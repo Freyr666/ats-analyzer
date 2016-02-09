@@ -1,3 +1,21 @@
+/* gstvideoanalysis.c
+ *
+ * Copyright (C) 2016 freyr <sky_rider_93@mail.ru> 
+ *
+ * This file is free software; you can redistribute it and/or modify it 
+ * under the terms of the GNU Lesser General Public License as 
+ * published by the Free Software Foundation; either version 3 of the 
+ * License, or (at your option) any later version. 
+ *
+ * This file is distributed in the hope that it will be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+ * Lesser General Public License for more details. 
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+*/
+
 /**
  * SECTION:element-gstvideoanalysis
  *
@@ -11,6 +29,7 @@
  * FIXME Describe what the pipeline does.
  * </refsect2>
  */
+
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -110,8 +129,9 @@ gst_videoanalysis_class_init (GstVideoAnalysisClass * klass)
 							    gst_caps_from_string (VIDEO_SINK_CAPS)));
 
   gst_element_class_set_static_metadata (GST_ELEMENT_CLASS(klass),
-					 "FIXME Long name", "Generic", "FIXME Description",
-					 "FIXME <fixme@example.com>");
+					 "Gstreamer element for video analysis",
+					 "Video data analysis", "filter for video analysis",
+					 "freyr <sky_rider_93@mail.ru>");
 
   gobject_class->set_property = gst_videoanalysis_set_property;
   gobject_class->get_property = gst_videoanalysis_get_property;
@@ -123,29 +143,37 @@ gst_videoanalysis_class_init (GstVideoAnalysisClass * klass)
   video_filter_class->transform_frame_ip = GST_DEBUG_FUNCPTR (gst_videoanalysis_transform_frame_ip);
 
   properties [PROP_ID] =
-    g_param_spec_string("id",
-			"Id",
-			"Channel id (channel num)",
-			NULL,
-			(G_PARAM_READWRITE));
+    g_param_spec_uint("id",
+		      "Id",
+		      "Channel id (channel num)",
+		      0,
+		      G_MAXUINT,
+		      2000,
+		      G_PARAM_READWRITE);
   properties [PROP_PERIOD] =
-    g_param_spec_string("period",
-			"Period",
-			"Number of frames, which forces filter to emit the info massege",
-			NULL,
-			(G_PARAM_READWRITE));
+    g_param_spec_uint("period",
+		      "Period",
+		      "Number of frames, which forces filter to emit the info massege",
+		      1,
+		      1024,
+		      8,
+		      G_PARAM_READWRITE);
   properties [PROP_BLACK] =
-    g_param_spec_string("black_lb",
-			"Black_lb",
-			"Blacness lower bounder",
-			NULL,
-			(G_PARAM_READWRITE));
+    g_param_spec_uint("black_lb",
+		      "Black_lb",
+		      "Frame blackness lower bounder",
+		      0,
+		      256,
+		      16,
+		      G_PARAM_READWRITE);
   properties [PROP_FREEZE] =
-    g_param_spec_string("freeze_lb",
-			"Freeze_lb",
-			"Freeze lower bounder",
-			NULL,
-			(G_PARAM_READWRITE));
+    g_param_spec_uint("freeze_lb",
+		      "Freeze_lb",
+		      "Frame freeze lower bounder",
+		      0,
+		      256,
+		      0,
+		      G_PARAM_READWRITE);
   g_object_class_install_properties(gobject_class, LAST_PROP, properties);
 
 }
@@ -345,21 +373,21 @@ plugin_init (GstPlugin * plugin)
    remove these, as they're always defined.  Otherwise, edit as
    appropriate for your external plugin package. */
 #ifndef VERSION
-#define VERSION "0.0.FIXME"
+#define VERSION "0.1.9"
 #endif
 #ifndef PACKAGE
-#define PACKAGE "FIXME_package"
+#define PACKAGE "videoanalysis"
 #endif
 #ifndef PACKAGE_NAME
-#define PACKAGE_NAME "FIXME_package_name"
+#define PACKAGE_NAME "videoanalysis_package"
 #endif
 #ifndef GST_PACKAGE_ORIGIN
-#define GST_PACKAGE_ORIGIN "http://FIXME.org/"
+#define GST_PACKAGE_ORIGIN "https://github.com/Freyr666/ats-analyzer/"
 #endif
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     videoanalysis,
-    "FIXME plugin description",
+    "Package for video data analysing",
     plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
 
