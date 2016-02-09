@@ -294,24 +294,17 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
   VideoParams params;
   
   GST_DEBUG_OBJECT (videoanalysis, "transform_frame_ip");
-
-  if (videoanalysis->past_buffer == NULL)
-    params = analyse_buffer(frame->data[0],
-			    frame->info.stride[0],
-			    frame->info.width,
-			    frame->info.height,
-			    videoanalysis->black_lb);
-  else
-    params = analyse_buffer_with_prev(frame->data[0],
-				      videoanalysis->past_buffer,
-				      frame->info.stride[0],
-				      frame->info.width,
-				      frame->info.height,
-				      videoanalysis->black_lb,
-				      videoanalysis->freeze_lb);
-
+  
+  params = analyse_buffer(frame->data[0],
+			  videoanalysis->past_buffer,
+			  frame->info.stride[0],
+			  frame->info.width,
+			  frame->info.height,
+			  videoanalysis->black_lb,
+			  videoanalysis->freeze_lb);
+  
   if (video_data_is_full(videoanalysis->data)){
-
+    
     GstStructure* st = gst_structure_new_id_empty(DATA_MARKER);
     gst_structure_id_set(st,
 			 VIDEO_DATA_MARKER,
@@ -323,14 +316,15 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
 			     gst_message_new_element(GST_OBJECT_CAST(filter),
 						     st));
     
+    
     video_data_reset(videoanalysis->data); 
   }
   
   video_data_append(videoanalysis->data, params);
+  
   if(videoanalysis->past_buffer == NULL)
     videoanalysis->past_buffer = (guint8*)malloc(frame->info.stride[0] * frame->info.height + 1);
-  if(videoanalysis->past_buffer != NULL)
-    memcpy(videoanalysis->past_buffer, frame->data[0], frame->info.stride[0] * frame->info.height);
+  
   return GST_FLOW_OK;
 }
 
