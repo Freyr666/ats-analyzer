@@ -14,6 +14,7 @@ proc_tree_new(guint stream_id)
   /* creating elements */
   rval->pipeline = gst_pipeline_new("proc-tree-pipe");
   rval->source = gst_element_factory_make("udpsrc", "proc-tree-source");
+  g_object_set (G_OBJECT (rval->source), "timeout", 5000000000, NULL);
   queue = gst_element_factory_make("queue2", "proc-tree-queue");
   parse = gst_element_factory_make("tsparse", "proc-tree-parse");
   rval->faketee.tee = gst_element_factory_make("tee", "proc-tree-tee");

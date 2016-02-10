@@ -30,6 +30,7 @@ dump_pmt (GstMpegtsSection * section, PROC_METADATA* data)
   channel = proc_metadata_find_channel(data, pmt->program_number);
   if (!channel) return;
   len = pmt->streams->len;
+  channel->pids_num = 0;
   for (i = 0; i < len; i++) {
     GstMpegtsPMTStream *stream = g_ptr_array_index (pmt->streams, i);
     if (stream->stream_type == 0x86) continue; /* Unknown type */
