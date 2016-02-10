@@ -144,20 +144,14 @@ proc_tree_remove_branches(PROC_TREE* this)
     PROC_BRANCH* tmp = g_slist_nth_data(this->branches, i);
     if (tmp->bin != NULL)
       gst_bin_remove(GST_BIN(this->pipeline), tmp->bin);
+    tmp->bin = NULL;
     proc_branch_delete(tmp);
   }
   /* deleting branches object and channel tee */
   g_slist_free(this->branches);
   this->branches = NULL;
   gst_bin_remove(GST_BIN(this->pipeline), this->tee);
-  gst_object_unref(this->tee);
+  //gst_object_unref(this->tee);
   this->tee = NULL;
-  gst_element_set_state(this->pipeline, GST_STATE_PLAYING);
-}
-
-void
-proc_tree_reset_tree(PROC_TREE* this)
-{
-  proc_tree_remove_branches(this);
-  proc_tree_add_branches(this);
+  gst_element_set_state(this->pipeline, GST_STATE_READY);
 }

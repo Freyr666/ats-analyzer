@@ -40,6 +40,6 @@ PROC_CH_DATA* proc_metadata_find_channel(PROC_METADATA* data, guint num);
 
 gboolean proc_metadata_is_ready(PROC_METADATA* data);
 
-void proc_metadata_to_string(PROC_METADATA* data);
+void proc_metadata_print(PROC_METADATA* data);
 
 #endif /* PROC_METADATA_H */

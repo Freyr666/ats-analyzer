@@ -75,6 +75,4 @@ void proc_tree_add_branches(PROC_TREE* this);
 
 void proc_tree_remove_branches(PROC_TREE* this);
 
-void proc_tree_reset_tree(PROC_TREE* this);
-
 #endif /* PROC_TREE_H */

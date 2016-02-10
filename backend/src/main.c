@@ -43,11 +43,14 @@ bus_call(GstBus* bus,
     const GstStructure* st;
     if ((section = gst_message_parse_mpegts_section (msg))) {
       if(parse_table (section, tree->metadata) && proc_metadata_is_ready(tree->metadata)){
-	proc_metadata_to_string(tree->metadata);
-	//if (tree->branches == NULL)
-	  //proc_tree_add_branches(tree);
-	  //else
-	  // proc_tree_reset_tree(tree);
+	if (tree->branches == NULL){
+	  proc_metadata_print(tree->metadata);
+	  proc_tree_add_branches(tree);
+	}
+	/*else {
+	  proc_metadata_print(tree->metadata);
+	  proc_tree_remove_branches(tree);
+	  }*/
       }
       gst_mpegts_section_unref (section);
     }
