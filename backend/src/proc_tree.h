@@ -57,7 +57,7 @@ struct __proc_tree
   GstElement *pipeline;
 }PROC_TREE;
 
-PROC_TREE* proc_tree_new(const gchar* srcname);
+PROC_TREE* proc_tree_new(guint stream_id);
 
 void proc_tree_delete(PROC_TREE* this);
 
@@ -71,12 +71,10 @@ void proc_tree_set_source(PROC_TREE* this,
 void proc_tree_set_state(PROC_TREE* this,
 			 GstState state);
 
-void proc_tree_add_branches(PROC_TREE* this,
-			    PROC_BRANCH* (*branch_new)(const guint,
-						       const gchar*,
-						       const gchar*,
-						       const guint ));
+void proc_tree_add_branches(PROC_TREE* this);
 
 void proc_tree_remove_branches(PROC_TREE* this);
+
+void proc_tree_reset_tree(PROC_TREE* this);
 
 #endif /* PROC_TREE_H */

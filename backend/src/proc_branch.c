@@ -1,9 +1,11 @@
 #include "proc_branch.h"
 #include <gst/video/videooverlay.h>
+#include <stdlib.h>
 
 static GstElement*
 create_video_bin(const gchar* type,
-		 const guint xid)
+		 const guint xid,
+		 const guint pid)
 {
   GstElement *bin, *queue, *parser, *decoder, *analyser, *sink;
   GstPad *pad, *ghost_pad;
@@ -23,7 +25,7 @@ create_video_bin(const gchar* type,
   g_object_set (G_OBJECT (queue), "max-size-buffers", 20000, NULL);
   g_object_set (G_OBJECT (queue), "max-size-bytes", 5000000, NULL);
   analyser = gst_element_factory_make("videoanalysis", NULL);
-  //g_object_set(G_OBJECT (analyser), "id", 2010, NULL);
+  g_object_set(G_OBJECT (analyser), "id", pid, NULL);
   sink = gst_element_factory_make("xvimagesink", NULL);
   /* Overlay */
   if (xid != 0)
@@ -108,23 +110,26 @@ branch_on_pad_added(GstElement* el,
   GstStructure *pad_struct = NULL;
   GstPad* sinkpad;
   const gchar *pad_type = NULL;
+  guint pid_num = 0;
   GstElement *tail;
   gchar** type_tocs;
+  gchar** pid_tocs;
   PROC_BRANCH* branch = (PROC_BRANCH*)data;
 
   g_print ("Dynamic pad created, linking demuxer/decoder\n");
   g_print ("Received new pad '%s' from '%s':\n", GST_PAD_NAME (pad), GST_ELEMENT_NAME (el));
-
+  
   caps = gst_pad_get_current_caps(pad);
   pad_struct = gst_caps_get_structure (caps, 0);
   pad_type = gst_structure_get_name (pad_struct);
   g_print("Result: %s\n", pad_type);
-  
+  pid_tocs = g_strsplit(GST_PAD_NAME (pad), "_", 2);
+  pid_num = strtoul(pid_tocs[1], NULL, 16);
   type_tocs = g_strsplit(pad_type, "/", 2);
   g_print("Got %s of type %s\n", type_tocs[0], type_tocs[1]);
   if (type_tocs[0][0] == 'v'){
-    g_print ("%xid: %d\n", branch->xid);
-    tail = create_video_bin(type_tocs[1], branch->xid);
+    g_print ("xid: %d\n", branch->xid);
+    tail = create_video_bin(type_tocs[1], branch->xid, pid_num);
   }
   else if (type_tocs[0][0] == 'a')
     tail = create_audio_bin(type_tocs[1]);
@@ -143,26 +148,26 @@ branch_on_pad_added(GstElement* el,
 }
 
 PROC_BRANCH*
-proc_branch_new(const guint number,
-		const gchar* service_name,
-		const gchar* provider_name,
+proc_branch_new(const guint stream_id,
+		const guint prog_num,
 		const guint xid)
 {
   PROC_BRANCH *rval;
   GstPad *pad, *ghost_pad;
   GstElement *queue, *demux;
   rval = g_new(PROC_BRANCH, 1);
-  rval->number = number;
-  rval->provider_name = g_strdup(provider_name);
-  rval->service_name = g_strdup(service_name);
+  rval->stream_id = stream_id;
+  rval->prog_num = prog_num;
   rval->xid = xid;
-  rval->bin = gst_bin_new(service_name);
+  rval->bin = gst_bin_new(NULL);
   
   queue = gst_element_factory_make("queue2", NULL);
   demux = gst_element_factory_make("tsdemux", NULL);
-  g_object_set (G_OBJECT (queue), "max-size-buffers", 2000000, NULL);
-  g_object_set (G_OBJECT (queue), "max-size-bytes", 429496729, NULL);
-  g_object_set(G_OBJECT(demux), "program-number", rval->number, NULL);
+  g_object_set (G_OBJECT (queue),
+		"max-size-buffers", 2000000,
+		"max-size-bytes", 429496729,
+		NULL);
+  g_object_set (G_OBJECT (demux), "program-number", rval->prog_num, NULL);
   
   gst_bin_add_many(GST_BIN(rval->bin), queue, demux, NULL);
   gst_element_link_many(queue, demux, NULL);

@@ -42,9 +42,13 @@ bus_call(GstBus* bus,
     GstMpegtsSection *section;
     const GstStructure* st;
     if ((section = gst_message_parse_mpegts_section (msg))) {
-      if (tree->branches == NULL)
-	if (parse_table (section, tree->metadata))
-	  proc_tree_add_branches(tree, proc_branch_new);
+      if(parse_table (section, tree->metadata) && proc_metadata_is_ready(tree->metadata)){
+	proc_metadata_to_string(tree->metadata);
+	//if (tree->branches == NULL)
+	  //proc_tree_add_branches(tree);
+	  //else
+	  // proc_tree_reset_tree(tree);
+      }
       gst_mpegts_section_unref (section);
     }
     else {
@@ -72,7 +76,7 @@ main(int argc,
   gst_init(&argc, &argv);
   mainloop = g_main_loop_new(NULL, FALSE);
 
-  proctree = proc_tree_new("udpsrc");
+  proctree = proc_tree_new(0);
   proc_tree_set_source(proctree, "udp://127.0.0.1:1234", "127.0.0.1", 1234);
   bus = proc_tree_get_bus(proctree);
   proc_tree_set_state(proctree, GST_STATE_PLAYING);

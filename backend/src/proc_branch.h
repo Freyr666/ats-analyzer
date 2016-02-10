@@ -4,20 +4,20 @@
 #include <gst/gst.h>
 #include <glib.h>
 
+#include "proc_metadata.h"
+
 typedef
 struct __proc_branch
 {
-  guint number;
-  gchar* service_name;
-  gchar* provider_name;
+  guint stream_id;
+  guint prog_num;
   guint xid;
   /* Branch pipeline*/
   GstElement* bin;
 } PROC_BRANCH;
 
-PROC_BRANCH* proc_branch_new(const guint number,
-			     const gchar* service_name,
-			     const gchar* provider_name,
+PROC_BRANCH* proc_branch_new(const guint stream_id,
+			     const guint prog_num,
 			     const guint xid);
 
 void proc_branch_delete(PROC_BRANCH *this);

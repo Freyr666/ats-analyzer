@@ -1,7 +1,7 @@
 #include "proc_tree.h"
 
 PROC_TREE*
-proc_tree_new(const gchar* srcname)
+proc_tree_new(guint stream_id)
 {
   PROC_TREE* rval;
   GstElement *queue, *parse, *fakesink;
@@ -10,21 +10,27 @@ proc_tree_new(const gchar* srcname)
   
   /* init-ing tree */
   rval = g_new(PROC_TREE, 1);
-  rval->pipeline = gst_pipeline_new("proc-tree-pipeline");
-  rval->source = gst_element_factory_make(srcname, "proc-tree-source");
+  
+  /* creating elements */
+  rval->pipeline = gst_pipeline_new("proc-tree-pipe");
+  rval->source = gst_element_factory_make("udpsrc", "proc-tree-source");
   queue = gst_element_factory_make("queue2", "proc-tree-queue");
   parse = gst_element_factory_make("tsparse", "proc-tree-parse");
   rval->faketee.tee = gst_element_factory_make("tee", "proc-tree-tee");
   rval->faketee.pad = NULL;
   fakesink = gst_element_factory_make("fakesink", NULL);
   rval->branches = NULL;
-  rval->metadata = g_new(PROC_METADATA, 1);
-  rval->metadata->proginfo = NULL;
-  rval->metadata->prognum = 0;
   
+  /* init-ing tree metadata */
+  rval->metadata = g_new(PROC_METADATA, 1);
+  rval->metadata->stream_id = stream_id;
+  rval->metadata->prog_info = NULL;
+  rval->metadata->done = FALSE;
   /* setting queue length and buf size*/
-  g_object_set (G_OBJECT (queue), "max-size-buffers", 2000000, NULL);
-  g_object_set (G_OBJECT (queue), "max-size-bytes", 429496729, NULL);
+  g_object_set (G_OBJECT (queue),
+		"max-size-buffers", 2000000,
+		"max-size-bytes", 429496729,
+		NULL);
   
   /* linking pipeline */
   gst_bin_add_many(GST_BIN(rval->pipeline), rval->source, queue, parse, rval->faketee.tee, fakesink, NULL);
@@ -65,10 +71,12 @@ proc_tree_set_source(PROC_TREE* this,
 		     const gchar* srcaddress,
 		     const guint srcport )
 {
-  g_object_set (G_OBJECT (this->source), "port", srcport, NULL);
-  g_object_set (G_OBJECT (this->source), "address", srcaddress, NULL);
-  g_object_set (G_OBJECT (this->source), "uri", srcpath, NULL);
-  g_object_set (G_OBJECT (this->source), "buffer-size", 429496295, NULL);  
+  g_object_set (G_OBJECT (this->source),
+		"port",        srcport,
+		"address",     srcaddress,
+		"uri",         srcpath,
+		"buffer-size", 429496295,
+		NULL);  
 }
 
 void
@@ -78,11 +86,7 @@ proc_tree_set_state(PROC_TREE* this,
   gst_element_set_state (this->pipeline, state);
 }
 
-void proc_tree_add_branches(PROC_TREE* this,
-			    PROC_BRANCH* (*branch_new)(const guint,
-						       const gchar*,
-						       const gchar*,
-						       const guint ))
+void proc_tree_add_branches(PROC_TREE* this)
 {
   guint channels;
   PROC_BRANCH* newbranch;
@@ -91,8 +95,8 @@ void proc_tree_add_branches(PROC_TREE* this,
   
   gst_element_set_state(this->pipeline, GST_STATE_PAUSED);
   /* if TS have been parsed */
-  if ((this->metadata->proginfo != NULL) && (this->branches == NULL)){
-    channels = g_slist_length(this->metadata->proginfo);
+  if (this->metadata->prog_info != NULL){
+    channels = g_slist_length(this->metadata->prog_info);
     if(this->faketee.pad == NULL){
       g_printerr("proc_tree_add_branches: tee has no pad to connect!\n");
       return;
@@ -105,13 +109,12 @@ void proc_tree_add_branches(PROC_TREE* this,
 
     /* adding processing branch for each channel */
     for (guint i = 0; i < channels; i++) {
-	PROC_CH_DATA* tmpinfo = g_slist_nth_data(this->metadata->proginfo, i);
+	PROC_CH_DATA* tmpinfo = g_slist_nth_data(this->metadata->prog_info, i);
 	if (!(tmpinfo->to_be_analyzed))
 	  continue;
-	newbranch = branch_new(tmpinfo->number,
-			       tmpinfo->service_name,
-			       tmpinfo->provider_name,
-			       tmpinfo->xid);
+	newbranch = proc_branch_new(this->metadata->stream_id,
+				    tmpinfo->number,
+				    tmpinfo->xid);
 
 	this->branches = g_slist_append(this->branches, newbranch);
 
@@ -150,4 +153,11 @@ proc_tree_remove_branches(PROC_TREE* this)
   gst_object_unref(this->tee);
   this->tee = NULL;
   gst_element_set_state(this->pipeline, GST_STATE_PLAYING);
+}
+
+void
+proc_tree_reset_tree(PROC_TREE* this)
+{
+  proc_tree_remove_branches(this);
+  proc_tree_add_branches(this);
 }
