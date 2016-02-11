@@ -137,8 +137,9 @@ branch_on_pad_added(GstElement* el,
     return;
   if (tail){
     g_print("Playing pipeline has been created\n");
-    gst_bin_sync_children_states(GST_BIN(tail));
+    gst_bin_sync_children_states(GST_BIN(branch->bin));
     gst_bin_add((GstBin*) branch->bin, tail);
+    gst_element_set_state(branch->bin, GST_STATE_PLAYING);
     gst_bin_sync_children_states(GST_BIN(branch->bin));
     sinkpad = gst_element_get_static_pad (tail, "sink");
     gst_pad_link (pad, sinkpad);

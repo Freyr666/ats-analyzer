@@ -1,4 +1,5 @@
 #include "proc_tree.h"
+#include "unistd.h"
 
 PROC_TREE*
 proc_tree_new(guint stream_id)
@@ -26,7 +27,6 @@ proc_tree_new(guint stream_id)
   rval->metadata = g_new(PROC_METADATA, 1);
   rval->metadata->stream_id = stream_id;
   rval->metadata->prog_info = NULL;
-  rval->metadata->done = FALSE;
   /* setting queue length and buf size*/
   g_object_set (G_OBJECT (queue),
 		"max-size-buffers", 2000000,
@@ -138,6 +138,16 @@ proc_tree_remove_branches(PROC_TREE* this)
 {
   guint blen;
 
+  if (this->branches != NULL){
+    GstPad *src;
+    GstEvent *event;
+    src = gst_element_get_static_pad(this->source, "src");
+    event = gst_event_new_eos();
+    gst_pad_push_event(src, event);
+  }
+  g_slist_free(this->metadata->prog_info);
+  this->metadata->prog_info = NULL;
+  sleep(2);
   gst_element_set_state(this->pipeline, GST_STATE_NULL);
   /* deleting processing branch for each channel */
   blen = g_slist_length(this->branches);

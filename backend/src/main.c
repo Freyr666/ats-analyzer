@@ -25,9 +25,6 @@ bus_call(GstBus* bus,
   switch (GST_MESSAGE_TYPE(msg)) {
   case GST_MESSAGE_EOS: {
     g_print("End of stream\n");
-    proc_metadata_print(tree->metadata);
-    proc_tree_remove_branches(tree);
-    proc_tree_set_state(tree, GST_STATE_PLAYING);
     break;
   }
   case GST_MESSAGE_ERROR: {
