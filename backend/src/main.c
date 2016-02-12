@@ -43,9 +43,17 @@ bus_call(GstBus* bus,
     if ((section = gst_message_parse_mpegts_section (msg))) {
       if(parse_table (section, tree->metadata) && ats_metadata_is_ready(tree->metadata)){
 	if (tree->branches == NULL){
+<<<<<<< HEAD
 	  ats_tree_add_branches(tree);
 	}
 	/*else {
+=======
+	  ats_metadata_print(tree->metadata);
+	  ats_tree_add_branches(tree);
+	}
+	/*else {
+	  ats_metadata_print(tree->metadata);
+>>>>>>> namespaces
 	  ats_tree_remove_branches(tree);
 	  }*/
       }
@@ -56,6 +64,10 @@ bus_call(GstBus* bus,
       st = gst_message_get_structure(msg);
       if (gst_structure_has_name (st, "GstUDPSrcTimeout")){
 	g_print("EOS!!!\n");
+<<<<<<< HEAD
+=======
+	/*ats_metadata_print(tree->metadata);*/
+>>>>>>> namespaces
 	if (tree->branches != NULL){
 	  ats_tree_remove_branches(tree);
 	  ats_tree_set_state(tree, GST_STATE_PLAYING);
