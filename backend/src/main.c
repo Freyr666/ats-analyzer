@@ -95,7 +95,7 @@ main(int argc,
   data->loop = mainloop;
   data->tree = proctree;
   gst_bus_add_watch(bus, bus_call, data);
-
+  
   g_print ("Now playing: %s\nRunning...\n", argv[1]);
   g_main_loop_run (mainloop);
 
