@@ -1,7 +1,7 @@
 #include "parse_ts.h"
-#include "proc_branch.h"
-#include "proc_metadata.h"
-#include "proc_tree.h"
+#include "ats_branch.h"
+#include "ats_metadata.h"
+#include "ats_tree.h"
 #include <string.h>
 
 
@@ -21,13 +21,13 @@ enum_name (GType instance_type, gint val)
 }
 
 static void
-dump_pmt (GstMpegtsSection * section, PROC_METADATA* data)
+dump_pmt (GstMpegtsSection * section, ATS_METADATA* data)
 {
   const GstMpegtsPMT *pmt = gst_mpegts_section_get_pmt (section);
   guint i, len;
-  PROC_CH_DATA* channel;
+  ATS_CH_DATA* channel;
   
-  channel = proc_metadata_find_channel(data, pmt->program_number);
+  channel = ats_metadata_find_channel(data, pmt->program_number);
   if (!channel) return;
   len = pmt->streams->len;
   channel->pids_num = 0;
@@ -43,7 +43,7 @@ dump_pmt (GstMpegtsSection * section, PROC_METADATA* data)
 }
 
 static void
-dump_pat (GstMpegtsSection * section, PROC_METADATA* data)
+dump_pat (GstMpegtsSection * section, ATS_METADATA* data)
 {
   GPtrArray *pat = gst_mpegts_section_get_pat (section);
   guint i, len;
@@ -53,7 +53,7 @@ dump_pat (GstMpegtsSection * section, PROC_METADATA* data)
   for (i = 0; i < len; i++) {
     GstMpegtsPatProgram *patp = g_ptr_array_index (pat, i);
     if (patp->program_number == 0) continue;
-    PROC_CH_DATA* tmpch = g_new(PROC_CH_DATA, 1);
+    ATS_CH_DATA* tmpch = g_new(ATS_CH_DATA, 1);
     tmpch->number = patp->program_number;
     tmpch->xid = 0;
     tmpch->pids_num = 0;
@@ -66,7 +66,7 @@ dump_pat (GstMpegtsSection * section, PROC_METADATA* data)
 }
 
 static void
-dump_sdt (GstMpegtsSection * section, PROC_METADATA* data)
+dump_sdt (GstMpegtsSection * section, ATS_METADATA* data)
 {
   const GstMpegtsSDT *sdt = gst_mpegts_section_get_sdt (section);
   guint i, len;
@@ -78,7 +78,7 @@ dump_sdt (GstMpegtsSection * section, PROC_METADATA* data)
   for (i = 0; i < len; i++) {
     GstMpegtsSDTService *service = g_ptr_array_index (sdt->services, i);
     if (service->service_id == 0) continue;
-    PROC_CH_DATA* tmpch = proc_metadata_find_channel(data, service->service_id);
+    ATS_CH_DATA* tmpch = ats_metadata_find_channel(data, service->service_id);
     if (!tmpch) continue;
     for (guint i = 0; i < service->descriptors->len; i++) {
       GstMpegtsDescriptor *desc = g_ptr_array_index (service->descriptors, i);
@@ -101,8 +101,8 @@ dump_sdt (GstMpegtsSection * section, PROC_METADATA* data)
 gboolean
 parse_table (GstMpegtsSection * section, void* data)
 {
-  PROC_METADATA* metadata; 
-  metadata = (PROC_METADATA*)data;
+  ATS_METADATA* metadata; 
+  metadata = (ATS_METADATA*)data;
 
   g_type_class_ref (GST_TYPE_MPEGTS_SECTION_TYPE);
   g_type_class_ref (GST_TYPE_MPEGTS_SECTION_TABLE_ID);

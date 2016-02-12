@@ -6,8 +6,8 @@ CFLAGS += `pkg-config --cflags gstreamer-1.0 gstreamer-video-1.0 gstreamer-mpegt
 LDFLAGS = 
 LDFLAGS += `pkg-config --libs gstreamer-1.0 gstreamer-video-1.0 gstreamer-mpegts-1.0 glib-2.0`
 
-SOURCES = main.c parse_ts.c proc_branch.c
-SOURCES += proc_tree.c proc_metadata.c
+SOURCES = main.c parse_ts.c ats_branch.c
+SOURCES += ats_tree.c ats_metadata.c
 
 OBJECTS=$(SOURCES:.c=.o)
 
