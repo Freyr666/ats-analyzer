@@ -95,7 +95,6 @@ dump_sdt (GstMpegtsSection * section, ATS_METADATA* data)
       }
     }
   }
-  data->done = TRUE;
 }
 
 gboolean
