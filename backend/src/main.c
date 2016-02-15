@@ -7,11 +7,13 @@
 #include "ats_metadata.h"
 #include "ats_tree.h"
 #include "videoanalysis_api.h"
+#include "ats_control.h"
 
 typedef struct __bus_data
 {
   GMainLoop* loop;
-  ATS_TREE* tree;
+  ATS_TREE* tree; 
+  ATS_CONTROL* control;
 } BUS_DATA;
 
 static gboolean
@@ -22,6 +24,7 @@ bus_call(GstBus* bus,
   BUS_DATA* d = (BUS_DATA*) data;
   GMainLoop* loop = d->loop;
   ATS_TREE* tree = d->tree;
+  ATS_CONTROL* control = d->control;
   switch (GST_MESSAGE_TYPE(msg)) {
   case GST_MESSAGE_EOS: {
     g_print("End of stream\n");
@@ -42,6 +45,7 @@ bus_call(GstBus* bus,
     const GstStructure* st;
     if ((section = gst_message_parse_mpegts_section (msg))) {
       if(parse_table (section, tree->metadata) && ats_metadata_is_ready(tree->metadata)){
+	ats_control_send(control, ats_metadata_to_string(tree->metadata));
 	if (tree->branches == NULL){
 	  ats_tree_add_branches(tree);
 	}
@@ -52,14 +56,14 @@ bus_call(GstBus* bus,
     else {
       st = gst_message_get_structure(msg);
       if (gst_structure_has_name (st, "GstUDPSrcTimeout")){
-	g_print("EOS!!!\n");
+        ats_control_send(control, "e0");
 	if (tree->branches != NULL){
 	  ats_tree_remove_branches(tree);
 	  ats_tree_set_state(tree, GST_STATE_PLAYING);
 	}
       }
       if (gst_structure_get_name_id(st) == DATA_MARKER)
-	g_print("%s\n", g_value_dup_string((gst_structure_id_get_value(st, VIDEO_DATA_MARKER))));
+	ats_control_send(control, g_value_dup_string(gst_structure_id_get_value(st, VIDEO_DATA_MARKER)));
     }
     break;
   }
@@ -76,6 +80,7 @@ main(int argc,
   GMainLoop *mainloop;
   GstBus* bus;
   ATS_TREE* proctree;
+  ATS_CONTROL* control;
   BUS_DATA* data;
   
   gst_init(&argc, &argv);
@@ -85,12 +90,13 @@ main(int argc,
   ats_tree_set_source(proctree, "udp://127.0.0.1:1234", "127.0.0.1", 1234);
   bus = ats_tree_get_bus(proctree);
   ats_tree_set_state(proctree, GST_STATE_PLAYING);
-  
+  control = ats_control_new(proctree);
   mainloop = g_main_loop_new (NULL, FALSE);
   
   data = g_new(BUS_DATA, 1);
   data->loop = mainloop;
   data->tree = proctree;
+  data->control = control;
   gst_bus_add_watch(bus, bus_call, data);
   
   g_print ("Now playing: %s\nRunning...\n", argv[1]);
