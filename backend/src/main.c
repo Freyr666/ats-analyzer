@@ -54,10 +54,8 @@ bus_call(GstBus* bus,
       st = gst_message_get_structure(msg);
       if (gst_structure_has_name (st, "GstUDPSrcTimeout")){
         ats_control_send(control, "e0");
-	if (tree->branches != NULL){
+	if (tree->branches != NULL)
 	  ats_tree_remove_branches(tree);
-	  ats_tree_set_state(tree, GST_STATE_PLAYING);
-	}
       }
       if (gst_structure_get_name_id(st) == DATA_MARKER)
 	ats_control_send(control, g_value_dup_string(gst_structure_id_get_value(st, VIDEO_DATA_MARKER)));
@@ -84,7 +82,6 @@ main(int argc,
   mainloop = g_main_loop_new(NULL, FALSE);
 
   proctree = ats_tree_new(0);
-  ats_tree_set_source(proctree, "udp://127.0.0.1:1234", "127.0.0.1", 1234);
   bus = ats_tree_get_bus(proctree);
   ats_tree_set_state(proctree, GST_STATE_PLAYING);
   control = ats_control_new(proctree);

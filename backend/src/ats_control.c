@@ -1,6 +1,44 @@
 #include "ats_control.h"
 
 #include <string.h>
+#include <stdlib.h>
+
+static gboolean
+parse_tree_message(guint *message, ATS_TREE* tree)
+{
+  ATS_METADATA* data = tree->metadata;
+  guint prognum = 0;
+  ATS_PID_DATA* piddata;
+  ATS_CH_DATA* progdata;
+  
+  if (tree->branches != NULL)
+    ats_tree_remove_branches(tree);
+  
+  message += 3; /* skip stream id */
+  while (*message != TREE_HEADER){
+    if (*message == PROG_DIVIDER) {
+      g_print("msg: %x => %d\n", *message, *message);
+      message++;
+      prognum = *message;
+      g_print("msg: %x => %d\n", *message, *message);
+      progdata = ats_metadata_find_channel(data, *message);
+      progdata->to_be_analyzed = TRUE;
+      message++;
+      g_print("msg: %x => %d\n", *message, *message);
+      progdata->xid = *message;
+      message++;
+      g_print("msg: %x => %d\n", *message, *message);
+    }
+    else {
+      piddata = ats_metadata_find_pid(data, prognum, *message);
+      if (piddata)
+	piddata->to_be_analyzed = TRUE;
+      message++;
+    }
+  }
+  ats_tree_add_branches(tree);
+  return FALSE;
+}
 
 static gboolean
 incoming_callback  (GSocketService *service,
@@ -9,7 +47,6 @@ incoming_callback  (GSocketService *service,
                     gpointer user_data)
 {
   ATS_TREE* tree = (ATS_TREE*) user_data;
-  ATS_METADATA* data = tree->metadata;
   GInputStream * istream = g_io_stream_get_input_stream (G_IO_STREAM (connection));
   guint buffer[1024];
   guint *message;
@@ -19,34 +56,9 @@ incoming_callback  (GSocketService *service,
                         NULL,
                         NULL);
   message = buffer;
-  if(*message == TREE_HEADER) {
-    guint prognum;
-    ATS_PID_DATA* piddata;
-    ATS_CH_DATA* progdata;
-    message += 3; /* skip stream id */
-    while (*message != TREE_HEADER){
-      if (*message == PROG_DIVIDER) {
-	g_print("msg: %x => %d\n", *message, *message);
-	message++;
-	prognum = *message;
-        g_print("msg: %x => %d\n", *message, *message);
-	progdata = ats_metadata_find_channel(data, *message);
-	progdata->to_be_analyzed = TRUE;
-	message++;
-	g_print("msg: %x => %d\n", *message, *message);
-	progdata->xid = *message;
-	message++;
-	g_print("msg: %x => %d\n", *message, *message);
-      }
-      else {
-	piddata = ats_metadata_find_pid(data, prognum, *message);
-	if (piddata)
-	  piddata->to_be_analyzed = TRUE;
-	message++;
-      }
-    }
-  }
-  ats_tree_add_branches(tree);
+  if(*message == TREE_HEADER) 
+    return parse_tree_message(message, tree);
+  g_printerr("Error: unknown message type!\n");
   return FALSE;
 }
 
@@ -83,6 +95,10 @@ ats_control_send(ATS_CONTROL* this, gchar* message)
 								  1600, /* your port goes here */
 								  NULL,
 								  NULL);
+  if (connection == NULL) {
+    g_printerr("Connection failed! Frontend is not active!\n");
+    exit(-1);
+  }
   GOutputStream * ostream = g_io_stream_get_output_stream (G_IO_STREAM (connection));
   g_output_stream_write  (ostream,
 			  message,

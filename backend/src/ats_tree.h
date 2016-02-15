@@ -63,11 +63,6 @@ void ats_tree_delete(ATS_TREE* this);
 
 GstBus* ats_tree_get_bus(ATS_TREE* this);
 
-void ats_tree_set_source(ATS_TREE* this,
-			  const gchar* srcpath,
-			  const gchar* srcaddress,
-			  const guint srcport );
-
 void ats_tree_set_state(ATS_TREE* this,
 			 GstState state);
 

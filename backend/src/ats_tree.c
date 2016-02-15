@@ -30,6 +30,12 @@ ats_tree_new(guint stream_id)
 		"max-size-buffers", 2000000,
 		"max-size-bytes", 429496729,
 		NULL);
+  /* setting udpsrc port and buf size*/
+  g_object_set (G_OBJECT (rval->source),
+		"port",        1234+stream_id,
+		"address",     "127.0.0.1",
+		"buffer-size", 429496295,
+		NULL);  
   
   /* linking pipeline */
   gst_bin_add_many(GST_BIN(rval->pipeline), rval->source, queue, parse, rval->faketee.tee, fakesink, NULL);
@@ -62,20 +68,6 @@ GstBus*
 ats_tree_get_bus(ATS_TREE* this)
 {
   return gst_pipeline_get_bus(GST_PIPELINE(this->pipeline));
-}
-
-void
-ats_tree_set_source(ATS_TREE* this,
-		     const gchar* srcpath,
-		     const gchar* srcaddress,
-		     const guint srcport )
-{
-  g_object_set (G_OBJECT (this->source),
-		"port",        srcport,
-		"address",     srcaddress,
-		"uri",         srcpath,
-		"buffer-size", 429496295,
-		NULL);  
 }
 
 void
@@ -163,4 +155,5 @@ ats_tree_remove_branches(ATS_TREE* this)
   //gst_object_unref(this->tee);
   this->tee = NULL;
   gst_element_set_state(this->pipeline, GST_STATE_READY);
+  gst_element_set_state(this->pipeline, GST_STATE_PLAYING);
 }
