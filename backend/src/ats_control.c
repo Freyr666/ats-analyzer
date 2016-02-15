@@ -8,13 +8,41 @@ incoming_callback  (GSocketService *service,
                     GObject *source_object,
                     gpointer user_data)
 {
+  ATS_TREE* tree = (ATS_TREE*) user_data;
+  ATS_METADATA* data = tree->metadata;
   GInputStream * istream = g_io_stream_get_input_stream (G_IO_STREAM (connection));
-  gchar message[1024];
+  guint buffer[1024];
+  guint *message;
   g_input_stream_read  (istream,
-                        message,
-                        1024,
+                        buffer,
+                        256,
                         NULL,
                         NULL);
+  message = buffer;
+  if(*message == TREE_HEADER) {
+    guint prognum;
+    ATS_PID_DATA* piddata;
+    ATS_CH_DATA* progdata;
+    message += 3; /* skip stream id */
+    while (*message != TREE_HEADER){
+      if (*message == PROG_DIVIDER) {
+	message++;
+	prognum = *message;
+	progdata = ats_metadata_find_channel(data, *message);
+	progdata->to_be_analyzed = TRUE;
+	message++;
+	progdata->xid = *message;
+	message++;
+	continue;
+      }
+      else {
+	piddata = ats_metadata_find_pid(data, prognum, *message);
+	if (piddata)
+	  piddata->to_be_analyzed = TRUE;
+      }
+    }
+  }
+  ats_tree_add_branches(tree);
   return FALSE;
 }
 
@@ -30,7 +58,7 @@ ats_control_new(ATS_TREE* tree)
   g_signal_connect (rval->incoming_service,
                     "incoming",
                     G_CALLBACK (incoming_callback),
-                    NULL);
+                    tree);
   g_socket_service_start (rval->incoming_service);
   rval->client = g_socket_client_new();
   return rval;

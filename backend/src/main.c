@@ -46,9 +46,6 @@ bus_call(GstBus* bus,
     if ((section = gst_message_parse_mpegts_section (msg))) {
       if(parse_table (section, tree->metadata) && ats_metadata_is_ready(tree->metadata)){
 	ats_control_send(control, ats_metadata_to_string(tree->metadata));
-	if (tree->branches == NULL){
-	  ats_tree_add_branches(tree);
-	}
       }
       gst_mpegts_section_unref (section);
     }
