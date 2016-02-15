@@ -91,7 +91,7 @@ void ats_tree_add_branches(ATS_TREE* this)
   ATS_BRANCH* newbranch;
   GstPadTemplate *tee_src_pad_template;
   GstPad *teepad, *branchpad, *sinkpad;
-  
+  g_printerr("ats_tree_add_branches!\n");
   gst_element_set_state(this->pipeline, GST_STATE_PAUSED);
   /* if TS have been parsed */
   if (this->metadata->prog_info != NULL){

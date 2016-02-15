@@ -26,19 +26,23 @@ incoming_callback  (GSocketService *service,
     message += 3; /* skip stream id */
     while (*message != TREE_HEADER){
       if (*message == PROG_DIVIDER) {
+	g_print("msg: %x => %d\n", *message, *message);
 	message++;
 	prognum = *message;
+        g_print("msg: %x => %d\n", *message, *message);
 	progdata = ats_metadata_find_channel(data, *message);
 	progdata->to_be_analyzed = TRUE;
 	message++;
+	g_print("msg: %x => %d\n", *message, *message);
 	progdata->xid = *message;
 	message++;
-	continue;
+	g_print("msg: %x => %d\n", *message, *message);
       }
       else {
 	piddata = ats_metadata_find_pid(data, prognum, *message);
 	if (piddata)
 	  piddata->to_be_analyzed = TRUE;
+	message++;
       }
     }
   }

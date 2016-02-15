@@ -34,7 +34,7 @@ dump_pmt (GstMpegtsSection * section, ATS_METADATA* data)
   for (i = 0; i < len; i++) {
     GstMpegtsPMTStream *stream = g_ptr_array_index (pmt->streams, i);
     if (stream->stream_type == 0x86) continue; /* Unknown type */
-    channel->pids[channel->pids_num].to_be_analyzed = TRUE;
+    channel->pids[channel->pids_num].to_be_analyzed = FALSE;
     channel->pids[channel->pids_num].pid = stream->pid;
     channel->pids[channel->pids_num].type = stream->stream_type;
     channel->pids[channel->pids_num].codec = g_strdup(enum_name (GST_TYPE_MPEGTS_STREAM_TYPE, stream->stream_type));
@@ -57,7 +57,7 @@ dump_pat (GstMpegtsSection * section, ATS_METADATA* data)
     tmpch->number = patp->program_number;
     tmpch->xid = 0;
     tmpch->pids_num = 0;
-    tmpch->to_be_analyzed = 1;
+    tmpch->to_be_analyzed = FALSE;
     tmpch->provider_name = NULL;
     tmpch->service_name = NULL;
     data->prog_info = g_slist_append(data->prog_info, tmpch);   
