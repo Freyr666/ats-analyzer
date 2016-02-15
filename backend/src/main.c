@@ -26,10 +26,6 @@ bus_call(GstBus* bus,
   ATS_TREE* tree = d->tree;
   ATS_CONTROL* control = d->control;
   switch (GST_MESSAGE_TYPE(msg)) {
-  case GST_MESSAGE_EOS: {
-    g_print("End of stream\n");
-    break;
-  }
   case GST_MESSAGE_ERROR: {
     gchar *debug;
     GError *error;
@@ -44,8 +40,10 @@ bus_call(GstBus* bus,
     GstMpegtsSection *section;
     const GstStructure* st;
     if ((section = gst_message_parse_mpegts_section (msg))) {
-      if(parse_table (section, tree->metadata) && ats_metadata_is_ready(tree->metadata)){
-	ats_control_send(control, ats_metadata_to_string(tree->metadata));
+      if (parse_table (section, tree->metadata) && ats_metadata_is_ready(tree->metadata)){
+	gchar* str = ats_metadata_to_string(tree->metadata);
+	ats_control_send(control, str);
+	g_free(str);
       }
       gst_mpegts_section_unref (section);
     }
@@ -55,10 +53,13 @@ bus_call(GstBus* bus,
       if (gst_structure_has_name (st, "GstUDPSrcTimeout")){
         ats_control_send(control, "e0");
 	if (tree->branches != NULL)
-	  ats_tree_remove_branches(tree);
+	  ats_tree_reset(tree);
       }
-      if (gst_structure_get_name_id(st) == DATA_MARKER)
-	ats_control_send(control, g_value_dup_string(gst_structure_id_get_value(st, VIDEO_DATA_MARKER)));
+      if (gst_structure_get_name_id(st) == DATA_MARKER){
+	gchar* str = g_value_dup_string(gst_structure_id_get_value(st, VIDEO_DATA_MARKER));
+	ats_control_send(control, str);
+	g_free(str);
+      }
     }
     break;
   }

@@ -19,6 +19,7 @@ ATS_CONTROL* ats_control_new(ATS_TREE* tree);
 
 void ats_control_delete(ATS_CONTROL* this);
 
-void ats_control_send(ATS_CONTROL* this, gchar* message);
+void ats_control_send(ATS_CONTROL* this,
+		      gchar* message);
 
 #endif /* ATS_CONTROL_H */

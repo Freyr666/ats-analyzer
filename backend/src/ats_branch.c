@@ -2,10 +2,16 @@
 #include <gst/video/videooverlay.h>
 #include <stdlib.h>
 
+typedef struct __callback_data
+{
+  const ATS_METADATA* data;
+  ATS_BRANCH* branch;
+} CALLBACK_DATA;
+
 static GstElement*
 create_video_bin(const gchar* type,
-		 const guint xid,
-		 const guint pid)
+		 const guint pid,
+		 const guint xid)
 {
   GstElement *bin, *queue, *parser, *decoder, *analyser, *sink;
   GstPad *pad, *ghost_pad;
@@ -28,8 +34,8 @@ create_video_bin(const gchar* type,
   g_object_set(G_OBJECT (analyser), "id", pid, NULL);
   sink = gst_element_factory_make("xvimagesink", NULL);
   /* Overlay */
-  if (xid != 0)
-    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (sink), xid);
+  //  if (xid != 0)
+  //  gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (sink), xid);
   /* ------- */
   bin = gst_bin_new (NULL);
   if (!bin || !parser || !decoder || !sink || !queue){
@@ -56,7 +62,8 @@ create_video_bin(const gchar* type,
 }
 
 static GstElement*
-create_audio_bin(const gchar* type)
+create_audio_bin(const gchar* type,
+		 const guint pid)
 {
   GstElement *bin, *queue, *parser, *decoder, *sink;
   GstPad *pad, *ghost_pad;
@@ -106,15 +113,17 @@ branch_on_pad_added(GstElement* el,
 		    GstPad* pad,
 		    gpointer data)
 {
+  CALLBACK_DATA* cb_data = (CALLBACK_DATA*)data;
   GstCaps *caps;
   GstStructure *pad_struct = NULL;
   GstPad* sinkpad;
   const gchar *pad_type = NULL;
   guint pid_num = 0;
-  GstElement *tail;
+  GstElement *tail = NULL;
   gchar** type_tocs;
   gchar** pid_tocs;
-  ATS_BRANCH* branch = (ATS_BRANCH*)data;
+  ATS_BRANCH* branch = cb_data->branch;
+  const ATS_METADATA* metadata = cb_data->data;
 
   g_print ("Dynamic pad created, linking demuxer/decoder\n");
   g_print ("Received new pad '%s' from '%s':\n", GST_PAD_NAME (pad), GST_ELEMENT_NAME (el));
@@ -127,47 +136,58 @@ branch_on_pad_added(GstElement* el,
   pid_num = strtoul(pid_tocs[1], NULL, 16);
   type_tocs = g_strsplit(pad_type, "/", 2);
   g_print("Got %s of type %s\n", type_tocs[0], type_tocs[1]);
-  if (type_tocs[0][0] == 'v'){
-    g_print ("xid: %d\n", branch->xid);
-    tail = create_video_bin(type_tocs[1], branch->xid, pid_num);
-  }
-  else if (type_tocs[0][0] == 'a')
-    tail = create_audio_bin(type_tocs[1]);
-  else 
-    return;
-  if (tail){
-    g_print("Playing pipeline has been created\n");
-    gst_bin_sync_children_states(GST_BIN(branch->bin));
-    gst_bin_add((GstBin*) branch->bin, tail);
-    gst_element_set_state(branch->bin, GST_STATE_PLAYING);
-    gst_bin_sync_children_states(GST_BIN(branch->bin));
-    sinkpad = gst_element_get_static_pad (tail, "sink");
-    gst_pad_link (pad, sinkpad);
-    g_print("Linked!\n");
-    gst_object_unref(GST_OBJECT(sinkpad));
+  if (ats_metadata_find_pid(metadata, branch->prog_num, pid_num)){
+    if (type_tocs[0][0] == 'v'){
+      g_print ("xid: %d\n", branch->xid);
+      tail = create_video_bin(type_tocs[1], pid_num, branch->xid);
     }
+    else if (type_tocs[0][0] == 'a')
+      tail = create_audio_bin(type_tocs[1], pid_num);
+    if (tail) {
+      g_print("Playing pipeline has been created\n");
+      gst_bin_sync_children_states(GST_BIN(branch->bin));
+      gst_bin_add((GstBin*) branch->bin, tail);
+      gst_element_set_state(branch->bin, GST_STATE_PLAYING);
+      gst_bin_sync_children_states(GST_BIN(branch->bin));
+      sinkpad = gst_element_get_static_pad (tail, "sink");
+      gst_pad_link (pad, sinkpad);
+      g_print("Linked!\n");
+      gst_object_unref(GST_OBJECT(sinkpad));
+    }
+  }
+  g_free(pid_tocs);
+  g_free(type_tocs);
 }
 
 ATS_BRANCH*
 ats_branch_new(const guint stream_id,
-		const guint prog_num,
-		const guint xid)
+	       const guint prog_num,
+	       const guint xid,
+	       const ATS_METADATA* data)
 {
   ATS_BRANCH *rval;
   GstPad *pad, *ghost_pad;
   GstElement *queue, *demux;
+  CALLBACK_DATA* cb_data;
+  
   rval = g_new(ATS_BRANCH, 1);
   rval->stream_id = stream_id;
   rval->prog_num = prog_num;
   rval->xid = xid;
   rval->bin = gst_bin_new(NULL);
+
+  cb_data = g_new(CALLBACK_DATA, 1);
+  cb_data->branch = rval;
+  cb_data->data = data;
   
   queue = gst_element_factory_make("queue2", NULL);
   demux = gst_element_factory_make("tsdemux", NULL);
+  
   g_object_set (G_OBJECT (queue),
 		"max-size-buffers", 2000000,
 		"max-size-bytes", 429496729,
 		NULL);
+  
   g_object_set (G_OBJECT (demux), "program-number", rval->prog_num, NULL);
   
   gst_bin_add_many(GST_BIN(rval->bin), queue, demux, NULL);
@@ -178,7 +198,7 @@ ats_branch_new(const guint stream_id,
   gst_element_add_pad (rval->bin, ghost_pad);
   gst_object_unref (pad);
 
-  g_signal_connect(demux, "pad-added", G_CALLBACK (branch_on_pad_added), rval);
+  g_signal_connect(demux, "pad-added", G_CALLBACK (branch_on_pad_added), cb_data);
   return rval;
 }
 

@@ -104,8 +104,9 @@ void ats_tree_add_branches(ATS_TREE* this)
 	if (!(tmpinfo->to_be_analyzed))
 	  continue;
 	newbranch = ats_branch_new(this->metadata->stream_id,
-				    tmpinfo->number,
-				    tmpinfo->xid);
+				   tmpinfo->number,
+				   tmpinfo->xid,
+				   this->metadata);
 
 	this->branches = g_slist_append(this->branches, newbranch);
 
@@ -127,7 +128,40 @@ void
 ats_tree_remove_branches(ATS_TREE* this)
 {
   guint blen;
-  guint stream_id = this->metadata->stream_id;
+  if (this->branches != NULL){
+    GstPad *src;
+    GstEvent *event;
+    src = gst_element_get_static_pad(this->source, "src");
+    event = gst_event_new_eos();
+    gst_pad_push_event(src, event);
+  }
+  ats_metadata_reset(this->metadata);
+  sleep(2);
+  gst_element_set_state(this->pipeline, GST_STATE_NULL);
+  /* deleting processing branch for each channel */
+  blen = g_slist_length(this->branches);
+  for (guint i = 0; i < blen; i++) {
+    ATS_BRANCH* tmp = g_slist_nth_data(this->branches, i);
+    if (tmp->bin != NULL)
+      gst_bin_remove(GST_BIN(this->pipeline), tmp->bin);
+    tmp->bin = NULL;
+    ats_branch_delete(tmp);
+  }
+  /* deleting branches object and channel tee */
+  g_slist_free(this->branches);
+  this->branches = NULL;
+  gst_bin_remove(GST_BIN(this->pipeline), this->tee);
+  //gst_object_unref(this->tee);
+  this->tee = NULL;
+  gst_element_set_state(this->pipeline, GST_STATE_READY);
+  gst_element_set_state(this->pipeline, GST_STATE_PLAYING);
+}
+
+void
+ats_tree_reset(ATS_TREE* this)
+{
+  guint id = this->metadata->stream_id;
+  guint blen;
   if (this->branches != NULL){
     GstPad *src;
     GstEvent *event;
@@ -136,7 +170,7 @@ ats_tree_remove_branches(ATS_TREE* this)
     gst_pad_push_event(src, event);
   }
   ats_metadata_delete(this->metadata);
-  this->metadata = ats_metadata_new(stream_id);
+  this->metadata = ats_metadata_new(id);
   sleep(2);
   gst_element_set_state(this->pipeline, GST_STATE_NULL);
   /* deleting processing branch for each channel */

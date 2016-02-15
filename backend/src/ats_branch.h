@@ -17,8 +17,9 @@ struct __ats_branch
 } ATS_BRANCH;
 
 ATS_BRANCH* ats_branch_new(const guint stream_id,
-			     const guint prog_num,
-			     const guint xid);
+			   const guint prog_num,
+			   const guint xid,
+			   const ATS_METADATA* data);
 
 void ats_branch_delete(ATS_BRANCH *this);
 

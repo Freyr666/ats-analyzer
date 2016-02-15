@@ -19,8 +19,22 @@ ats_metadata_delete(ATS_METADATA* this)
   this = NULL;
 }
 
+void
+ats_metadata_reset(ATS_METADATA* this)
+{
+  guint len = g_slist_length(this->prog_info);
+  for (guint i = 0; i < len; i++) {
+    ATS_CH_DATA* tmpch = g_slist_nth_data(this->prog_info, i);
+    tmpch->to_be_analyzed = FALSE;
+    tmpch->xid = 0;
+    for (guint j = 0; j < tmpch->pids_num; j++) {
+      tmpch->pids[j].to_be_analyzed = FALSE;
+    }
+  }
+}
+
 ATS_CH_DATA*
-ats_metadata_find_channel(ATS_METADATA* this, guint num)
+ats_metadata_find_channel(const ATS_METADATA* this, guint num)
 {
   ATS_CH_DATA* rval;
   GSList* list;
@@ -35,7 +49,7 @@ ats_metadata_find_channel(ATS_METADATA* this, guint num)
 }
 
 ATS_PID_DATA*
-ats_metadata_find_pid(ATS_METADATA* data, guint ch, guint pid)
+ats_metadata_find_pid(const ATS_METADATA* data, guint ch, guint pid)
 {
   ATS_PID_DATA* rval;
   ATS_CH_DATA* tmpch = ats_metadata_find_channel(data, ch);
@@ -48,7 +62,7 @@ ats_metadata_find_pid(ATS_METADATA* data, guint ch, guint pid)
 }
 
 gboolean
-ats_metadata_is_ready(ATS_METADATA* data)
+ats_metadata_is_ready(const ATS_METADATA* data)
 {
   guint len;
   if (data == NULL) return FALSE;
@@ -62,7 +76,7 @@ ats_metadata_is_ready(ATS_METADATA* data)
 }
 
 gchar*
-ats_metadata_to_string(ATS_METADATA* data)
+ats_metadata_to_string(const ATS_METADATA* data)
 {
   gchar* string;
   guint len;

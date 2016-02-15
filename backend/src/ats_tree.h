@@ -64,10 +64,12 @@ void ats_tree_delete(ATS_TREE* this);
 GstBus* ats_tree_get_bus(ATS_TREE* this);
 
 void ats_tree_set_state(ATS_TREE* this,
-			 GstState state);
+			GstState state);
 
 void ats_tree_add_branches(ATS_TREE* this);
 
 void ats_tree_remove_branches(ATS_TREE* this);
+
+void ats_tree_reset(ATS_TREE* this);
 
 #endif /* ATS_TREE_H */
