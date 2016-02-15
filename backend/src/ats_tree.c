@@ -24,9 +24,7 @@ ats_tree_new(guint stream_id)
   rval->branches = NULL;
   
   /* init-ing tree metadata */
-  rval->metadata = g_new(ATS_METADATA, 1);
-  rval->metadata->stream_id = stream_id;
-  rval->metadata->prog_info = NULL;
+  rval->metadata = ats_metadata_new(stream_id);
   /* setting queue length and buf size*/
   g_object_set (G_OBJECT (queue),
 		"max-size-buffers", 2000000,
@@ -137,7 +135,7 @@ void
 ats_tree_remove_branches(ATS_TREE* this)
 {
   guint blen;
-
+  guint stream_id = this->metadata->stream_id;
   if (this->branches != NULL){
     GstPad *src;
     GstEvent *event;
@@ -145,8 +143,8 @@ ats_tree_remove_branches(ATS_TREE* this)
     event = gst_event_new_eos();
     gst_pad_push_event(src, event);
   }
-  g_slist_free(this->metadata->prog_info);
-  this->metadata->prog_info = NULL;
+  ats_metadata_delete(this->metadata);
+  this->metadata = ats_metadata_new(stream_id);
   sleep(2);
   gst_element_set_state(this->pipeline, GST_STATE_NULL);
   /* deleting processing branch for each channel */

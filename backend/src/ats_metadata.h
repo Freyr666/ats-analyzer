@@ -32,14 +32,20 @@ typedef struct __ats_metadata
 {
   guint stream_id;
   GSList* prog_info; /* ATS_CH_DATA */
-  /* true if metadata has been updated by backend */
-  gboolean done;
 } ATS_METADATA;
 
-ATS_CH_DATA* ats_metadata_find_channel(ATS_METADATA* data, guint num);
+ATS_METADATA* ats_metadata_new(guint stream_id);
+
+void ats_metadata_delete(ATS_METADATA* this);
+
+ATS_CH_DATA* ats_metadata_find_channel(ATS_METADATA* this, guint num);
+
+ATS_PID_DATA* ats_metadata_find_pid(ATS_METADATA* data, guint ch, guint pid);
+
+#define ats_metadata_ch_number(data)((data->prog_info == NULL)?0:g_slist_length(data->prog_info))
 
 gboolean ats_metadata_is_ready(ATS_METADATA* data);
 
-void ats_metadata_print(ATS_METADATA* data);
+gchar* ats_metadata_to_string(ATS_METADATA* data);
 
 #endif /* ATS_METADATA_H */
