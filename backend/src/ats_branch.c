@@ -34,8 +34,8 @@ create_video_bin(const gchar* type,
   g_object_set(G_OBJECT (analyser), "id", pid, NULL);
   sink = gst_element_factory_make("xvimagesink", NULL);
   /* Overlay */
-    if (xid != 0)
-  	gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (sink), xid);
+  /* if (xid != 0)
+     gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (sink), xid); */
   /* ------- */
   bin = gst_bin_new (NULL);
   if (!bin || !parser || !decoder || !sink || !queue){
@@ -155,8 +155,8 @@ branch_on_pad_added(GstElement* el,
       gst_object_unref(GST_OBJECT(sinkpad));
     }
   }
-  g_free(pid_tocs);
-  g_free(type_tocs);
+  g_strfreev(pid_tocs);
+  g_strfreev(type_tocs);
 }
 
 ATS_BRANCH*
