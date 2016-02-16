@@ -10,6 +10,8 @@ typedef struct __callback_data
 
 static GstElement*
 create_video_bin(const gchar* type,
+		 const guint stream,
+		 const guint prog,
 		 const guint pid,
 		 const guint xid)
 {
@@ -31,7 +33,11 @@ create_video_bin(const gchar* type,
   g_object_set (G_OBJECT (queue), "max-size-buffers", 20000, NULL);
   g_object_set (G_OBJECT (queue), "max-size-bytes", 5000000, NULL);
   analyser = gst_element_factory_make("videoanalysis", NULL);
-  g_object_set(G_OBJECT (analyser), "id", pid, NULL);
+  g_object_set(G_OBJECT (analyser),
+	       "stream_id", stream,
+	       "program", prog,
+	       "pid", pid,
+	       NULL);
   sink = gst_element_factory_make("xvimagesink", NULL);
   /* Overlay */
   if (xid != 0)
@@ -63,6 +69,8 @@ create_video_bin(const gchar* type,
 
 static GstElement*
 create_audio_bin(const gchar* type,
+		 const guint stream,
+		 const guint prog,
 		 const guint pid)
 {
   GstElement *bin, *queue, *parser, *decoder, *sink;
@@ -124,7 +132,7 @@ branch_on_pad_added(GstElement* el,
   gchar** pid_tocs;
   ATS_BRANCH* branch = cb_data->branch;
   const ATS_METADATA* metadata = cb_data->data;
-
+  
   g_print ("Dynamic pad created, linking demuxer/decoder\n");
   g_print ("Received new pad '%s' from '%s':\n", GST_PAD_NAME (pad), GST_ELEMENT_NAME (el));
   
@@ -139,10 +147,17 @@ branch_on_pad_added(GstElement* el,
   if (ats_metadata_find_pid(metadata, branch->prog_num, pid_num)){
     if (type_tocs[0][0] == 'v'){
       g_print ("xid: %d\n", branch->xid);
-      tail = create_video_bin(type_tocs[1], pid_num, branch->xid);
+      tail = create_video_bin(type_tocs[1],
+			      branch->stream_id,
+			      branch->prog_num,
+			      pid_num,
+			      branch->xid);
     }
     else if (type_tocs[0][0] == 'a')
-      tail = create_audio_bin(type_tocs[1], pid_num);
+      tail = create_audio_bin(type_tocs[1],
+			      branch->stream_id,
+			      branch->prog_num,
+			      pid_num);
     if (tail) {
       g_print("Playing pipeline has been created\n");
       gst_bin_sync_children_states(GST_BIN(branch->bin));

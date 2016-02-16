@@ -82,7 +82,9 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
 enum
 {
   PROP_0,
-  PROP_ID,
+  PROP_STREAM_ID,
+  PROP_PROGRAM,
+  PROP_PID,
   PROP_PERIOD,
   PROP_BLACK,
   PROP_FREEZE,
@@ -142,13 +144,29 @@ gst_videoanalysis_class_init (GstVideoAnalysisClass * klass)
   video_filter_class->set_info = GST_DEBUG_FUNCPTR (gst_videoanalysis_set_info);
   video_filter_class->transform_frame_ip = GST_DEBUG_FUNCPTR (gst_videoanalysis_transform_frame_ip);
 
-  properties [PROP_ID] =
-    g_param_spec_uint("id",
-		      "Id",
+  properties [PROP_STREAM_ID] =
+    g_param_spec_uint("stream_id",
+		      "Stream id",
+		      "Plp stream id (stream num)",
+		      0,
+		      G_MAXUINT,
+		      0,
+		      G_PARAM_READWRITE);
+  properties [PROP_PROGRAM] =
+    g_param_spec_uint("program",
+		      "Program",
 		      "Channel id (channel num)",
 		      0,
 		      G_MAXUINT,
 		      2000,
+		      G_PARAM_READWRITE);
+  properties [PROP_PID] =
+    g_param_spec_uint("pid",
+		      "Pid",
+		      "Pid id (pid num)",
+		      0,
+		      G_MAXUINT,
+		      2001,
 		      G_PARAM_READWRITE);
   properties [PROP_PERIOD] =
     g_param_spec_uint("period",
@@ -181,7 +199,9 @@ gst_videoanalysis_class_init (GstVideoAnalysisClass * klass)
 static void
 gst_videoanalysis_init (GstVideoAnalysis *videoanalysis)
 {
-  videoanalysis->id = 2000;
+  videoanalysis->stream_id = 0;
+  videoanalysis->program = 2000;
+  videoanalysis->pid = 2001;
   videoanalysis->counter = 0;
   videoanalysis->black_lb = 16;
   videoanalysis->freeze_lb = 0;
@@ -200,8 +220,14 @@ gst_videoanalysis_set_property (GObject * object,
   GST_DEBUG_OBJECT (videoanalysis, "set_property");
 
   switch (property_id) {
-  case PROP_ID:
-    videoanalysis->id = g_value_get_uint(value);
+  case PROP_STREAM_ID:
+    videoanalysis->stream_id = g_value_get_uint(value);
+    break;
+  case PROP_PROGRAM:
+    videoanalysis->program = g_value_get_uint(value);
+    break;
+  case PROP_PID:
+    videoanalysis->pid = g_value_get_uint(value);
     break;
   case PROP_BLACK:
     videoanalysis->black_lb = g_value_get_uint(value);
@@ -229,9 +255,15 @@ gst_videoanalysis_get_property (GObject * object,
   GST_DEBUG_OBJECT (videoanalysis, "get_property");
 
   switch (property_id) {
-  case PROP_ID:
-    g_value_set_uint(value, videoanalysis->id);
+  case PROP_STREAM_ID:
+    g_value_set_uint(value, videoanalysis->stream_id);
     break;
+  case PROP_PROGRAM:
+    g_value_set_uint(value, videoanalysis->program);
+    break;
+  case PROP_PID:
+    g_value_set_uint(value, videoanalysis->pid);
+    break; 
   case PROP_BLACK:
     g_value_set_uint(value, videoanalysis->black_lb);
     break;
@@ -277,7 +309,7 @@ gst_videoanalysis_start (GstBaseTransform * trans)
 
   GST_DEBUG_OBJECT (videoanalysis, "start");
 
-  videoanalysis->data = video_data_new(videoanalysis->id, videoanalysis->period);
+  videoanalysis->data = video_data_new(videoanalysis->period);
 
   return TRUE;
 }
@@ -337,7 +369,10 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
     gst_structure_id_set(st,
 			 VIDEO_DATA_MARKER,
 			 G_TYPE_STRING,
-			 video_data_to_string(videoanalysis->data),
+			 video_data_to_string(videoanalysis->data,
+					      videoanalysis->stream_id,
+					      videoanalysis->program,
+					      videoanalysis->pid),
 			 NULL);
     
     gst_element_post_message(GST_ELEMENT_CAST(filter),

@@ -44,7 +44,9 @@ struct _GstVideoAnalysis
 {
   GstVideoFilter base_videoanalysis;
   /* public */
-  guint id;
+  guint stream_id;
+  guint program;
+  guint pid;
   guint period;
   guint black_lb;
   guint freeze_lb;

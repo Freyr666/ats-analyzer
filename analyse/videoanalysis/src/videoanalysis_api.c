@@ -19,14 +19,13 @@
 #include "videoanalysis_api.h"
 
 VideoData*
-video_data_new(guint ch, guint fr)
+video_data_new(guint fr)
 {
   if (fr == 0) return NULL;
   
   VideoData* rval;
   rval = g_new(VideoData, 1);
   rval->data_marker = VIDEO_DATA_MARKER;
-  rval->channel = ch;
   rval->frames = fr;
   rval->current = 0;
   rval->data = g_new(VideoParams, fr);
@@ -64,12 +63,15 @@ video_data_is_full(VideoData* dt)
 }
 
 gchar*
-video_data_to_string(VideoData* dt)
+video_data_to_string(VideoData* dt,
+		     const guint stream,
+		     const guint prog,
+		     const guint pid)
 {
   guint i;
   gchar* string;
 
-  string = g_strdup_printf("%d", dt->channel);
+  string = g_strdup_printf("v%d:%d:%d", stream, prog, pid);
   for (i = 0; i < dt->frames; i++) {
     gchar* pr_str = string;
     gchar* tmp = g_strdup_printf(":*:%f:%f:%f:%f:%f",

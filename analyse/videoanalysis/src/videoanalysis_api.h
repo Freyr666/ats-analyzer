@@ -37,21 +37,24 @@ struct __VideoParams {
 
 struct __VideoData {
   guint data_marker;
-  guint channel;
   guint current;
   guint frames;
   VideoParams* data;
 };
 
-VideoData* video_data_new(guint ch, guint fr);
+VideoData* video_data_new(guint fr);
 void video_data_reset(VideoData* dt);
 void video_data_delete(VideoData* dt);
-gint video_data_append(VideoData* dt, VideoParams par);
+gint video_data_append(VideoData* dt,
+		       VideoParams par);
 gboolean video_data_is_full(VideoData* dt);
 /* convert data into string 
  * format:
  * channel:*:frozen_pix:black_pix:blocks:avg_bright:avg_diff:*:frozen_pix:black_pix:blocks:avg_bright:avg_diff
  */
-gchar* video_data_to_string(VideoData* dt);
+gchar* video_data_to_string(VideoData* dt,
+			    const guint stream,
+			    const guint prog,
+			    const guint pid);
 
 #endif /* VIDEOANALYSIS_API_H */
