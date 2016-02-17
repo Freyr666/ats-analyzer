@@ -5,7 +5,7 @@ ATS_TREE*
 ats_tree_new(guint stream_id)
 {
   ATS_TREE* rval;
-  GstElement *queue, *parse, *fakesink;
+  GstElement *parse, *fakesink;
   GstPadTemplate *tee_src_pad_template;
   GstPad *teepad, *sinkpad;
   
@@ -16,7 +16,6 @@ ats_tree_new(guint stream_id)
   rval->pipeline = gst_pipeline_new("proc-tree-pipe");
   rval->source = gst_element_factory_make("udpsrc", "proc-tree-source");
   g_object_set (G_OBJECT (rval->source), "timeout", 5000000000, NULL);
-  queue = gst_element_factory_make("queue2", "proc-tree-queue");
   parse = gst_element_factory_make("tsparse", "proc-tree-parse");
   rval->faketee.tee = gst_element_factory_make("tee", "proc-tree-tee");
   rval->faketee.pad = NULL;
@@ -25,21 +24,15 @@ ats_tree_new(guint stream_id)
   
   /* init-ing tree metadata */
   rval->metadata = ats_metadata_new(stream_id);
-  /* setting queue length and buf size*/
-  g_object_set (G_OBJECT (queue),
-		"max-size-buffers", 2000000,
-		"max-size-bytes", 429496729,
-		NULL);
   /* setting udpsrc port and buf size*/
   g_object_set (G_OBJECT (rval->source),
 		"port",        1234+stream_id,
 		"address",     "127.0.0.1",
-		"buffer-size", 429496295,
 		NULL);  
   
   /* linking pipeline */
-  gst_bin_add_many(GST_BIN(rval->pipeline), rval->source, queue, parse, rval->faketee.tee, fakesink, NULL);
-  gst_element_link_many (rval->source, queue, parse, rval->faketee.tee, NULL);
+  gst_bin_add_many(GST_BIN(rval->pipeline), rval->source, parse, rval->faketee.tee, fakesink, NULL);
+  gst_element_link_many (rval->source, parse, rval->faketee.tee, NULL);
 
   /* connecting tee src to fakesink */
   sinkpad = gst_element_get_static_pad(fakesink, "sink");

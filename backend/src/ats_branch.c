@@ -30,8 +30,10 @@ create_video_bin(const gchar* type,
       return NULL;
   }
   queue = gst_element_factory_make("queue", NULL);
-  g_object_set (G_OBJECT (queue), "max-size-buffers", 20000, NULL);
-  g_object_set (G_OBJECT (queue), "max-size-bytes", 5000000, NULL);
+  g_object_set (G_OBJECT (queue),
+		"max-size-buffers", 20,
+		NULL);
+  // "max-size-bytes", 50000,
   analyser = gst_element_factory_make("videoanalysis", NULL);
   g_object_set(G_OBJECT (analyser),
 	       "stream_id", stream,
