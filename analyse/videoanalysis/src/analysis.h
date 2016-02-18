@@ -22,21 +22,21 @@
 #include "videoanalysis_api.h"
 #include <stdlib.h>
 
-inline VideoParams
+inline void
 analyse_buffer(guint8* data,
 	       guint8* data_prev,
 	       guint stride,
 	       guint width,
 	       guint height,
 	       guint black_bnd,
-	       guint freez_bnd)
+	       guint freez_bnd,
+	       VideoParams *rval)
 {
-  VideoParams rval;
-  rval.avg_bright = .0;
-  rval.avg_diff = .0;
-  rval.blocks = .0;
-  rval.black_pix = .0;
-  rval.frozen_pix = .0;
+  rval->avg_bright = .0;
+  rval->avg_diff = .0;
+  rval->blocks = .0;
+  rval->black_pix = .0;
+  rval->frozen_pix = .0;
 
   /* Deprecated algorithm */
   
@@ -135,13 +135,11 @@ analyse_buffer(guint8* data,
   }
   if (!Shnonblock) Shnonblock = 4;
   
-  rval.blocks = Shnonblock/Shblock;
-  rval.avg_bright = (float)brightness / (height*width);
-  rval.black_pix = (black/(height*width))*100.0;
-  rval.avg_diff = (float)difference / (height*width);
-  rval.frozen_pix = (frozen/(height*width))*100.0;
-
-  return rval;
+  rval->blocks = Shnonblock/Shblock;
+  rval->avg_bright = (float)brightness / (height*width);
+  rval->black_pix = (black/(height*width))*100.0;
+  rval->avg_diff = (float)difference / (height*width);
+  rval->frozen_pix = (frozen/(height*width))*100.0;
 }
 
 #endif /* ANALYSIS_H */

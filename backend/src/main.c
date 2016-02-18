@@ -40,7 +40,9 @@ bus_call(GstBus* bus,
     GstMpegtsSection *section;
     const GstStructure* st;
     if ((section = gst_message_parse_mpegts_section (msg))) {
-      if (parse_table (section, tree->metadata) && ats_metadata_is_ready(tree->metadata)){
+      parse_table (section, tree->metadata);
+      if (ats_metadata_is_ready(tree->metadata) &&
+	  tree->branches == NULL){
 	gchar* str = ats_metadata_to_string(tree->metadata);
 	ats_control_send(control, str);
 	g_free(str);

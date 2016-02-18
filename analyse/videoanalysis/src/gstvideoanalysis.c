@@ -351,16 +351,17 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
   
   GST_DEBUG_OBJECT (videoanalysis, "transform_frame_ip");
   
-  params = analyse_buffer(frame->data[0],
-			  videoanalysis->past_buffer,
-			  frame->info.stride[0],
-			  frame->info.width,
-			  frame->info.height,
-			  videoanalysis->black_lb,
-			  videoanalysis->freeze_lb);
+  analyse_buffer(frame->data[0],
+		 videoanalysis->past_buffer,
+		 frame->info.stride[0],
+		 frame->info.width,
+		 frame->info.height,
+		 videoanalysis->black_lb,
+		 videoanalysis->freeze_lb,
+		 &params);
   
   if (video_data_is_full(videoanalysis->data)){
-    
+    /*
     GstStructure* st = gst_structure_new_id_empty(DATA_MARKER);
     gchar* str = video_data_to_string(videoanalysis->data,
 				      videoanalysis->stream_id,
@@ -377,14 +378,11 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
 			     gst_message_new_element(GST_OBJECT_CAST(filter),
 						     st));
     
-    
-    video_data_reset(videoanalysis->data); 
+    */
+    //video_data_reset(videoanalysis->data); 
   }
   
-  video_data_append(videoanalysis->data, params);
-  
-  if(videoanalysis->past_buffer == NULL)
-    videoanalysis->past_buffer = (guint8*)malloc(frame->info.stride[0] * frame->info.height + 1);
+  //video_data_append(videoanalysis->data, params);
   
   return GST_FLOW_OK;
 }
