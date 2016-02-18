@@ -206,7 +206,7 @@ gst_videoanalysis_init (GstVideoAnalysis *videoanalysis)
   videoanalysis->black_lb = 16;
   videoanalysis->freeze_lb = 0;
   videoanalysis->period = 8;
-  videoanalysis->past_buffer = NULL;
+  videoanalysis->past_buffer = (guint8*)malloc(4096*4096);
 }
 
 void
@@ -296,8 +296,7 @@ gst_videoanalysis_finalize (GObject * object)
 
   GST_DEBUG_OBJECT (videoanalysis, "finalize");
 
-  if (videoanalysis->past_buffer != NULL)
-    g_free(videoanalysis->past_buffer);
+  free(videoanalysis->past_buffer);
 
   G_OBJECT_CLASS (gst_videoanalysis_parent_class)->finalize (object);
 }
@@ -325,9 +324,6 @@ gst_videoanalysis_stop (GstBaseTransform * trans)
     video_data_delete(videoanalysis->data);
     videoanalysis->data = NULL;
   }
-  if (videoanalysis->past_buffer != NULL)
-    free(videoanalysis->past_buffer);
-  videoanalysis->past_buffer = NULL;
   return TRUE;
 }
 
@@ -366,15 +362,17 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
   if (video_data_is_full(videoanalysis->data)){
     
     GstStructure* st = gst_structure_new_id_empty(DATA_MARKER);
+    gchar* str = video_data_to_string(videoanalysis->data,
+				      videoanalysis->stream_id,
+				      videoanalysis->program,
+				      videoanalysis->pid);
     gst_structure_id_set(st,
 			 VIDEO_DATA_MARKER,
 			 G_TYPE_STRING,
-			 video_data_to_string(videoanalysis->data,
-					      videoanalysis->stream_id,
-					      videoanalysis->program,
-					      videoanalysis->pid),
+			 str,
 			 NULL);
-    
+
+    g_free(str);
     gst_element_post_message(GST_ELEMENT_CAST(filter),
 			     gst_message_new_element(GST_OBJECT_CAST(filter),
 						     st));
