@@ -17,6 +17,7 @@
 */
 
 #include "videoanalysis_api.h"
+#include <malloc.h>
 
 VideoData*
 video_data_new(guint fr)
@@ -24,11 +25,11 @@ video_data_new(guint fr)
   if (fr == 0) return NULL;
   
   VideoData* rval;
-  rval = g_new(VideoData, 1);
-  rval->data_marker = VIDEO_DATA_MARKER;
+  rval = (VideoData*)malloc(sizeof(VideoData));
   rval->frames = fr;
   rval->current = 0;
-  rval->data = g_new(VideoParams, fr);
+  rval->data = (VideoParams*)malloc(sizeof(VideoParams) * fr);
+  g_print("----------------------created\n");
   return rval;
 }
 
@@ -41,16 +42,19 @@ video_data_reset(VideoData* dt)
 void
 video_data_delete(VideoData* dt)
 {
-  g_free(dt->data);
-  g_free(dt);
+  g_print("----------------------deleted\n");
+  free(dt->data);
+  dt->data = NULL;
+  free(dt);
+  dt = NULL;
 }
 
 gint
-video_data_append(VideoData* dt, VideoParams par)
+video_data_append(VideoData* dt, VideoParams* par)
 {
   if(dt->current == dt->frames) return -1;
   guint i = dt->current;
-  dt->data[i] = par;
+  dt->data[i] = *par;
   dt->current++;
   return 0;
 }

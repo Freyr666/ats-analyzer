@@ -36,7 +36,6 @@ struct __VideoParams {
 };
 
 struct __VideoData {
-  guint data_marker;
   guint current;
   guint frames;
   VideoParams* data;
@@ -46,7 +45,7 @@ VideoData* video_data_new(guint fr);
 void video_data_reset(VideoData* dt);
 void video_data_delete(VideoData* dt);
 gint video_data_append(VideoData* dt,
-		       VideoParams par);
+		       VideoParams* par);
 gboolean video_data_is_full(VideoData* dt);
 /* convert data into string 
  * format:

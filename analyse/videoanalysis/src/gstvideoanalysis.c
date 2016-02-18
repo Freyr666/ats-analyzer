@@ -308,6 +308,9 @@ gst_videoanalysis_start (GstBaseTransform * trans)
 
   GST_DEBUG_OBJECT (videoanalysis, "start");
 
+  if (videoanalysis->data != NULL)
+    video_data_delete(videoanalysis->data);
+  
   videoanalysis->data = video_data_new(videoanalysis->period);
 
   return TRUE;
@@ -320,10 +323,8 @@ gst_videoanalysis_stop (GstBaseTransform * trans)
 
   GST_DEBUG_OBJECT (videoanalysis, "stop");
 
-  if(videoanalysis->data != NULL){
+  if(videoanalysis->data != NULL)
     video_data_delete(videoanalysis->data);
-    videoanalysis->data = NULL;
-  }
   return TRUE;
 }
 
@@ -379,10 +380,10 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
 						     st));
     
     */
-    //video_data_reset(videoanalysis->data); 
+    video_data_reset(videoanalysis->data); 
   }
   
-  //video_data_append(videoanalysis->data, params);
+  //video_data_append(videoanalysis->data, &params);
   
   return GST_FLOW_OK;
 }
