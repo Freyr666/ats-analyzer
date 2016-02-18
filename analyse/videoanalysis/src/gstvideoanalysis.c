@@ -205,8 +205,13 @@ gst_videoanalysis_init (GstVideoAnalysis *videoanalysis)
   videoanalysis->counter = 0;
   videoanalysis->black_lb = 16;
   videoanalysis->freeze_lb = 0;
-  videoanalysis->period = 8;
+  videoanalysis->period = 72;
   videoanalysis->past_buffer = (guint8*)malloc(4096*4096);
+  /* init-ing sockets*/
+  videoanalysis->socket = socket(AF_INET, SOCK_STREAM, 0);
+  videoanalysis->addr.sin_family = AF_INET;
+  videoanalysis->addr.sin_port = htons(1600);
+  videoanalysis->addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 }
 
 void
@@ -297,7 +302,7 @@ gst_videoanalysis_finalize (GObject * object)
   GST_DEBUG_OBJECT (videoanalysis, "finalize");
 
   free(videoanalysis->past_buffer);
-
+  
   G_OBJECT_CLASS (gst_videoanalysis_parent_class)->finalize (object);
 }
 
@@ -338,7 +343,7 @@ gst_videoanalysis_set_info (GstVideoFilter * filter,
   GstVideoAnalysis *videoanalysis = GST_VIDEOANALYSIS (filter);
 
   GST_DEBUG_OBJECT (videoanalysis, "set_info");
-
+  
   return TRUE;
 }
 
@@ -362,22 +367,19 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
 		 &params);
   
   if (video_data_is_full(videoanalysis->data)){
-    GstStructure* st = gst_structure_new_id_empty(DATA_MARKER);
     gchar* str = video_data_to_string(videoanalysis->data,
 				      videoanalysis->stream_id,
 				      videoanalysis->program,
 				      videoanalysis->pid);
-    gst_structure_id_set(st,
-			 VIDEO_DATA_MARKER,
-			 G_TYPE_STRING,
-			 str,
-			 NULL);
-
-    g_free(str);
-    gst_element_post_message(GST_ELEMENT_CAST(filter),
-			     gst_message_new_element(GST_OBJECT_CAST(filter),
-						     st));
+    if (connect(videoanalysis->socket,
+		(struct sockaddr *)&videoanalysis->addr ,
+		sizeof(videoanalysis->addr)) < 0){
+      g_printerr("connect error");
+    }
+    else
+      send(videoanalysis->socket, str, sizeof(str), 0);
     
+    g_free(str);
     video_data_reset(videoanalysis->data); 
   }
   

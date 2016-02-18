@@ -29,20 +29,12 @@ video_data_new(guint fr)
   rval->frames = fr;
   rval->current = 0;
   rval->data = (VideoParams*)malloc(sizeof(VideoParams) * fr);
-  g_print("----------------------created\n");
   return rval;
-}
-
-void
-video_data_reset(VideoData* dt)
-{
-  dt->current = 0;
 }
   
 void
 video_data_delete(VideoData* dt)
 {
-  g_print("----------------------deleted\n");
   free(dt->data);
   dt->data = NULL;
   free(dt);

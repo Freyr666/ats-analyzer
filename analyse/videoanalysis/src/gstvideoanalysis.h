@@ -21,6 +21,11 @@
 
 #include <gst/video/video.h>
 #include <gst/video/gstvideofilter.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/file.h>
 
 #include "videoanalysis_api.h"
 
@@ -54,6 +59,9 @@ struct _GstVideoAnalysis
   guint counter;
   guint8 *past_buffer;
   VideoData *data;
+
+  int socket;
+  struct sockaddr_in addr;
 };
 
 struct _GstVideoAnalysisClass

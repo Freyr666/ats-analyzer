@@ -42,7 +42,7 @@ struct __VideoData {
 };
 
 VideoData* video_data_new(guint fr);
-void video_data_reset(VideoData* dt);
+#define video_data_reset(dt)(dt->current = 0)
 void video_data_delete(VideoData* dt);
 gint video_data_append(VideoData* dt,
 		       VideoParams* par);
