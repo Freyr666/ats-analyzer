@@ -395,7 +395,6 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
     gst_videoanalysis_send_string_threaded(str,
     					   filter);
     video_data_reset(videoanalysis->data);
-    return GST_FLOW_OK;
   }
 
   analyse_buffer(frame->data[0],

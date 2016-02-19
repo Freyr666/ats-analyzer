@@ -11,8 +11,12 @@
 
 typedef struct __ats_control
 {
+  /* input */
   GSocketService * incoming_service;
+  /* output */
   GSocketClient * client;
+  GSocketConnection* connection;
+  GOutputStream * ostream;
 } ATS_CONTROL;
 
 ATS_CONTROL* ats_control_new(ATS_TREE* tree);

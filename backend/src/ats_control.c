@@ -66,6 +66,7 @@ ATS_CONTROL*
 ats_control_new(ATS_TREE* tree)
 {
   ATS_CONTROL* rval = g_new(ATS_CONTROL, 1);
+  /* input */
   rval->incoming_service = g_socket_service_new ();
   g_socket_listener_add_inet_port ((GSocketListener*)rval->incoming_service,
                                     1500, /* your port goes here */
@@ -76,34 +77,45 @@ ats_control_new(ATS_TREE* tree)
                     G_CALLBACK (incoming_callback),
                     tree);
   g_socket_service_start (rval->incoming_service);
+  /* output */
   rval->client = g_socket_client_new();
+  /*
+  rval->connection = g_socket_client_connect_to_host (rval->client,
+						      (gchar*)"localhost",
+						      1600, 
+						      NULL,
+						      NULL);
+  if (rval->connection == NULL) {
+    g_printerr("Connection failed! Frontend is not active!\n");
+    exit(-1);
+  }
+  */
   return rval;
 }
 
 void
 ats_control_delete(ATS_CONTROL* this)
 {
+  g_io_stream_close(G_IO_STREAM (this->connection), NULL, NULL);
   g_free(this);
 }
 
 void
 ats_control_send(ATS_CONTROL* this, gchar* message)
 {
-  //GSocketClient * client = g_socket_client_new();
   GSocketConnection* connection = g_socket_client_connect_to_host (this->client,
-								  (gchar*)"localhost",
-								  1600, /* your port goes here */
-								  NULL,
-								  NULL);
-  if (connection == NULL) {
-    g_printerr("Connection failed! Frontend is not active!\n");
-    exit(-1);
-  }
+								   (gchar*)"localhost",
+								   1600, /* your port goes here */
+								   NULL,
+								   NULL);
   GOutputStream * ostream = g_io_stream_get_output_stream (G_IO_STREAM (connection));
   g_output_stream_write  (ostream,
 			  message,
                           strlen(message),
                           NULL,
                           NULL);
-  g_io_stream_close(G_IO_STREAM (connection), NULL, NULL);
+  g_io_stream_close(G_IO_STREAM (connection),
+		    NULL,
+		    NULL);
+  g_object_unref(connection);
 }
