@@ -1,6 +1,7 @@
 #include <gst/gst.h>
 #include <gst/mpegts/mpegts.h>
 #include <glib.h>
+//#include <linux/time.h>
 
 #include "parse_ts.h"
 #include "ats_branch.h"
@@ -14,6 +15,7 @@ typedef struct __bus_data
   GMainLoop* loop;
   ATS_TREE* tree; 
   ATS_CONTROL* control;
+  time_t time;
 } BUS_DATA;
 
 static gboolean
@@ -43,9 +45,15 @@ bus_call(GstBus* bus,
       if (parse_table (section, tree->metadata) &&
 	  ats_metadata_is_ready(tree->metadata) &&
 	  tree->branches == NULL){
-	gchar* str = ats_metadata_to_string(tree->metadata);
-	ats_control_send(control, str);
-	g_free(str);
+	if(d->time == 0)
+	  d->time = time(0);
+	time_t tmp_time = time(0);
+	if (((tmp_time - d->time) >= 2) ||
+	    ats_metadata_got_sdt(tree->metadata)){
+	  gchar* str = ats_metadata_to_string(tree->metadata);
+	  ats_control_send(control, str);
+	  g_free(str);
+	}
       }
       gst_mpegts_section_unref (section);
     }
@@ -94,6 +102,7 @@ main(int argc,
   data->loop = mainloop;
   data->tree = proctree;
   data->control = control;
+  data->time = 0;
   gst_bus_add_watch(bus, bus_call, data);
   
   g_print ("Now playing: %s\nRunning...\n", argv[1]);

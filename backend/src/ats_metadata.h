@@ -46,6 +46,9 @@ ATS_PID_DATA* ats_metadata_find_pid(const ATS_METADATA* data, guint ch, guint pi
 
 #define ats_metadata_ch_number(data)((data->prog_info == NULL)?0:g_slist_length(data->prog_info))
 
+#define ats_metadata_got_sdt(data)\
+  (((ATS_CH_DATA*)g_slist_nth_data(data->prog_info,0))->service_name != NULL)
+
 gboolean ats_metadata_is_ready(const ATS_METADATA* data);
 
 gchar* ats_metadata_to_string(const ATS_METADATA* data);

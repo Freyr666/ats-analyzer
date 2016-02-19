@@ -96,7 +96,6 @@ ats_control_new(ATS_TREE* tree)
 void
 ats_control_delete(ATS_CONTROL* this)
 {
-  g_io_stream_close(G_IO_STREAM (this->connection), NULL, NULL);
   g_free(this);
 }
 
