@@ -129,7 +129,6 @@ ats_tree_remove_branches(ATS_TREE* this)
     gst_pad_push_event(src, event);
   }
   ats_metadata_reset(this->metadata);
-  sleep(2);
   gst_element_set_state(this->pipeline, GST_STATE_NULL);
   /* deleting processing branch for each channel */
   blen = g_slist_length(this->branches);
@@ -164,7 +163,6 @@ ats_tree_reset(ATS_TREE* this)
   }
   ats_metadata_delete(this->metadata);
   this->metadata = ats_metadata_new(id);
-  sleep(2);
   gst_element_set_state(this->pipeline, GST_STATE_NULL);
   /* deleting processing branch for each channel */
   blen = g_slist_length(this->branches);
