@@ -58,9 +58,9 @@ bus_call(GstBus* bus,
 	  ats_tree_reset(tree);
       }
       if (gst_structure_get_name_id(st) == DATA_MARKER){
-	gchar* str = g_value_dup_string(gst_structure_id_get_value(st, VIDEO_DATA_MARKER));
-	ats_control_send(control, str);
-	g_free(str);
+	//gchar* str = g_value_dup_string(gst_structure_id_get_value(st, VIDEO_DATA_MARKER));
+	//ats_control_send(control, str);
+	//g_free(str);
       }
     }
     break;
