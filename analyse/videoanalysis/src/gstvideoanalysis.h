@@ -54,8 +54,6 @@ struct _GstVideoAnalysis
   guint counter;
   guint8 *past_buffer;
   VideoData *data;
-  /* threads */
-  //GThreadPool* threads;
 };
 
 struct _GstVideoAnalysisClass

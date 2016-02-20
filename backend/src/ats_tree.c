@@ -2,7 +2,9 @@
 #include "unistd.h"
 
 ATS_TREE*
-ats_tree_new(guint stream_id)
+ats_tree_new(guint stream_id,
+	     gchar* ip,
+	     guint port)
 {
   ATS_TREE* rval;
   GstElement *parse, *fakesink;
@@ -15,7 +17,6 @@ ats_tree_new(guint stream_id)
   /* creating elements */
   rval->pipeline = gst_pipeline_new("proc-tree-pipe");
   rval->source = gst_element_factory_make("udpsrc", "proc-tree-source");
-  g_object_set (G_OBJECT (rval->source), "timeout", 5000000000, NULL);
   parse = gst_element_factory_make("tsparse", "proc-tree-parse");
   rval->faketee.tee = gst_element_factory_make("tee", "proc-tree-tee");
   rval->faketee.pad = NULL;
@@ -26,25 +27,36 @@ ats_tree_new(guint stream_id)
   rval->metadata = ats_metadata_new(stream_id);
   /* setting udpsrc port and buf size*/
   g_object_set (G_OBJECT (rval->source),
-		"port",        1234+stream_id,
-		"address",     "127.0.0.1",
+		"timeout", 5000000000,
+		"port",        port,
+		"address",     ip,
 		NULL);  
   
   /* linking pipeline */
-  gst_bin_add_many(GST_BIN(rval->pipeline), rval->source, parse, rval->faketee.tee, fakesink, NULL);
+  gst_bin_add_many(GST_BIN(rval->pipeline),
+		   rval->source,
+		   parse,
+		   rval->faketee.tee,
+		   fakesink, NULL);
   gst_element_link_many (rval->source, parse, rval->faketee.tee, NULL);
 
   /* connecting tee src to fakesink */
   sinkpad = gst_element_get_static_pad(fakesink, "sink");
-  tee_src_pad_template = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS (rval->faketee.tee), "src_%u");
-  teepad = gst_element_request_pad(rval->faketee.tee, tee_src_pad_template, NULL, NULL);
+  tee_src_pad_template = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS (rval->faketee.tee),
+							    "src_%u");
+  teepad = gst_element_request_pad(rval->faketee.tee,
+				   tee_src_pad_template,
+				   NULL, NULL);
   gst_pad_link(teepad, sinkpad);
   gst_object_unref(tee_src_pad_template);
   gst_object_unref(teepad);
 
   /* creating additional tee src pad for other brunches */
-  tee_src_pad_template = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS (rval->faketee.tee), "src_%u");
-  rval->faketee.pad = gst_element_request_pad(rval->faketee.tee, tee_src_pad_template, NULL, NULL);
+  tee_src_pad_template = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(rval->faketee.tee),
+							    "src_%u");
+  rval->faketee.pad = gst_element_request_pad(rval->faketee.tee,
+					      tee_src_pad_template,
+					      NULL, NULL);
   gst_object_unref(tee_src_pad_template);
   
   return rval;
@@ -99,6 +111,7 @@ void ats_tree_add_branches(ATS_TREE* this)
 	newbranch = ats_branch_new(this->metadata->stream_id,
 				   tmpinfo->number,
 				   tmpinfo->xid,
+				   0,
 				   this->metadata);
 
 	this->branches = g_slist_append(this->branches, newbranch);
@@ -127,6 +140,7 @@ ats_tree_remove_branches(ATS_TREE* this)
     src = gst_element_get_static_pad(this->source, "src");
     event = gst_event_new_eos();
     gst_pad_push_event(src, event);
+    gst_object_unref(src);
   }
   ats_metadata_reset(this->metadata);
   gst_element_set_state(this->pipeline, GST_STATE_NULL);
@@ -143,42 +157,8 @@ ats_tree_remove_branches(ATS_TREE* this)
   g_slist_free(this->branches);
   this->branches = NULL;
   gst_bin_remove(GST_BIN(this->pipeline), this->tee);
-  //gst_object_unref(this->tee);
   this->tee = NULL;
   gst_element_set_state(this->pipeline, GST_STATE_READY);
   gst_element_set_state(this->pipeline, GST_STATE_PLAYING);
 }
 
-void
-ats_tree_reset(ATS_TREE* this)
-{
-  guint id = this->metadata->stream_id;
-  guint blen;
-  if (this->branches != NULL){
-    GstPad *src;
-    GstEvent *event;
-    src = gst_element_get_static_pad(this->source, "src");
-    event = gst_event_new_eos();
-    gst_pad_push_event(src, event);
-  }
-  ats_metadata_delete(this->metadata);
-  this->metadata = ats_metadata_new(id);
-  gst_element_set_state(this->pipeline, GST_STATE_NULL);
-  /* deleting processing branch for each channel */
-  blen = g_slist_length(this->branches);
-  for (guint i = 0; i < blen; i++) {
-    ATS_BRANCH* tmp = g_slist_nth_data(this->branches, i);
-    if (tmp->bin != NULL)
-      gst_bin_remove(GST_BIN(this->pipeline), tmp->bin);
-    tmp->bin = NULL;
-    ats_branch_delete(tmp);
-  }
-  /* deleting branches object and channel tee */
-  g_slist_free(this->branches);
-  this->branches = NULL;
-  gst_bin_remove(GST_BIN(this->pipeline), this->tee);
-  //gst_object_unref(this->tee);
-  this->tee = NULL;
-  gst_element_set_state(this->pipeline, GST_STATE_READY);
-  gst_element_set_state(this->pipeline, GST_STATE_PLAYING);
-}

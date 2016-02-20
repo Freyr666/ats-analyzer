@@ -75,9 +75,9 @@ gst_videoanalysis_set_info     (GstVideoFilter * filter,
 				GstVideoInfo * in_info,
 				GstCaps * outcaps,
 				GstVideoInfo * out_info);
-static void
-gst_videoanalysis_send_string_threaded(gchar* data,
-				       GstVideoFilter* filter);
+static inline void
+gst_videoanalysis_send_string(gchar* data,
+			      GstVideoFilter* filter);
 static GstFlowReturn
 gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
 				      GstVideoFrame * frame);
@@ -208,13 +208,8 @@ gst_videoanalysis_init (GstVideoAnalysis *videoanalysis)
   videoanalysis->counter = 0;
   videoanalysis->black_lb = 16;
   videoanalysis->freeze_lb = 0;
-  videoanalysis->period = 12;
+  videoanalysis->period = 8;
   videoanalysis->past_buffer = (guint8*)malloc(4096*4096);
-  /* videoanalysis->threads = g_thread_pool_new((GFunc)gst_videoanalysis_send_string_threaded,
-					     videoanalysis,
-					     -1,
-					     FALSE,
-					     NULL);*/
 }
 
 void
@@ -351,9 +346,9 @@ gst_videoanalysis_set_info (GstVideoFilter * filter,
 }
 
 /* send data */
-static void
-gst_videoanalysis_send_string_threaded(gchar* data,
-				       GstVideoFilter* filter)
+static inline void
+gst_videoanalysis_send_string(gchar* data,
+			      GstVideoFilter* filter)
 {
   if (data != NULL){
     GstStructure* st = gst_structure_new_id_empty(DATA_MARKER);
@@ -389,11 +384,9 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
 				      videoanalysis->program,
 				      videoanalysis->pid);
 
-    /* g_thread_pool_push (videoanalysis->threads,
-			str,
-			NULL);*/
-    gst_videoanalysis_send_string_threaded(str,
-    					   filter);
+
+    gst_videoanalysis_send_string(str,
+				  filter);
     video_data_reset(videoanalysis->data);
   }
 

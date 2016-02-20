@@ -17,7 +17,8 @@ typedef struct __ats_control
   GSocketClient * client;
 } ATS_CONTROL;
 
-ATS_CONTROL* ats_control_new(ATS_TREE* tree);
+ATS_CONTROL* ats_control_new(ATS_TREE* tree,
+			     guint stream_id);
 
 void ats_control_delete(ATS_CONTROL* this);
 

@@ -57,7 +57,9 @@ struct __ats_tree
   GstElement *pipeline;
 }ATS_TREE;
 
-ATS_TREE* ats_tree_new(guint stream_id);
+ATS_TREE* ats_tree_new(guint stream_id,
+		       gchar* ip,
+		       guint port);
 
 void ats_tree_delete(ATS_TREE* this);
 
@@ -69,7 +71,5 @@ void ats_tree_set_state(ATS_TREE* this,
 void ats_tree_add_branches(ATS_TREE* this);
 
 void ats_tree_remove_branches(ATS_TREE* this);
-
-void ats_tree_reset(ATS_TREE* this);
 
 #endif /* ATS_TREE_H */
