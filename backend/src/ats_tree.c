@@ -82,6 +82,30 @@ ats_tree_set_state(ATS_TREE* this,
   gst_element_set_state (this->pipeline, state);
 }
 
+ATS_SUBBRANCH*
+ats_tree_find_subbranch(ATS_TREE* this,
+			guint prog,
+			guint pid)
+{
+  guint len;
+  guint pids;
+  if(this->branches == NULL) return NULL;
+  len = g_slist_length(this->branches);
+  for (guint i = 0; i < len; i++) {
+    ATS_BRANCH* tmp_branch = g_slist_nth_data(this->branches, i);
+    if (tmp_branch->prog_num != prog) continue;
+    if (tmp_branch->subbranches == NULL) return NULL;
+    pids = g_slist_length(tmp_branch->subbranches);
+    for (guint j = 0; j < pids; j++) {
+      ATS_SUBBRANCH* tmp_subbranch = g_slist_nth_data(tmp_branch->subbranches, j);
+      if (tmp_subbranch->pid != pid) continue;
+      return tmp_subbranch;
+    }
+    return NULL;
+  }
+  return NULL;
+}
+
 void ats_tree_add_branches(ATS_TREE* this)
 {
   guint channels;

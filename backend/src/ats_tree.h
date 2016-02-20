@@ -68,6 +68,10 @@ GstBus* ats_tree_get_bus(ATS_TREE* this);
 void ats_tree_set_state(ATS_TREE* this,
 			GstState state);
 
+ATS_SUBBRANCH* ats_tree_find_subbranch(ATS_TREE* this,
+				       guint prog,
+				       guint pid);
+
 void ats_tree_add_branches(ATS_TREE* this);
 
 void ats_tree_remove_branches(ATS_TREE* this);

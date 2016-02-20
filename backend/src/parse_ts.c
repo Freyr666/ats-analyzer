@@ -97,7 +97,7 @@ dump_sdt (GstMpegtsSection * section, ATS_METADATA* data)
   }
 }
 
-gboolean
+void
 parse_table (GstMpegtsSection * section, void* data)
 {
   ATS_METADATA* metadata; 
@@ -132,18 +132,14 @@ parse_table (GstMpegtsSection * section, void* data)
   switch (GST_MPEGTS_SECTION_TYPE (section)) {
   case GST_MPEGTS_SECTION_PAT:
     dump_pat (section, metadata);
-    return TRUE;
     break;
   case GST_MPEGTS_SECTION_PMT:
     dump_pmt(section, data);
-    return TRUE;
     break;
   case GST_MPEGTS_SECTION_SDT:
     dump_sdt (section, metadata);
-    return TRUE;
     break;
   default:
     break;
   }
-  return FALSE;
 }
