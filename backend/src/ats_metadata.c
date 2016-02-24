@@ -62,7 +62,7 @@ ats_metadata_find_pid(const ATS_METADATA* data, guint ch, guint pid)
 }
 
 gboolean
-ats_metadata_is_ready(const ATS_METADATA* data)
+ats_metadata_are_ready(const ATS_METADATA* data)
 {
   guint len;
   if (data == NULL) return FALSE;

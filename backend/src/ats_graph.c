@@ -25,7 +25,8 @@ bus_call(GstBus* bus,
     const GstStructure* st;
     if ((section = gst_message_parse_mpegts_section (msg))) {
       parse_table (section, tree->metadata);
-      if (ats_metadata_is_ready(tree->metadata) &&
+      if (!(d->metadata_were_sent) &&
+	  ats_metadata_are_ready(tree->metadata) &&
 	  tree->branches == NULL){
 	if(d->time == 0)
 	  d->time = time(0);
@@ -34,6 +35,7 @@ bus_call(GstBus* bus,
 	    ats_metadata_got_sdt(tree->metadata)){
 	  gchar* str = ats_metadata_to_string(tree->metadata);
 	  ats_control_send(control, str);
+	  d->metadata_were_sent = TRUE;
 	  g_free(str);
 	}
       }
@@ -42,9 +44,11 @@ bus_call(GstBus* bus,
     else {
       st = gst_message_get_structure(msg);
       if (gst_structure_has_name (st, "GstUDPSrcTimeout")){
-        ats_control_send(control, "e0");
+	gchar* str = g_strdup_printf("e%d", tree->metadata->stream_id);
+        ats_control_send(control, str);
 	if (tree->branches != NULL)
 	  ats_tree_remove_branches(tree);
+	g_free(str);
       }
       if (gst_structure_get_name_id(st) == DATA_MARKER){
 	gchar* str = g_value_dup_string(gst_structure_id_get_value(st, VIDEO_DATA_MARKER));
@@ -72,6 +76,7 @@ ats_graph_new(guint stream_id,
   rval->loop = g_main_loop_new(NULL, FALSE);
   rval->control = ats_control_new(rval->tree, stream_id);
   rval->time = 0;
+  rval->metadata_were_sent = FALSE;
   
   bus = ats_tree_get_bus(rval->tree);
 

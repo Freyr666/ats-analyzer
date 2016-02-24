@@ -16,7 +16,9 @@ typedef struct __ats_graph
   GMainLoop* loop;
   ATS_TREE* tree; 
   ATS_CONTROL* control;
+  /* Parsing vars*/
   time_t time;
+  gboolean metadata_were_sent;
 } ATS_GRAPH;
 
 ATS_GRAPH* ats_graph_new(guint stream_id, gchar* ip, guint port);
