@@ -36,6 +36,8 @@ create_video_bin(const gchar* type,
   queue = gst_element_factory_make("queue", NULL);
   g_object_set (G_OBJECT (queue),
 		"flush-on-eos", TRUE,
+		"max-size-buffers", 20000,
+		"max-size-bytes", 12000000,
 		NULL);
   // "max-size-bytes", 50000,
   analyser = gst_element_factory_make("videoanalysis", NULL);
@@ -237,7 +239,7 @@ ats_branch_new(const guint stream_id,
   demux = gst_element_factory_make("tsdemux", NULL);
   
   g_object_set (G_OBJECT (queue),
-		"max-size-buffers", 2000,
+		"max-size-buffers", 200000,
 		"max-size-bytes", 429496729,
 		NULL);
   

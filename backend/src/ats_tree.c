@@ -28,6 +28,7 @@ ats_tree_new(guint stream_id,
   /* setting udpsrc port and buf size*/
   g_object_set (G_OBJECT (rval->source),
 		"timeout", 5000000000,
+		"buffer-size", 2147483647,
 		"port",        port,
 		"address",     ip,
 		NULL);  
