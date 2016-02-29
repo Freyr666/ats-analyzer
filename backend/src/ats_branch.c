@@ -160,6 +160,7 @@ branch_on_pad_added(GstElement* el,
   gchar** pid_tocs;
   ATS_BRANCH* branch = cb_data->branch;
   const ATS_METADATA* metadata = cb_data->data;
+  const ATS_PID_DATA* piddata;
   
   g_print ("Dynamic pad created, linking demuxer/decoder\n");
   g_print ("Received new pad '%s' from '%s':\n", GST_PAD_NAME (pad), GST_ELEMENT_NAME (el));
@@ -173,7 +174,9 @@ branch_on_pad_added(GstElement* el,
   pid_num = strtoul(pid_tocs[1], NULL, 16);
   type_tocs = g_strsplit(pad_type, "/", 2);
   g_print("Got %s of type %s\n", type_tocs[0], type_tocs[1]);
-  if (ats_metadata_find_pid(metadata, branch->prog_num, pid_num)){
+  /* Finding pad's pid in metadata */
+  piddata = ats_metadata_find_pid(metadata, branch->prog_num, pid_num);
+  if (piddata && piddata->to_be_analyzed){
     /* If recieved pad is video pad: */
     if (type_tocs[0][0] == 'v')
       tail = create_video_bin(type_tocs[1],

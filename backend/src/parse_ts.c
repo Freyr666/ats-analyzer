@@ -32,12 +32,16 @@ dump_pmt (GstMpegtsSection * section, ATS_METADATA* data)
   len = pmt->streams->len;
   channel->pids_num = 0;
   for (i = 0; i < len; i++) {
+    const gchar* type;
     GstMpegtsPMTStream *stream = g_ptr_array_index (pmt->streams, i);
     if (stream->stream_type == 0x86) continue; /* Unknown type */
+    /* Getting pid's codec type */
+    type = enum_name (GST_TYPE_MPEGTS_STREAM_TYPE, stream->stream_type);
+    if (type[0] != 'a' && type[0] != 'v') continue;
     channel->pids[channel->pids_num].to_be_analyzed = FALSE;
     channel->pids[channel->pids_num].pid = stream->pid;
     channel->pids[channel->pids_num].type = stream->stream_type;
-    channel->pids[channel->pids_num].codec = g_strdup(enum_name (GST_TYPE_MPEGTS_STREAM_TYPE, stream->stream_type));
+    channel->pids[channel->pids_num].codec = g_strdup(type);
     channel->pids_num++;
   }
 }
