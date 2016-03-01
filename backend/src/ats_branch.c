@@ -76,6 +76,7 @@ create_video_bin(const gchar* type,
   rval->bin = bin;
   rval->sink = sink;
   rval->analyser = analyser;
+  rval->av = 'v';
   rval->pid = pid;
   rval->type = g_strdup(type);
   return rval;
@@ -140,6 +141,7 @@ create_audio_bin(const gchar* type,
   rval->sink = sink;
   rval->analyser = analyser;
   rval->pid = pid;
+  rval->av = 'a';
   rval->type = g_strdup(type);
   return rval;
 }

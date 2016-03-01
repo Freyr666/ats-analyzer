@@ -3,6 +3,28 @@
 #include <string.h>
 #include <stdlib.h>
 
+struct video_options {
+  const gchar* option;
+  guint value;
+};
+
+static void
+set_video_option(gpointer data,
+		 gpointer user_data)
+{
+  ATS_BRANCH* branch = (ATS_BRANCH*) data;
+  ATS_SUBBRANCH* subbranch;
+  struct video_options* opts = (struct video_options*) user_data;
+  guint len = g_slist_length(branch->subbranches);
+  for (guint i = 0; i < len; i++) {
+    subbranch = g_slist_nth_data(branch->subbranches, i);
+    if (subbranch->av != 'v') continue;
+    g_object_set(subbranch->analyser,
+		 opts->option, opts->value,
+		 NULL);
+  }
+}
+
 static gboolean
 parse_tree_message(guint *message,
 		   ATS_TREE* tree)
@@ -62,13 +84,14 @@ parse_sound_message(guint* message,
   fvolume = (double)volume/100.0;
   branch = ats_tree_find_subbranch(tree, channel, pid);
   if(!(branch) ||
-     (branch->type[0] != 'a')){
+     (branch->av != 'a')){
     g_print("Not an audio subbranch!\n");
     return FALSE;
   }
   g_object_set(branch->sink,
 	       "volume", fvolume,
 	       NULL);
+  g_print("New volume value for %d pid %d is %f\n", channel, pid, fvolume);
   return TRUE;
 }
 
@@ -76,6 +99,36 @@ static gboolean
 parse_settings_message(guint* message,
 		       ATS_TREE* tree)
 {
+  const static gchar* black = "black-lb";
+  const static gchar* freeze = "freeze-lb";
+  struct video_options opts;
+  if ((message[0] != VIDEO_SETTINGS_HEADER) ||
+      (message[3] != VIDEO_SETTINGS_HEADER)) {
+    g_print("Not a proper settings message!\n");
+    return FALSE;
+  }
+  switch (message[1]) {
+  case SETTINGS_BLACK_LEVEL: {
+    opts.option = black;
+    break;
+  }
+  case SETTINGS_DIFF_LEVEL: {
+    opts.option = freeze;
+    break;
+  }
+  default: {
+    g_print("Wrong option!\n");
+    return FALSE;
+    break;
+  }
+  }
+  opts.value = message[2];
+  if (opts.value > 255) {
+    g_print("Value is %d, but it should be in range (0..255)!\n", opts.value);
+    return FALSE;
+  }
+  g_slist_foreach(tree->branches, set_video_option, &opts);
+  
   return TRUE;
 }
 
@@ -103,7 +156,7 @@ incoming_callback  (GSocketService *service,
   case SOUND_HEADER:
     return parse_sound_message(message, tree);
     break;
-  case SETTINGS_HEADER:
+  case VIDEO_SETTINGS_HEADER:
     return parse_settings_message(message, tree);
     break;
   default:

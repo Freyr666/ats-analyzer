@@ -10,6 +10,7 @@ typedef struct __ats_subbranch
 {
   guint pid;
   gchar* type;
+  gchar av;
   GstElement* analyser;
   GstElement* sink;
   GstElement* bin;
