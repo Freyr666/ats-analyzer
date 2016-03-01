@@ -4,7 +4,7 @@
 
 typedef struct __callback_data
 {
-  const ATS_METADATA* data;
+  ATS_METADATA* data;
   ATS_BRANCH* branch;
   guint xid;
   double volume;
@@ -159,8 +159,8 @@ branch_on_pad_added(GstElement* el,
   gchar** type_tocs;
   gchar** pid_tocs;
   ATS_BRANCH* branch = cb_data->branch;
-  const ATS_METADATA* metadata = cb_data->data;
-  const ATS_PID_DATA* piddata;
+  ATS_METADATA* metadata = cb_data->data;
+  ATS_PID_DATA* piddata;
   
   g_print ("Dynamic pad created, linking demuxer/decoder\n");
   g_print ("Received new pad '%s' from '%s':\n", GST_PAD_NAME (pad), GST_ELEMENT_NAME (el));
@@ -176,6 +176,12 @@ branch_on_pad_added(GstElement* el,
   g_print("Got %s of type %s\n", type_tocs[0], type_tocs[1]);
   /* Finding pad's pid in metadata */
   piddata = ats_metadata_find_pid(metadata, branch->prog_num, pid_num);
+  /*
+  if (piddata)
+    g_print("For channel %d got pid %d, analysed?: %d\n", branch->prog_num, pid_num, piddata->to_be_analyzed);
+  else
+    g_print("no such pid");
+  */
   if (piddata && piddata->to_be_analyzed){
     /* If recieved pad is video pad: */
     if (g_strcmp0(type_tocs[0], "video") == 0)
@@ -209,13 +215,11 @@ branch_on_pad_added(GstElement* el,
       g_print("Linked!\n");
       gst_object_unref(GST_OBJECT(sinkpad));
     }
-    else {
-      g_print("Null sink has been created\n");
-      gst_element_set_state(branch->bin, GST_STATE_PAUSED);
-      gst_bin_sync_children_states(GST_BIN(branch->bin));
-      gst_element_set_state(branch->bin, GST_STATE_PLAYING);
-    }
   }
+  gst_element_set_state(branch->bin, GST_STATE_PAUSED);
+  gst_bin_sync_children_states(GST_BIN(branch->bin));
+  gst_element_set_state(branch->bin, GST_STATE_PLAYING);
+  gst_element_set_state(branch->bin, GST_STATE_PLAYING);
   g_strfreev(pid_tocs);
   g_strfreev(type_tocs);
 }
@@ -225,7 +229,7 @@ ats_branch_new(const guint stream_id,
 	       const guint prog_num,
 	       const guint xid,
 	       const double volume,
-	       const ATS_METADATA* data)
+	       ATS_METADATA* data)
 {
   ATS_BRANCH *rval;
   GstPad *pad, *ghost_pad;

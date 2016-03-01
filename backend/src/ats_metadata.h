@@ -40,9 +40,9 @@ void ats_metadata_delete(ATS_METADATA* this);
 
 void ats_metadata_reset(ATS_METADATA* this);
 
-ATS_CH_DATA* ats_metadata_find_channel(const ATS_METADATA* this, guint num);
+ATS_CH_DATA* ats_metadata_find_channel(ATS_METADATA* this, guint num);
 
-ATS_PID_DATA* ats_metadata_find_pid(const ATS_METADATA* data, guint ch, guint pid);
+ATS_PID_DATA* ats_metadata_find_pid(ATS_METADATA* data, guint ch, guint pid);
 
 #define ats_metadata_ch_number(data)((data->prog_info == NULL)?0:g_slist_length(data->prog_info))
 
@@ -52,5 +52,7 @@ ATS_PID_DATA* ats_metadata_find_pid(const ATS_METADATA* data, guint ch, guint pi
 gboolean ats_metadata_are_ready(const ATS_METADATA* data);
 
 gchar* ats_metadata_to_string(const ATS_METADATA* data);
+
+void ats_metadata_print(const ATS_METADATA* data);
 
 #endif /* ATS_METADATA_H */

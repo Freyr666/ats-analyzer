@@ -23,10 +23,10 @@ bus_call(GstBus* bus,
   case GST_MESSAGE_ELEMENT: {
     GstMpegtsSection *section;
     const GstStructure* st;
-    if ((section = gst_message_parse_mpegts_section (msg))) {
+    if ((section = gst_message_parse_mpegts_section (msg)) &&
+	!(d->metadata_were_sent)) {
       parse_table (section, tree->metadata);
-      if (!(d->metadata_were_sent) &&
-	  ats_metadata_are_ready(tree->metadata) &&
+      if (ats_metadata_are_ready(tree->metadata) &&
 	  tree->branches == NULL){
 	if(d->time == 0)
 	  d->time = time(0);

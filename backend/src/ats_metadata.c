@@ -34,7 +34,7 @@ ats_metadata_reset(ATS_METADATA* this)
 }
 
 ATS_CH_DATA*
-ats_metadata_find_channel(const ATS_METADATA* this, guint num)
+ats_metadata_find_channel(ATS_METADATA* this, guint num)
 {
   ATS_CH_DATA* rval;
   GSList* list;
@@ -49,7 +49,7 @@ ats_metadata_find_channel(const ATS_METADATA* this, guint num)
 }
 
 ATS_PID_DATA*
-ats_metadata_find_pid(const ATS_METADATA* data, guint ch, guint pid)
+ats_metadata_find_pid(ATS_METADATA* data, guint ch, guint pid)
 {
   ATS_PID_DATA* rval;
   ATS_CH_DATA* tmpch = ats_metadata_find_channel(data, ch);
@@ -106,4 +106,29 @@ ats_metadata_to_string(const ATS_METADATA* data)
     g_free(prog_str);
   }
   return string;
+}
+
+void
+ats_metadata_print(const ATS_METADATA* data)
+{
+  ATS_CH_DATA* tmpch;
+  ATS_PID_DATA* tmppid;
+  guint len;
+  
+  g_print("Stream id: %d\n", data->stream_id);
+  len = g_slist_length(data->prog_info);
+  for (guint i = 0; i < len; i++) {
+    tmpch = g_slist_nth_data(data->prog_info, i);
+    g_print("\tChan num: %d\n", tmpch->number);
+    g_print("\tChannel: %s\n", tmpch->service_name);
+    g_print("\tProvider: %s\n", tmpch->provider_name);
+    g_print("\tAnalysed?: %d\n", tmpch->to_be_analyzed);
+    g_print("\txid: %d\n", tmpch->xid);
+    for (guint j = 0; j < tmpch->pids_num; j++) {
+      tmppid = &tmpch->pids[j];
+      g_print("\t\tPid: %d\n", tmppid->pid);
+      g_print("\t\tType: %s Num: %d\n", tmppid->codec, tmppid->type);
+      g_print("\t\tAnalysed?: %d\n", tmppid->to_be_analyzed);
+    }
+  }
 }
