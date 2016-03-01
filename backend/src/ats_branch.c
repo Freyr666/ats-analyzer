@@ -178,14 +178,14 @@ branch_on_pad_added(GstElement* el,
   piddata = ats_metadata_find_pid(metadata, branch->prog_num, pid_num);
   if (piddata && piddata->to_be_analyzed){
     /* If recieved pad is video pad: */
-    if (type_tocs[0][0] == 'v')
+    if (g_strcmp0(type_tocs[0], "video") == 0)
       tail = create_video_bin(type_tocs[1],
 			      branch->stream_id,
 			      branch->prog_num,
 			      pid_num,
 			      cb_data->xid);
     /* Else if pad is audio pad: */
-    else if (type_tocs[0][0] == 'a')
+    else if (g_strcmp0(type_tocs[0], "audio") == 0)
       tail = create_audio_bin(type_tocs[1],
 			      branch->stream_id,
 			      branch->prog_num,
@@ -208,6 +208,12 @@ branch_on_pad_added(GstElement* el,
       gst_element_set_state(branch->bin, GST_STATE_PLAYING);
       g_print("Linked!\n");
       gst_object_unref(GST_OBJECT(sinkpad));
+    }
+    else {
+      g_print("Null sink has been created\n");
+      gst_element_set_state(branch->bin, GST_STATE_PAUSED);
+      gst_bin_sync_children_states(GST_BIN(branch->bin));
+      gst_element_set_state(branch->bin, GST_STATE_PLAYING);
     }
   }
   g_strfreev(pid_tocs);
