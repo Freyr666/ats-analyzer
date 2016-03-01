@@ -9,6 +9,12 @@
 #define STREAM_DIVIDER 0xABBA0000
 #define PROG_DIVIDER 0xACDC0000
 
+#define SOUND_HEADER 0x0EFA1922
+
+#define SETTINGS_HEADER 0xCDDA1307
+#define SETTINGS_BLACK_LEVEL 0xBA1306BA
+#define SETTINGS_DIFF_LEVEL 0xDA0476AD
+
 typedef struct __ats_control
 {
   /* input */

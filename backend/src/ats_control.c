@@ -4,7 +4,8 @@
 #include <stdlib.h>
 
 static gboolean
-parse_tree_message(guint *message, ATS_TREE* tree)
+parse_tree_message(guint *message,
+		   ATS_TREE* tree)
 {
   ATS_METADATA* data = tree->metadata;
   guint prognum = 0;
@@ -38,6 +39,43 @@ parse_tree_message(guint *message, ATS_TREE* tree)
 }
 
 static gboolean
+parse_sound_message(guint* message,
+		    ATS_TREE* tree)
+{
+  ATS_SUBBRANCH* branch;
+  guint channel = 0;
+  guint pid = 0;
+  guint volume = 0;
+  double fvolume = .0;
+  if ((message[0] != SOUND_HEADER) ||
+      (message[4] != SOUND_HEADER)) {
+    g_print("Not a proper sound message!\n");
+    return FALSE;
+  }
+  channel = message[1];
+  pid = message[2];
+  volume = message[3];
+  fvolume = (double)volume/100.0;
+  branch = ats_tree_find_subbranch(tree, channel, pid);
+  if(!(branch) ||
+     (branch->type[0] != 'a')){
+    g_print("Not an audio subbranch!\n");
+    return FALSE;
+  }
+  g_object_set(branch->sink,
+	       "volume", fvolume,
+	       NULL);
+  return TRUE;
+}
+
+static gboolean
+parse_settings_message(guint* message,
+		       ATS_TREE* tree)
+{
+  return TRUE;
+}
+
+static gboolean
 incoming_callback  (GSocketService *service,
                     GSocketConnection *connection,
                     GObject *source_object,
@@ -53,8 +91,20 @@ incoming_callback  (GSocketService *service,
                         NULL,
                         NULL);
   message = buffer;
-  if(*message == TREE_HEADER) 
+  switch (*message) {
+  case TREE_HEADER: {
     return parse_tree_message(message, tree);
+    break;
+  }
+  case SOUND_HEADER:
+    return parse_sound_message(message, tree);
+    break;
+  case SETTINGS_HEADER:
+    return parse_settings_message(message, tree);
+    break;
+  default:
+    break;
+  }
   g_printerr("Error: unknown message type!\n");
   return FALSE;
 }
