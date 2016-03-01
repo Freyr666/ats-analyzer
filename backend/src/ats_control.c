@@ -55,6 +55,10 @@ parse_sound_message(guint* message,
   channel = message[1];
   pid = message[2];
   volume = message[3];
+  if (volume > 100) {
+    g_print("Volume value is %d, but it should be in range (0..100)!\n", volume);
+    return FALSE;
+  }
   fvolume = (double)volume/100.0;
   branch = ats_tree_find_subbranch(tree, channel, pid);
   if(!(branch) ||
