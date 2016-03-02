@@ -96,8 +96,8 @@ analyse_buffer(guint8* data,
   long difference = 0;
   guint black = 0;
   guint frozen = 0;
-  float Shblock = 0;
-  float Shnonblock = 0;
+  double Shblock = 0;
+  double Shnonblock = 0;
   
   for (guint j = 0; j < height; j++) {
     for (guint i = 0; i < width; i++) {
@@ -105,21 +105,20 @@ analyse_buffer(guint8* data,
       guint8 current = data[ind];
       guint8 diff = 0;
       if (i && !(i % 4)) {
-	float sum, sub, subNext, subPrev;
+	double sum;
+	guint8 sub, subNext, subPrev;
 	int ind = i + j*stride;
-	sub = (float)abs(data[ind - 1] - current);
-	subNext = (float)abs(current - data[ind + 1]); 
-	subPrev = (float)abs(data[ind - 2] - data[ind - 1]);
-	sum = subNext + subPrev;
-	if (sum == 0) sum = 1;
-	else sum = sum / 2; 
+	sub = abs(data[ind - 1] - current);
+	subNext = abs(current - data[ind + 1]); 
+	subPrev = abs(data[ind - 2] - data[ind - 1]);
+	sum = (double)subNext + (double)subPrev;
+	if (sum == .0) sum = 1.0;
+	else sum = sum / 2.0; 
 	if (!(i % 8)){
-	  Shnonblock += sub;
-	  Shblock += sum;
+	  Shnonblock += (double)sub/sum;
 	}
 	else {
-	  Shblock += sub;
-	  Shnonblock += sum;
+	  Shblock += (double)sub/sum;
 	}
       }
       brightness += current;
