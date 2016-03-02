@@ -6,11 +6,10 @@ send_metadata(gpointer data)
   ATS_GRAPH* graph = (ATS_GRAPH*) data;
   if (graph->tree->branches == NULL){
     if (ats_metadata_are_ready(graph->tree->metadata)) {
-      ats_metadata_print(graph->tree->metadata);
       if(graph->time == 0)
 	graph->time = time(0);
       time_t tmp_time = time(0);
-      if (((tmp_time - graph->time) >= 4) ||
+      if (((tmp_time - graph->time) >= 2) ||
 	  ats_metadata_got_sdt(graph->tree->metadata)){
 	gchar* str = ats_metadata_to_string(graph->tree->metadata);
 	ats_control_send(graph->control, str);
