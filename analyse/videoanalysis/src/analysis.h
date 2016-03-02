@@ -100,17 +100,11 @@ analyse_buffer(guint8* data,
   float Shnonblock = 0;
   
   for (guint j = 0; j < height; j++) {
-    guint8 diff;
-    if (data_prev != NULL) {
-      diff = abs(data[j*stride] - data_prev[j*stride]);
-      difference += diff;
-      frozen += (diff <= freez_bnd) ? 1 : 0;
-      data_prev[j*stride] = data[j*stride];
-    }
-    for (guint i = 1; i < width; i++) {
+    for (guint i = 0; i < width; i++) {
       int ind = i + j*stride;
       guint8 current = data[ind];
-      if (!(i % 4)) {
+      guint8 diff = 0;
+      if (i && !(i % 4)) {
 	float sum, sub, subNext, subPrev;
 	int ind = i + j*stride;
 	sub = (float)abs(data[ind - 1] - current);

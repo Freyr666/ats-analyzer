@@ -11,6 +11,8 @@
 #define DATA_MARKER 0x8BA820F0
 #define VIDEO_DATA_MARKER 0xEA96C3D8
 
+#define SDT_TIMEOUT 3
+
 typedef struct __ats_graph
 {
   GMainLoop* loop;
