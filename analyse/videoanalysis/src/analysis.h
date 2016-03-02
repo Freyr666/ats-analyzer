@@ -100,6 +100,13 @@ analyse_buffer(guint8* data,
   float Shnonblock = 0;
   
   for (guint j = 0; j < height; j++) {
+    if (data_prev != NULL) {
+      guint8 current_prev = data_prev[j*stride];
+      diff = abs(current - current_prev);
+      difference += diff;
+      frozen += (diff <= freez_bnd) ? 1 : 0;
+      data_prev[j*stride] = current;
+    }
     for (guint i = 1; i < width; i++) {
       int ind = i + j*stride;
       guint8 current = data[ind];
@@ -137,7 +144,7 @@ analyse_buffer(guint8* data,
   
   rval->blocks = Shnonblock/Shblock;
   rval->avg_bright = (float)brightness / (height*width);
-  rval->black_pix = (black/(height*width))*100.0;
+  rval->black_pix = ((float)black/((float)height*(float)width))*100.0;
   rval->avg_diff = (float)difference / (height*width);
   rval->frozen_pix = (frozen/(height*width))*100.0;
 }
