@@ -132,18 +132,22 @@ parse_table (GstMpegtsSection * section, void* data)
   g_type_class_ref (GST_TYPE_MPEGTS_DVB_LINKAGE_HAND_OVER_TYPE);
   g_type_class_ref (GST_TYPE_MPEGTS_COMPONENT_STREAM_CONTENT);
   g_type_class_ref (GST_TYPE_MPEGTS_CONTENT_NIBBLE_HI);
-
+  g_print("Got table!\n");
   switch (GST_MPEGTS_SECTION_TYPE (section)) {
   case GST_MPEGTS_SECTION_PAT:
+    g_print("Type PAT\n");
     dump_pat (section, metadata);
     break;
   case GST_MPEGTS_SECTION_PMT:
+    g_print("Type PMT\n");
     dump_pmt(section, data);
     break;
   case GST_MPEGTS_SECTION_SDT:
+    g_print("Type SDT\n");
     dump_sdt (section, metadata);
     break;
   default:
+    g_print("UNKNOWN TYPE!\n");
     break;
   }
 }
