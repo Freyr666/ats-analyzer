@@ -218,10 +218,6 @@ branch_on_pad_added(GstElement* el,
       gst_object_unref(GST_OBJECT(sinkpad));
     }
   }
-  gst_element_set_state(branch->bin, GST_STATE_PAUSED);
-  gst_bin_sync_children_states(GST_BIN(branch->bin));
-  gst_element_set_state(branch->bin, GST_STATE_PLAYING);
-  gst_element_set_state(branch->bin, GST_STATE_PLAYING);
   g_strfreev(pid_tocs);
   g_strfreev(type_tocs);
 }

@@ -53,10 +53,11 @@ bus_call(GstBus* bus,
   case GST_MESSAGE_ELEMENT: {
     GstMpegtsSection *section;
     const GstStructure* st;
-    if ((section = gst_message_parse_mpegts_section (msg)) &&
-	!(d->metadata_were_sent)) {
-      parse_table (section, tree->metadata);
-      ats_metadata_print(tree->metadata);
+    if ((section = gst_message_parse_mpegts_section (msg))) {
+      if (!(d->metadata_were_sent)) {
+	parse_table (section, tree->metadata);
+	ats_metadata_print(tree->metadata);
+      }
       gst_mpegts_section_unref (section);
     }
     else {
