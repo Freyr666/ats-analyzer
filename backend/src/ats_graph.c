@@ -56,13 +56,13 @@ bus_call(GstBus* bus,
     if ((section = gst_message_parse_mpegts_section (msg))) {
       if (!(d->metadata_were_sent)) {
 	parse_table (section, tree->metadata);
-	ats_metadata_print(tree->metadata);
       }
       gst_mpegts_section_unref (section);
     }
     else {
       st = gst_message_get_structure(msg);
       if (gst_structure_has_name (st, "GstUDPSrcTimeout")){
+	/* send End Of Stream sygnal */
 	gchar* str = g_strdup_printf("e%d", tree->metadata->stream_id);
         ats_control_send(control, str);
 	if (tree->branches != NULL)
