@@ -22,7 +22,7 @@
 #include <gst/video/video.h>
 #include <gst/video/gstvideofilter.h>
 
-#include "videoanalysis_api.h"
+#include "videodata.h"
 
 G_BEGIN_DECLS
 

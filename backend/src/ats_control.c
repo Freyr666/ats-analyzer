@@ -55,7 +55,6 @@ parse_tree_message(guint *message,
       message++;
     }
   }
-  ats_metadata_print(data);
   ats_tree_add_branches(tree);
   return FALSE;
 }
