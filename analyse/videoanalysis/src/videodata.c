@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 */
 
-#include "videoanalysis_api.h"
+#include "videodata.h"
 #include <malloc.h>
 
 VideoData*
