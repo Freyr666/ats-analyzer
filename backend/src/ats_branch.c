@@ -105,7 +105,7 @@ create_audio_bin(const gchar* type,
     return NULL;
   }
   queue = gst_element_factory_make("queue", NULL);
-  analyser = NULL;
+  analyser = gst_element_factory_make("audioanalysis", NULL);
   sink = gst_element_factory_make("pulsesink", NULL);
   bin = gst_bin_new (NULL);
   if (!bin || !decoder || !sink || !queue)

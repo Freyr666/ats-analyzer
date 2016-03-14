@@ -45,16 +45,20 @@ GST_DEBUG_CATEGORY_STATIC (gst_audioanalysis_debug_category);
 
 
 static void gst_audioanalysis_set_property (GObject * object,
-    guint property_id, const GValue * value, GParamSpec * pspec);
+					    guint property_id,
+					    const GValue * value,
+					    GParamSpec * pspec);
 static void gst_audioanalysis_get_property (GObject * object,
-    guint property_id, GValue * value, GParamSpec * pspec);
+					    guint property_id,
+					    GValue * value,
+					    GParamSpec * pspec);
 static void gst_audioanalysis_dispose (GObject * object);
 static void gst_audioanalysis_finalize (GObject * object);
 
 static gboolean gst_audioanalysis_setup (GstAudioFilter * filter,
-    const GstAudioInfo * info);
+					 const GstAudioInfo * info);
 static GstFlowReturn gst_audioanalysis_transform_ip (GstBaseTransform * trans,
-    GstBuffer * buf);
+						     GstBuffer * buf);
 
 enum
 {
@@ -65,28 +69,29 @@ enum
 
 /* FIXME add/remove the formats that you want to support */
 static GstStaticPadTemplate gst_audioanalysis_src_template =
-GST_STATIC_PAD_TEMPLATE ("src",
-    GST_PAD_SRC,
-    GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("audio/x-raw,format=S16LE,rate=[1,max],"
-      "channels=[1,max],layout=interleaved")
-    );
+  GST_STATIC_PAD_TEMPLATE ("src",
+			   GST_PAD_SRC,
+			   GST_PAD_ALWAYS,
+			   GST_STATIC_CAPS ("audio/x-raw,format=F32LE,rate=[1,max],"
+					    "channels=[1,max],layout=interleaved"));
 
 /* FIXME add/remove the formats that you want to support */
 static GstStaticPadTemplate gst_audioanalysis_sink_template =
-GST_STATIC_PAD_TEMPLATE ("sink",
-    GST_PAD_SINK,
-    GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("audio/x-raw,format=S16LE,rate=[1,max],"
-      "channels=[1,max],layout=interleaved")
-    );
+  GST_STATIC_PAD_TEMPLATE ("sink",
+			   GST_PAD_SINK,
+			   GST_PAD_ALWAYS,
+			   GST_STATIC_CAPS ("audio/x-raw,format=F32LE,rate=[1,max],"
+					    "channels=[1,max],layout=interleaved"));
 
 
 /* class initialization */
 
-G_DEFINE_TYPE_WITH_CODE (GstAudioanalysis, gst_audioanalysis, GST_TYPE_AUDIO_FILTER,
-  GST_DEBUG_CATEGORY_INIT (gst_audioanalysis_debug_category, "audioanalysis", 0,
-  "debug category for audioanalysis element"));
+G_DEFINE_TYPE_WITH_CODE (GstAudioanalysis,
+			 gst_audioanalysis,
+			 GST_TYPE_AUDIO_FILTER,
+			 GST_DEBUG_CATEGORY_INIT (gst_audioanalysis_debug_category,
+						  "audioanalysis", 0,
+						  "debug category for audioanalysis element"));
 
 static void
 gst_audioanalysis_class_init (GstAudioanalysisClass * klass)
@@ -98,13 +103,15 @@ gst_audioanalysis_class_init (GstAudioanalysisClass * klass)
   /* Setting up pads and setting metadata should be moved to
      base_class_init if you intend to subclass this class. */
   gst_element_class_add_pad_template (GST_ELEMENT_CLASS(klass),
-      gst_static_pad_template_get (&gst_audioanalysis_src_template));
+				      gst_static_pad_template_get (&gst_audioanalysis_src_template));
   gst_element_class_add_pad_template (GST_ELEMENT_CLASS(klass),
-      gst_static_pad_template_get (&gst_audioanalysis_sink_template));
+				      gst_static_pad_template_get (&gst_audioanalysis_sink_template));
 
   gst_element_class_set_static_metadata (GST_ELEMENT_CLASS(klass),
-      "FIXME Long name", "Generic", "FIXME Description",
-      "FIXME <fixme@example.com>");
+					 "Gstreamer element for audio analysis",
+					 "Audio data analysis",
+					 "filter for audio analysis",
+					 "freyr <sky_rider_93@mail.ru>");
 
   gobject_class->set_property = gst_audioanalysis_set_property;
   gobject_class->get_property = gst_audioanalysis_get_property;
@@ -121,23 +128,27 @@ gst_audioanalysis_init (GstAudioanalysis *audioanalysis)
 }
 
 void
-gst_audioanalysis_set_property (GObject * object, guint property_id,
-    const GValue * value, GParamSpec * pspec)
+gst_audioanalysis_set_property (GObject * object,
+				guint property_id,
+				const GValue * value,
+				GParamSpec * pspec)
 {
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (object);
 
   GST_DEBUG_OBJECT (audioanalysis, "set_property");
 
   switch (property_id) {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    break;
   }
 }
 
 void
-gst_audioanalysis_get_property (GObject * object, guint property_id,
-    GValue * value, GParamSpec * pspec)
+gst_audioanalysis_get_property (GObject * object,
+				guint property_id,
+				GValue * value,
+				GParamSpec * pspec)
 {
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (object);
 
@@ -154,7 +165,7 @@ void
 gst_audioanalysis_dispose (GObject * object)
 {
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (object);
-
+  
   GST_DEBUG_OBJECT (audioanalysis, "dispose");
 
   /* clean up as possible.  may be called multiple times */
@@ -175,23 +186,29 @@ gst_audioanalysis_finalize (GObject * object)
 }
 
 static gboolean
-gst_audioanalysis_setup (GstAudioFilter * filter, const GstAudioInfo * info)
+gst_audioanalysis_setup (GstAudioFilter * filter,
+			 const GstAudioInfo * info)
 {
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (filter);
 
   GST_DEBUG_OBJECT (audioanalysis, "setup");
 
+  
+  
   return TRUE;
 }
 
 /* transform */
 static GstFlowReturn
-gst_audioanalysis_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
+gst_audioanalysis_transform_ip (GstBaseTransform * trans,
+				GstBuffer * buf)
 {
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (trans);
 
   GST_DEBUG_OBJECT (audioanalysis, "transform_ip");
 
+  
+  
   return GST_FLOW_OK;
 }
 
@@ -201,8 +218,10 @@ plugin_init (GstPlugin * plugin)
 
   /* FIXME Remember to set the rank if it's an element that is meant
      to be autoplugged by decodebin. */
-  return gst_element_register (plugin, "audioanalysis", GST_RANK_NONE,
-      GST_TYPE_AUDIOANALYSIS);
+  return gst_element_register (plugin,
+			       "audioanalysis",
+			       GST_RANK_NONE,
+			       GST_TYPE_AUDIOANALYSIS);
 }
 
 /* FIXME: these are normally defined by the GStreamer build system.
@@ -210,21 +229,21 @@ plugin_init (GstPlugin * plugin)
    remove these, as they're always defined.  Otherwise, edit as
    appropriate for your external plugin package. */
 #ifndef VERSION
-#define VERSION "0.0.FIXME"
+#define VERSION "0.1.9"
 #endif
 #ifndef PACKAGE
-#define PACKAGE "FIXME_package"
+#define PACKAGE "audioanalysis"
 #endif
 #ifndef PACKAGE_NAME
-#define PACKAGE_NAME "FIXME_package_name"
+#define PACKAGE_NAME "audioanalysis_package"
 #endif
 #ifndef GST_PACKAGE_ORIGIN
-#define GST_PACKAGE_ORIGIN "http://FIXME.org/"
+#define GST_PACKAGE_ORIGIN "https://github.com/Freyr666/ats-analyzer/"
 #endif
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    audioanalysis,
-    "FIXME plugin description",
-    plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
+		   GST_VERSION_MINOR,
+		   audioanalysis,
+		   "Package for audio data analysis",
+		   plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
 

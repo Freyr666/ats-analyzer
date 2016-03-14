@@ -135,7 +135,8 @@ gst_videoanalysis_class_init (GstVideoAnalysisClass * klass)
 
   gst_element_class_set_static_metadata (GST_ELEMENT_CLASS(klass),
 					 "Gstreamer element for video analysis",
-					 "Video data analysis", "filter for video analysis",
+					 "Video data analysis",
+					 "filter for video analysis",
 					 "freyr <sky_rider_93@mail.ru>");
 
   gobject_class->set_property = gst_videoanalysis_set_property;
@@ -435,8 +436,8 @@ plugin_init (GstPlugin * plugin)
 #endif
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    videoanalysis,
-    "Package for video data analysing",
-    plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
+		   GST_VERSION_MINOR,
+		   videoanalysis,
+		   "Package for video data analysis",
+		   plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
 
