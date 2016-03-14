@@ -21,6 +21,7 @@
 #define _GST_AUDIOANALYSIS_H_
 
 #include <gst/audio/gstaudiofilter.h>
+#include <ebur128.h>
 
 G_BEGIN_DECLS
 
@@ -36,7 +37,9 @@ typedef struct _GstAudioanalysisClass GstAudioanalysisClass;
 struct _GstAudioanalysis
 {
   GstAudioFilter base_audioanalysis;
-
+  ebur128_state* state_momentary;
+  ebur128_state* state_short;
+  double loudness;
 };
 
 struct _GstAudioanalysisClass

@@ -118,12 +118,12 @@ create_audio_bin(const gchar* type,
       return NULL;
     }
   if (g_strcmp0(type, "mpeg") == 0){
-    gst_bin_add_many(GST_BIN(bin), queue, parser, decoder, sink, NULL);
-    gst_element_link_many(queue, parser, decoder, sink, NULL);
+    gst_bin_add_many(GST_BIN(bin), queue, parser, decoder, analyser, sink, NULL);
+    gst_element_link_many(queue, parser, decoder, analyser, sink, NULL);
   }
   else{
-    gst_bin_add_many(GST_BIN(bin), queue, decoder, sink, NULL);
-    gst_element_link_many(queue, decoder, sink, NULL);
+    gst_bin_add_many(GST_BIN(bin), queue, decoder, analyser, sink, NULL);
+    gst_element_link_many(queue, decoder, analyser, sink, NULL);
   }
 
   g_object_set (G_OBJECT (sink),
