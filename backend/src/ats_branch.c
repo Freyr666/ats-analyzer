@@ -139,7 +139,7 @@ create_audio_bin(const gchar* type,
   rval = g_new(ATS_SUBBRANCH, 1);
   rval->bin = bin;
   rval->sink = sink;
-  rval->analyser = NULL;//analyser;
+  rval->analyser = analyser;
   rval->pid = pid;
   rval->av = 'a';
   rval->type = g_strdup(type);
@@ -201,7 +201,7 @@ branch_on_pad_added(GstElement* el,
 			      cb_data->volume);
     /* Connecting subbranch to the tsdemux element of the branch: */
     if ((tail != NULL) && (tail->bin != NULL)) {
-      GstElement* tmp = gst_element_get_parent(branch->bin);
+      //GstElement* tmp = gst_element_get_parent(branch->bin);
       g_print("Playing pipeline has been created\n");
       branch->subbranches = g_slist_append(branch->subbranches,
 					   tail);
@@ -230,7 +230,7 @@ branch_on_pad_added(GstElement* el,
       g_print("Linked!\n");
             
       gst_object_unref(GST_OBJECT(sinkpad));
-      GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(tmp), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+      //GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(tmp), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
     }
   }
   g_strfreev(pid_tocs);

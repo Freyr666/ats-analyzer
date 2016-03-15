@@ -188,14 +188,10 @@ gst_audioanalysis_finalize (GObject * object)
 
   GST_DEBUG_OBJECT (audioanalysis, "finalize");
 
-  if (audioanalysis->state_momentary != NULL) {
-    free(audioanalysis->state_momentary);
-    audioanalysis->state_momentary = NULL;
-  }
-  if (audioanalysis->state_short != NULL) {
-    free(audioanalysis->state_short);
-    audioanalysis->state_short = NULL;
-  }
+  if (audioanalysis->state_momentary != NULL)
+    ebur128_destroy(&audioanalysis->state_momentary);
+  if (audioanalysis->state_short != NULL)
+    ebur128_destroy(&audioanalysis->state_short);
 
   G_OBJECT_CLASS (gst_audioanalysis_parent_class)->finalize (object);
 }
@@ -210,14 +206,10 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
 
   printf("Audio setup!\n");
   
-  if (audioanalysis->state_momentary != NULL) {
-    free(audioanalysis->state_momentary);
-    audioanalysis->state_momentary = NULL;
-  }
-  if (audioanalysis->state_short != NULL) {
-    free(audioanalysis->state_short);
-    audioanalysis->state_short = NULL;
-  }
+  if (audioanalysis->state_momentary != NULL)
+    ebur128_destroy(&audioanalysis->state_momentary);
+  if (audioanalysis->state_short != NULL)
+    ebur128_destroy(&audioanalysis->state_short);
 
   audioanalysis->state_momentary = ebur128_init(info->channels,
 						info->rate,
@@ -235,21 +227,20 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
 				GstBuffer * buf)
 {
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (trans);
-  //GstMapInfo map;
-  //guint num_samples;
-  //int rval = 0;
-  //struct timeval tv;
+  GstMapInfo map;
+  guint num_samples;
   
   GST_DEBUG_OBJECT (audioanalysis, "transform_ip");
   /*
   gst_buffer_map(buf, &map, GST_MAP_READ);
   num_samples = map.size / GST_AUDIO_FILTER_BPS (audioanalysis);
-  ebur128_add_frames_float(audioanalysis->state_momentary, (float*)map.data, num_samples);
-  // rval = ebur128_loudness_momentary(audioanalysis->state_momentary, &audioanalysis->loudness);
-
-  ebur128_add_frames_float(audioanalysis->state_short, (float*)map.data, num_samples);
-  // ebur128_loudness_shortterm(audioanalysis->state_short, &audioanalysis->loudness);
-
+  ebur128_add_frames_short(audioanalysis->state_momentary, (short*)map.data, num_samples);
+  ebur128_loudness_momentary(audioanalysis->state_momentary, &audioanalysis->loudness);
+  
+  ebur128_add_frames_short(audioanalysis->state_short, (short*)map.data, num_samples);
+  ebur128_loudness_shortterm(audioanalysis->state_short, &audioanalysis->loudness);
+  printf("L: %f LUFS\n", audioanalysis->loudness);
+  
   gst_buffer_unmap(buf, &map);
   */
   // gettimeofday(&tv, NULL);
