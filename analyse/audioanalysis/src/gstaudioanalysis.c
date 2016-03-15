@@ -76,7 +76,7 @@ static GstStaticPadTemplate gst_audioanalysis_src_template =
   GST_STATIC_PAD_TEMPLATE ("src",
 			   GST_PAD_SRC,
 			   GST_PAD_ALWAYS,
-			   GST_STATIC_CAPS ("audio/x-raw,format=F32LE,rate=[1,max],"
+			   GST_STATIC_CAPS ("audio/x-raw,format=S16LE,rate=[1,max],"
 					    "channels=[1,max],layout=interleaved"));
 
 /* FIXME add/remove the formats that you want to support */
@@ -84,7 +84,7 @@ static GstStaticPadTemplate gst_audioanalysis_sink_template =
   GST_STATIC_PAD_TEMPLATE ("sink",
 			   GST_PAD_SINK,
 			   GST_PAD_ALWAYS,
-			   GST_STATIC_CAPS ("audio/x-raw,format=F32LE,rate=[1,max],"
+			   GST_STATIC_CAPS ("audio/x-raw,format=S16LE,rate=[1,max],"
 					    "channels=[1,max],layout=interleaved"));
 
 
@@ -235,27 +235,23 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
 				GstBuffer * buf)
 {
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (trans);
-  GstMapInfo map;
-  guint num_samples;
-  int rval = 0;
+  //GstMapInfo map;
+  //guint num_samples;
+  //int rval = 0;
   //struct timeval tv;
   
   GST_DEBUG_OBJECT (audioanalysis, "transform_ip");
-  
+  /*
   gst_buffer_map(buf, &map, GST_MAP_READ);
   num_samples = map.size / GST_AUDIO_FILTER_BPS (audioanalysis);
   ebur128_add_frames_float(audioanalysis->state_momentary, (float*)map.data, num_samples);
-  rval = ebur128_loudness_momentary(audioanalysis->state_momentary, &audioanalysis->loudness);
-  if (rval == EBUR128_SUCCESS)
-    printf("momentary loudness: %f LUFS\n", audioanalysis->loudness);
-  ebur128_add_frames_float(audioanalysis->state_short, (float*)map.data, num_samples);
-  ebur128_loudness_shortterm(audioanalysis->state_short, &audioanalysis->loudness);
-  if (rval == EBUR128_SUCCESS)
-    printf("short loudness: %f LUFS\n", audioanalysis->loudness);
-  else
-    printf("short loudness does not changed\n");
-  gst_buffer_unmap(buf, &map);
+  // rval = ebur128_loudness_momentary(audioanalysis->state_momentary, &audioanalysis->loudness);
 
+  ebur128_add_frames_float(audioanalysis->state_short, (float*)map.data, num_samples);
+  // ebur128_loudness_shortterm(audioanalysis->state_short, &audioanalysis->loudness);
+
+  gst_buffer_unmap(buf, &map);
+  */
   // gettimeofday(&tv, NULL);
   // printf("%ld seconds\n", tv.tv_sec);
   return GST_FLOW_OK;

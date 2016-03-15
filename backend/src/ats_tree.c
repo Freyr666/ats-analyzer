@@ -115,6 +115,7 @@ void ats_tree_add_branches(ATS_TREE* this)
   GstPad *teepad, *branchpad, *sinkpad;
   g_printerr("ats_tree_add_branches!\n");
   gst_element_set_state(this->pipeline, GST_STATE_PAUSED);
+  g_printerr("ats_tree is in PAUSE state!\n");
   /* if TS have been parsed */
   if (this->metadata->prog_info != NULL){
     channels = g_slist_length(this->metadata->prog_info);
@@ -153,6 +154,7 @@ void ats_tree_add_branches(ATS_TREE* this)
       }
   }
   gst_element_set_state(this->pipeline, GST_STATE_PLAYING);
+  g_printerr("ats_tree is in PLAYING state!\n");
 }
 
 void
