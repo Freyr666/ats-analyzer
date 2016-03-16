@@ -22,7 +22,6 @@
 #include <glib.h>
 
 #define DATA_MARKER 0x8BA820F0
-#define VIDEO_DATA_MARKER 0xEA96C3D8
 
 typedef struct __VideoParams VideoParams;
 typedef struct __VideoData VideoData;

@@ -271,6 +271,28 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
   return TRUE;
 }
 
+/* send data */
+static inline void
+gst_audioanalysis_send_string(gchar* data,
+			      GstAudioanalysis* filter)
+{
+  if (data != NULL){
+    GstStructure* st = gst_structure_new_id_empty(DATA_MARKER);
+    
+    gst_structure_id_set(st,
+			 DATA_MARKER,
+			 G_TYPE_STRING,
+			 data,
+			 NULL);
+    
+    gst_element_post_message(GST_ELEMENT_CAST(filter),
+			     gst_message_new_element(GST_OBJECT_CAST(filter),
+						     st));
+    g_free(data);
+  }
+  return;
+}
+
 /* transform */
 static GstFlowReturn
 gst_audioanalysis_transform_ip (GstBaseTransform * trans,
@@ -281,6 +303,7 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   guint num_frames;
   double loudness_shortt;
   double loudness_moment;
+  gchar* rval = NULL;
   
   GST_DEBUG_OBJECT (audioanalysis, "transform_ip");
   
@@ -292,6 +315,15 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   
   ebur128_add_frames_short(audioanalysis->state_short, (short*)map.data, num_frames);
   ebur128_loudness_shortterm(audioanalysis->state_short, &loudness_shortt);
+
+  rval = g_strdup_printf("a%d:%d:%d:*:%f:%f",
+			 audioanalysis->stream_id,
+			 audioanalysis->program,
+			 audioanalysis->pid,
+			 loudness_moment,
+			 loudness_shortt);
+
+  gst_audioanalysis_send_string(rval, audioanalysis);
   
   gst_buffer_unmap(buf, &map);
 

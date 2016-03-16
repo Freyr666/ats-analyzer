@@ -22,6 +22,8 @@
 #include <gst/audio/gstaudiofilter.h>
 #include <ebur128.h>
 
+#define DATA_MARKER 0x8BA820F0
+
 G_BEGIN_DECLS
 
 #define GST_TYPE_AUDIOANALYSIS\

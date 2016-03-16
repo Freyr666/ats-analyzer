@@ -70,7 +70,7 @@ bus_call(GstBus* bus,
 	g_free(str);
       }
       if (gst_structure_get_name_id(st) == DATA_MARKER){
-	gchar* str = g_value_dup_string(gst_structure_id_get_value(st, VIDEO_DATA_MARKER));
+	gchar* str = g_value_dup_string(gst_structure_id_get_value(st, DATA_MARKER));
 	ats_control_send(control, str);
 	g_free(str);
       }

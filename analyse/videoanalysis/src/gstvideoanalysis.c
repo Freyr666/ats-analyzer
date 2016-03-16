@@ -354,7 +354,7 @@ gst_videoanalysis_send_string(gchar* data,
     GstStructure* st = gst_structure_new_id_empty(DATA_MARKER);
     
     gst_structure_id_set(st,
-			 VIDEO_DATA_MARKER,
+			 DATA_MARKER,
 			 G_TYPE_STRING,
 			 data,
 			 NULL);
