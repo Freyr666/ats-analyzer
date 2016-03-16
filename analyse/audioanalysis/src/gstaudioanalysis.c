@@ -162,7 +162,7 @@ gst_audioanalysis_class_init (GstAudioanalysisClass * klass)
 		      "Number of frames, which forces filter to emit the info massege",
 		      1,
 		      1024,
-		      5,
+		      16,
 		      G_PARAM_READWRITE);
   
   g_object_class_install_properties(gobject_class, LAST_PROP, properties);
@@ -174,7 +174,7 @@ gst_audioanalysis_init (GstAudioanalysis *audioanalysis)
   audioanalysis->stream_id = 0;
   audioanalysis->program = 2000;
   audioanalysis->pid = 2001;
-  audioanalysis->period = 5;
+  audioanalysis->period = 16;
   audioanalysis->state_momentary = NULL;
   audioanalysis->state_short = NULL;
   audioanalysis->data = NULL;
