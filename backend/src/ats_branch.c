@@ -201,36 +201,26 @@ branch_on_pad_added(GstElement* el,
 			      cb_data->volume);
     /* Connecting subbranch to the tsdemux element of the branch: */
     if ((tail != NULL) && (tail->bin != NULL)) {
-      // GstElement* tmp = gst_element_get_parent(branch->bin);
       g_print("Playing pipeline has been created\n");
       branch->subbranches = g_slist_append(branch->subbranches,
 					   tail);
       /* Connecting pads: */
       g_print("Playing pipeline has been created\n");
-      // gst_bin_sync_children_states(GST_BIN(branch->bin));
-      /* gst_bin_add((GstBin*) branch->bin, tail->bin);
-      gst_element_set_state(branch->bin, GST_STATE_PAUSED);
-      gst_bin_sync_children_states(GST_BIN(branch->bin));
-      gst_element_set_state(branch->bin, GST_STATE_PLAYING);
-      sinkpad = gst_element_get_static_pad (tail->bin, "sink");
-      gst_pad_link (pad, sinkpad);
-      gst_element_set_state(branch->bin, GST_STATE_PLAYING);
-      g_print("Linked!\n");
-      gst_element_set_state(branch->bin, GST_STATE_PLAYING);*/
 
       gst_element_set_state(tail->bin, GST_STATE_PLAYING);
       gst_bin_sync_children_states(GST_BIN(tail->bin));
       gst_bin_add((GstBin*) branch->bin, tail->bin);
-      //gst_element_sync_state_with_parent(tail->bin);
-      //gst_element_set_state(branch->bin, GST_STATE_PAUSED);
-      //gst_bin_sync_children_states(GST_BIN(branch->bin));
-      //gst_element_set_state(branch->bin, GST_STATE_PLAYING);
+
       sinkpad = gst_element_get_static_pad (tail->bin, "sink");
       gst_pad_link (pad, sinkpad);
       g_print("Linked!\n");
             
       gst_object_unref(GST_OBJECT(sinkpad));
-      // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(tmp), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+      /*
+       * Graph printing:
+       * GstElement* tmp = gst_element_get_parent(branch->bin);
+       * GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(tmp), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+       */
     }
   }
   g_strfreev(pid_tocs);

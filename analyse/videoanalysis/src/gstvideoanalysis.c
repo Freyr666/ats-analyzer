@@ -197,7 +197,6 @@ gst_videoanalysis_class_init (GstVideoAnalysisClass * klass)
 		      0,
 		      G_PARAM_READWRITE);
   g_object_class_install_properties(gobject_class, LAST_PROP, properties);
-
 }
 
 static void

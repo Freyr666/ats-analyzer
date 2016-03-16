@@ -1,21 +1,21 @@
-/* GStreamer
- * Copyright (C) 2016 FIXME <fixme@example.com>
+/* gstaudioanalysis.c
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * Copyright (C) 2016 freyr <sky_rider_93@mail.ru> 
  *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * This file is free software; you can redistribute it and/or modify it 
+ * under the terms of the GNU Lesser General Public License as 
+ * published by the Free Software Foundation; either version 3 of the 
+ * License, or (at your option) any later version. 
  *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Suite 500,
- * Boston, MA 02110-1335, USA.
- */
+ * This file is distributed in the hope that it will be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+ * Lesser General Public License for more details. 
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+*/
+
 /**
  * SECTION:element-gstaudioanalysis
  *
@@ -37,9 +37,6 @@
 #include <gst/gst.h>
 #include <gst/audio/gstaudiofilter.h>
 #include <ebur128.h>
-#include <malloc.h>
-#include <stdio.h>
-#include <sys/time.h>
 #include "gstaudioanalysis.h"
 
 GST_DEBUG_CATEGORY_STATIC (gst_audioanalysis_debug_category);
@@ -48,30 +45,41 @@ GST_DEBUG_CATEGORY_STATIC (gst_audioanalysis_debug_category);
 /* prototypes */
 
 
-static void gst_audioanalysis_set_property (GObject * object,
-					    guint property_id,
-					    const GValue * value,
-					    GParamSpec * pspec);
-static void gst_audioanalysis_get_property (GObject * object,
-					    guint property_id,
-					    GValue * value,
-					    GParamSpec * pspec);
-static void gst_audioanalysis_dispose (GObject * object);
-static void gst_audioanalysis_finalize (GObject * object);
+static void
+gst_audioanalysis_set_property (GObject * object,
+				guint property_id,
+				const GValue * value,
+				GParamSpec * pspec);
+static void
+gst_audioanalysis_get_property (GObject * object,
+				guint property_id,
+				GValue * value,
+				GParamSpec * pspec);
+static void
+gst_audioanalysis_dispose (GObject * object);
+static void
+gst_audioanalysis_finalize (GObject * object);
 
-static gboolean gst_audioanalysis_setup (GstAudioFilter * filter,
-					 const GstAudioInfo * info);
-static GstFlowReturn gst_audioanalysis_transform_ip (GstBaseTransform * trans,
+static gboolean
+gst_audioanalysis_setup (GstAudioFilter * filter,
+			 const GstAudioInfo * info);
+static GstFlowReturn
+gst_audioanalysis_transform_ip (GstBaseTransform * trans,
 						     GstBuffer * buf);
 
 enum
 {
-  PROP_0
+  PROP_0,
+  PROP_STREAM_ID,
+  PROP_PROGRAM,
+  PROP_PID,
+  LAST_PROP
 };
+
+static GParamSpec *properties[LAST_PROP] = { NULL, };
 
 /* pad templates */
 
-/* FIXME add/remove the formats that you want to support */
 static GstStaticPadTemplate gst_audioanalysis_src_template =
   GST_STATIC_PAD_TEMPLATE ("src",
 			   GST_PAD_SRC,
@@ -79,7 +87,6 @@ static GstStaticPadTemplate gst_audioanalysis_src_template =
 			   GST_STATIC_CAPS ("audio/x-raw,format=S16LE,rate=[1,max],"
 					    "channels=[1,max],layout=interleaved"));
 
-/* FIXME add/remove the formats that you want to support */
 static GstStaticPadTemplate gst_audioanalysis_sink_template =
   GST_STATIC_PAD_TEMPLATE ("sink",
 			   GST_PAD_SINK,
@@ -124,15 +131,42 @@ gst_audioanalysis_class_init (GstAudioanalysisClass * klass)
   audio_filter_class->setup = GST_DEBUG_FUNCPTR (gst_audioanalysis_setup);
   base_transform_class->transform_ip = GST_DEBUG_FUNCPTR (gst_audioanalysis_transform_ip);
 
+  properties [PROP_STREAM_ID] =
+    g_param_spec_uint("stream_id",
+		      "Stream id",
+		      "Plp stream id (stream num)",
+		      0,
+		      G_MAXUINT,
+		      0,
+		      G_PARAM_READWRITE);
+  properties [PROP_PROGRAM] =
+    g_param_spec_uint("program",
+		      "Program",
+		      "Channel id (channel num)",
+		      0,
+		      G_MAXUINT,
+		      2000,
+		      G_PARAM_READWRITE);
+  properties [PROP_PID] =
+    g_param_spec_uint("pid",
+		      "Pid",
+		      "Pid id (pid num)",
+		      0,
+		      G_MAXUINT,
+		      2001,
+		      G_PARAM_READWRITE);
+  
+  g_object_class_install_properties(gobject_class, LAST_PROP, properties);
 }
 
 static void
 gst_audioanalysis_init (GstAudioanalysis *audioanalysis)
 {
-  printf("Audioanalysis created!\n");
+  audioanalysis->stream_id = 0;
+  audioanalysis->program = 2000;
+  audioanalysis->pid = 2001;
   audioanalysis->state_momentary = NULL;
   audioanalysis->state_short = NULL;
-  audioanalysis->loudness = .0;
 }
 
 void
@@ -146,6 +180,15 @@ gst_audioanalysis_set_property (GObject * object,
   GST_DEBUG_OBJECT (audioanalysis, "set_property");
 
   switch (property_id) {
+  case PROP_STREAM_ID:
+    audioanalysis->stream_id = g_value_get_uint(value);
+    break;
+  case PROP_PROGRAM:
+    audioanalysis->program = g_value_get_uint(value);
+    break;
+  case PROP_PID:
+    audioanalysis->pid = g_value_get_uint(value);
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     break;
@@ -163,6 +206,15 @@ gst_audioanalysis_get_property (GObject * object,
   GST_DEBUG_OBJECT (audioanalysis, "get_property");
 
   switch (property_id) {
+  case PROP_STREAM_ID:
+    g_value_set_uint(value, audioanalysis->stream_id);
+    break;
+  case PROP_PROGRAM:
+    g_value_set_uint(value, audioanalysis->program);
+    break;
+  case PROP_PID:
+    g_value_set_uint(value, audioanalysis->pid);
+    break; 
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -203,8 +255,6 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (filter);
 
   GST_DEBUG_OBJECT (audioanalysis, "setup");
-
-  printf("Audio setup!\n");
   
   if (audioanalysis->state_momentary != NULL)
     ebur128_destroy(&audioanalysis->state_momentary);
@@ -214,10 +264,9 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
   audioanalysis->state_momentary = ebur128_init(info->channels,
 						(unsigned long)info->rate,
 						EBUR128_MODE_M);
-  printf("Rate: %d\nChannels: %d\n", info->rate, info->channels);
-  /*audioanalysis->state_short = ebur128_init(info->channels,
+  audioanalysis->state_short = ebur128_init(info->channels,
 					    (unsigned long)info->rate,
-					    EBUR128_MODE_S);*/
+					    EBUR128_MODE_S);
   
   return TRUE;
 }
@@ -229,25 +278,23 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
 {
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (trans);
   GstMapInfo map;
-  guint num_samples;
+  guint num_frames;
+  double loudness_shortt;
+  double loudness_moment;
   
   GST_DEBUG_OBJECT (audioanalysis, "transform_ip");
   
   gst_buffer_map(buf, &map, GST_MAP_READ);
-  num_samples = map.size /4;
-  //printf("Map size: %ld\n", map.size);
-  ebur128_add_frames_short(audioanalysis->state_momentary, (short*)map.data, num_samples);
-  ebur128_loudness_momentary(audioanalysis->state_momentary, &audioanalysis->loudness);
-  printf("LUFS: %f\n", audioanalysis->loudness);
+  num_frames = map.size / (GST_AUDIO_FILTER_BPS(audioanalysis) * GST_AUDIO_FILTER_CHANNELS(audioanalysis));
+
+  ebur128_add_frames_short(audioanalysis->state_momentary, (short*)map.data, num_frames);
+  ebur128_loudness_momentary(audioanalysis->state_momentary, &loudness_moment);
   
-  //ebur128_add_frames_short(audioanalysis->state_short, (short*)map.data, num_samples);
-  //ebur128_loudness_shortterm(audioanalysis->state_short, &audioanalysis->loudness);
-  //printf("L: %f LUFS\n", audioanalysis->loudness);
+  ebur128_add_frames_short(audioanalysis->state_short, (short*)map.data, num_frames);
+  ebur128_loudness_shortterm(audioanalysis->state_short, &loudness_shortt);
   
   gst_buffer_unmap(buf, &map);
-  
-  // gettimeofday(&tv, NULL);
-  // printf("%ld seconds\n", tv.tv_sec);
+
   return GST_FLOW_OK;
 }
 
