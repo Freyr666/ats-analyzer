@@ -22,7 +22,7 @@
 #include <gst/audio/gstaudiofilter.h>
 #include <ebur128.h>
 
-#define DATA_MARKER 0x8BA820F0
+#include "audiodata.h"
 
 G_BEGIN_DECLS
 
@@ -47,10 +47,11 @@ struct _GstAudioanalysis
   guint stream_id;
   guint program;
   guint pid;
-  /*guint period;*/
+  guint period;
   /* Private */
   ebur128_state* state_momentary;
   ebur128_state* state_short;
+  AudioData* data;
 };
 
 struct _GstAudioanalysisClass

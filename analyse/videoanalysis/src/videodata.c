@@ -1,4 +1,4 @@
-/* videoanalysis_api.c
+/* videodata.c
  *
  * Copyright (C) 2016 freyr <sky_rider_93@mail.ru> 
  *
@@ -42,7 +42,8 @@ video_data_delete(VideoData* dt)
 }
 
 gint
-video_data_append(VideoData* dt, VideoParams* par)
+video_data_append(VideoData* dt,
+		  VideoParams* par)
 {
   if(dt->current == dt->frames) return -1;
   guint i = dt->current;

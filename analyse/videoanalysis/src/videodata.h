@@ -1,4 +1,4 @@
-/* videoanalysis_api.c
+/* videodata.h
  *
  * Copyright (C) 2016 freyr <sky_rider_93@mail.ru> 
  *
@@ -15,9 +15,8 @@
  * You should have received a copy of the GNU General Public License 
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 */
-
-#ifndef VIDEOANALYSIS_API_H
-#define VIDEOANALYSIS_API_H
+#ifndef VIDEODATA_H
+#define VIDEODATA_H
 
 #include <glib.h>
 
