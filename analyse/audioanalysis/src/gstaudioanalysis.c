@@ -334,12 +334,12 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   num_frames = map.size / (GST_AUDIO_FILTER_BPS(audioanalysis) * GST_AUDIO_FILTER_CHANNELS(audioanalysis));
 
   ebur128_add_frames_short(audioanalysis->state_momentary, (short*)map.data, num_frames);
-  //ebur128_loudness_momentary(audioanalysis->state_momentary, &(params.moment));
+  ebur128_loudness_momentary(audioanalysis->state_momentary, &(params.moment));
   
   ebur128_add_frames_short(audioanalysis->state_short, (short*)map.data, num_frames);
-  //ebur128_loudness_shortterm(audioanalysis->state_short, &(params.shortt));
+  ebur128_loudness_shortterm(audioanalysis->state_short, &(params.shortt));
 
-  /*if (audio_data_is_full(audioanalysis->data)) {
+  if (audio_data_is_full(audioanalysis->data)) {
     rval = audio_data_to_string(audioanalysis->data,
 				audioanalysis->stream_id,
 				audioanalysis->program,
@@ -348,7 +348,7 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
     audio_data_reset(audioanalysis->data);
   }
   audio_data_append(audioanalysis->data, &params);
-  */
+  
   gst_buffer_unmap(buf, &map);
 
   return GST_FLOW_OK;
