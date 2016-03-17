@@ -39,6 +39,8 @@
 #include <ebur128.h>
 #include "gstaudioanalysis.h"
 
+#define DIFF(x,y)((x > y)?(x-y):(y-x))
+
 GST_DEBUG_CATEGORY_STATIC (gst_audioanalysis_debug_category);
 #define GST_CAT_DEFAULT gst_audioanalysis_debug_category
 
@@ -73,7 +75,6 @@ enum
   PROP_STREAM_ID,
   PROP_PROGRAM,
   PROP_PID,
-  PROP_PERIOD,
   LAST_PROP
 };
 
@@ -156,14 +157,6 @@ gst_audioanalysis_class_init (GstAudioanalysisClass * klass)
 		      G_MAXUINT,
 		      2001,
 		      G_PARAM_READWRITE);
-  properties [PROP_PERIOD] =
-    g_param_spec_uint("period",
-		      "Period",
-		      "Number of frames, which forces filter to emit the info massege",
-		      1,
-		      1024,
-		      20,
-		      G_PARAM_READWRITE);
   
   g_object_class_install_properties(gobject_class, LAST_PROP, properties);
 }
@@ -174,10 +167,12 @@ gst_audioanalysis_init (GstAudioanalysis *audioanalysis)
   audioanalysis->stream_id = 0;
   audioanalysis->program = 2000;
   audioanalysis->pid = 2001;
-  audioanalysis->period = 20;
   audioanalysis->state_momentary = NULL;
   audioanalysis->state_short = NULL;
   audioanalysis->data = NULL;
+  //audioanalysis->clock = gst_element_get_clock(GST_ELEMENT(audioanalysis));
+  // audioanalysis->time = gst_clock_get_time(GST_ELEMENT(audioanalysis)->clock);
+  audioanalysis->time = 0;
 }
 
 void
@@ -199,9 +194,6 @@ gst_audioanalysis_set_property (GObject * object,
     break;
   case PROP_PID:
     audioanalysis->pid = g_value_get_uint(value);
-    break;
-  case PROP_PERIOD:
-    audioanalysis->period = g_value_get_uint(value);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -228,9 +220,6 @@ gst_audioanalysis_get_property (GObject * object,
     break;
   case PROP_PID:
     g_value_set_uint(value, audioanalysis->pid);
-    break;
-  case PROP_PERIOD: 
-    g_value_set_uint(value, audioanalysis->period);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -265,6 +254,8 @@ gst_audioanalysis_finalize (GObject * object)
   if (audioanalysis->data != NULL)
     audio_data_delete(audioanalysis->data);
 
+  //gst_object_unref(audioanalysis->clock);
+
   G_OBJECT_CLASS (gst_audioanalysis_parent_class)->finalize (object);
 }
 
@@ -290,7 +281,9 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
 
   if (audioanalysis->data != NULL)
     audio_data_delete(audioanalysis->data);
-  audioanalysis->data = audio_data_new(audioanalysis->period);
+  audioanalysis->data = audio_data_new(EVAL_PERIOD);
+
+  audioanalysis->time = gst_clock_get_time(GST_ELEMENT(audioanalysis)->clock);
   
   return TRUE;
 }
@@ -327,6 +320,7 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   guint num_frames;
   AudioParams params;
   gchar* rval = NULL;
+  GstClockTime current_time = gst_clock_get_time(GST_ELEMENT(audioanalysis)->clock);
   
   GST_DEBUG_OBJECT (audioanalysis, "transform_ip");
   
@@ -334,20 +328,23 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   num_frames = map.size / (GST_AUDIO_FILTER_BPS(audioanalysis) * GST_AUDIO_FILTER_CHANNELS(audioanalysis));
 
   ebur128_add_frames_short(audioanalysis->state_momentary, (short*)map.data, num_frames);
-  ebur128_loudness_momentary(audioanalysis->state_momentary, &(params.moment));
   
   ebur128_add_frames_short(audioanalysis->state_short, (short*)map.data, num_frames);
-  ebur128_loudness_shortterm(audioanalysis->state_short, &(params.shortt));
 
-  if (audio_data_is_full(audioanalysis->data)) {
-    rval = audio_data_to_string(audioanalysis->data,
-				audioanalysis->stream_id,
-				audioanalysis->program,
-				audioanalysis->pid);
-    gst_audioanalysis_send_string(rval, audioanalysis);
-    audio_data_reset(audioanalysis->data);
+  if (DIFF(current_time, audioanalysis->time) >= OBSERVATION_TIME) {
+    ebur128_loudness_momentary(audioanalysis->state_momentary, &(params.moment));
+    ebur128_loudness_shortterm(audioanalysis->state_short, &(params.shortt));
+    if (audio_data_is_full(audioanalysis->data)) {
+      rval = audio_data_to_string(audioanalysis->data,
+				  audioanalysis->stream_id,
+				  audioanalysis->program,
+				  audioanalysis->pid);
+      gst_audioanalysis_send_string(rval, audioanalysis);
+      audio_data_reset(audioanalysis->data);
+    }
+    audio_data_append(audioanalysis->data, &params);
+    audioanalysis->time = current_time;
   }
-  audio_data_append(audioanalysis->data, &params);
   
   gst_buffer_unmap(buf, &map);
 

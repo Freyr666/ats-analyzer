@@ -24,6 +24,9 @@
 
 #include "audiodata.h"
 
+#define OBSERVATION_TIME 100000000
+#define EVAL_PERIOD 4
+
 G_BEGIN_DECLS
 
 #define GST_TYPE_AUDIOANALYSIS\
@@ -47,11 +50,12 @@ struct _GstAudioanalysis
   guint stream_id;
   guint program;
   guint pid;
-  guint period;
   /* Private */
   ebur128_state* state_momentary;
   ebur128_state* state_short;
   AudioData* data;
+  //  GstClock* clock;
+  GstClockTime time;
 };
 
 struct _GstAudioanalysisClass
