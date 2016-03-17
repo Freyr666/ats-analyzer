@@ -162,7 +162,7 @@ gst_audioanalysis_class_init (GstAudioanalysisClass * klass)
 		      "Number of frames, which forces filter to emit the info massege",
 		      1,
 		      1024,
-		      16,
+		      20,
 		      G_PARAM_READWRITE);
   
   g_object_class_install_properties(gobject_class, LAST_PROP, properties);
@@ -174,7 +174,7 @@ gst_audioanalysis_init (GstAudioanalysis *audioanalysis)
   audioanalysis->stream_id = 0;
   audioanalysis->program = 2000;
   audioanalysis->pid = 2001;
-  audioanalysis->period = 16;
+  audioanalysis->period = 20;
   audioanalysis->state_momentary = NULL;
   audioanalysis->state_short = NULL;
   audioanalysis->data = NULL;
@@ -334,12 +334,12 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   num_frames = map.size / (GST_AUDIO_FILTER_BPS(audioanalysis) * GST_AUDIO_FILTER_CHANNELS(audioanalysis));
 
   ebur128_add_frames_short(audioanalysis->state_momentary, (short*)map.data, num_frames);
-  ebur128_loudness_momentary(audioanalysis->state_momentary, &(params.moment));
+  //ebur128_loudness_momentary(audioanalysis->state_momentary, &(params.moment));
   
   ebur128_add_frames_short(audioanalysis->state_short, (short*)map.data, num_frames);
-  ebur128_loudness_shortterm(audioanalysis->state_short, &(params.shortt));
+  //ebur128_loudness_shortterm(audioanalysis->state_short, &(params.shortt));
 
-  if (audio_data_is_full(audioanalysis->data)) {
+  /*if (audio_data_is_full(audioanalysis->data)) {
     rval = audio_data_to_string(audioanalysis->data,
 				audioanalysis->stream_id,
 				audioanalysis->program,
@@ -348,7 +348,7 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
     audio_data_reset(audioanalysis->data);
   }
   audio_data_append(audioanalysis->data, &params);
-  
+  */
   gst_buffer_unmap(buf, &map);
 
   return GST_FLOW_OK;

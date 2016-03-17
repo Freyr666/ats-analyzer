@@ -10,6 +10,15 @@ typedef struct __callback_data
   double volume;
 } CALLBACK_DATA;
 
+static void
+branch_added (GstBin     *bin,
+	      GstElement *element,
+	      gpointer    user_data)
+{
+  gst_element_set_state(GST_ELEMENT(bin), GST_STATE_PLAYING);
+  gst_bin_sync_children_states(GST_BIN(bin));
+}
+
 static ATS_SUBBRANCH*
 create_video_bin(const gchar* type,
 		 const guint stream,
@@ -277,6 +286,8 @@ ats_branch_new(const guint stream_id,
   gst_object_unref (pad);
 
   g_signal_connect(demux, "pad-added", G_CALLBACK (branch_on_pad_added), cb_data);
+  g_signal_connect(rval->bin, "element-added", G_CALLBACK (branch_added), NULL);
+  
   return rval;
 }
 
