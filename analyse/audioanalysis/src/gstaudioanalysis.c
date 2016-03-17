@@ -331,17 +331,18 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   
   ebur128_add_frames_short(audioanalysis->state_short, (short*)map.data, num_frames);
 
+  if (audio_data_is_full(audioanalysis->data)) {
+    rval = audio_data_to_string(audioanalysis->data,
+				audioanalysis->stream_id,
+				audioanalysis->program,
+				audioanalysis->pid);
+    gst_audioanalysis_send_string(rval, audioanalysis);
+    audio_data_reset(audioanalysis->data);
+  }
   if (DIFF(current_time, audioanalysis->time) >= OBSERVATION_TIME) {
     ebur128_loudness_momentary(audioanalysis->state_momentary, &(params.moment));
     ebur128_loudness_shortterm(audioanalysis->state_short, &(params.shortt));
-    if (audio_data_is_full(audioanalysis->data)) {
-      rval = audio_data_to_string(audioanalysis->data,
-				  audioanalysis->stream_id,
-				  audioanalysis->program,
-				  audioanalysis->pid);
-      gst_audioanalysis_send_string(rval, audioanalysis);
-      audio_data_reset(audioanalysis->data);
-    }
+    
     audio_data_append(audioanalysis->data, &params);
     audioanalysis->time = current_time;
   }
