@@ -20,6 +20,7 @@ typedef struct __ats_graph
   /* Parsing vars*/
   time_t time;
   gboolean metadata_were_sent;
+  gboolean sdt_was_sent;
 } ATS_GRAPH;
 
 ATS_GRAPH* ats_graph_new(guint stream_id, gchar* ip, guint port);

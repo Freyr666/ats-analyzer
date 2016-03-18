@@ -55,8 +55,27 @@ bus_call(GstBus* bus,
     const GstStructure* st;
     if ((section = gst_message_parse_mpegts_section (msg))) {
       if (!(d->metadata_were_sent)) {
+	gchar* str;
 	parse_table (section, tree->metadata);
+	if (ats_metadata_are_ready(tree->metadata)) {
+	  d->metadata_were_sent = TRUE;
+	  if (ats_metadata_got_sdt(tree->metadata))
+	    d->sdt_was_sent = TRUE;
+	  str = ats_metadata_to_string(tree->metadata);
+	  ats_control_send(d->control, str);
+	  g_free(str);
+	}
       }
+      else if (!(d->sdt_was_sent)) {
+	gchar* str;
+	parse_sdt(section, tree->metadata);
+	if (ats_metadata_got_sdt(tree->metadata)) {
+	  d->sdt_was_sent = TRUE;
+	  str = ats_metadata_to_string(tree->metadata);
+	  ats_control_send(d->control, str);
+	  g_free(str);
+	}
+      }	
       gst_mpegts_section_unref (section);
     }
     else {
@@ -96,13 +115,14 @@ ats_graph_new(guint stream_id,
   rval->control = ats_control_new(rval->tree, stream_id);
   rval->time = 0;
   rval->metadata_were_sent = FALSE;
+  rval->sdt_was_sent = FALSE;
   
   bus = ats_tree_get_bus(rval->tree);
 
   ats_tree_set_state(rval->tree, GST_STATE_PLAYING);
   
   gst_bus_add_watch(bus, bus_call, rval);
-  g_idle_add(send_metadata, rval);
+  /*g_idle_add(send_metadata, rval);*/
   
   gst_object_unref(bus);
   return rval;

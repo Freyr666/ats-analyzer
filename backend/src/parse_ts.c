@@ -132,22 +132,52 @@ parse_table (GstMpegtsSection * section, void* data)
   g_type_class_ref (GST_TYPE_MPEGTS_DVB_LINKAGE_HAND_OVER_TYPE);
   g_type_class_ref (GST_TYPE_MPEGTS_COMPONENT_STREAM_CONTENT);
   g_type_class_ref (GST_TYPE_MPEGTS_CONTENT_NIBBLE_HI);
-  g_print("Got table!\n");
   switch (GST_MPEGTS_SECTION_TYPE (section)) {
   case GST_MPEGTS_SECTION_PAT:
-    g_print("Type PAT\n");
     dump_pat (section, metadata);
     break;
   case GST_MPEGTS_SECTION_PMT:
-    g_print("Type PMT\n");
     dump_pmt(section, data);
     break;
   case GST_MPEGTS_SECTION_SDT:
-    g_print("Type SDT\n");
     dump_sdt (section, metadata);
     break;
   default:
-    g_print("UNKNOWN TYPE!\n");
     break;
   }
+}
+
+void
+parse_sdt (GstMpegtsSection * section, void* data)
+{
+  ATS_METADATA* metadata; 
+  metadata = (ATS_METADATA*)data;
+
+  g_type_class_ref (GST_TYPE_MPEGTS_SECTION_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_SECTION_TABLE_ID);
+  g_type_class_ref (GST_TYPE_MPEGTS_RUNNING_STATUS);
+  g_type_class_ref (GST_TYPE_MPEGTS_DESCRIPTOR_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_DVB_DESCRIPTOR_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_ATSC_DESCRIPTOR_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_ISDB_DESCRIPTOR_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_MISC_DESCRIPTOR_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_ISO639_AUDIO_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_DVB_SERVICE_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_DVB_TELETEXT_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_STREAM_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_SECTION_DVB_TABLE_ID);
+  g_type_class_ref (GST_TYPE_MPEGTS_SECTION_ATSC_TABLE_ID);
+  g_type_class_ref (GST_TYPE_MPEGTS_SECTION_SCTE_TABLE_ID);
+  g_type_class_ref (GST_TYPE_MPEGTS_MODULATION_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_DVB_CODE_RATE);
+  g_type_class_ref (GST_TYPE_MPEGTS_CABLE_OUTER_FEC_SCHEME);
+  g_type_class_ref (GST_TYPE_MPEGTS_TERRESTRIAL_TRANSMISSION_MODE);
+  g_type_class_ref (GST_TYPE_MPEGTS_TERRESTRIAL_GUARD_INTERVAL);
+  g_type_class_ref (GST_TYPE_MPEGTS_TERRESTRIAL_HIERARCHY);
+  g_type_class_ref (GST_TYPE_MPEGTS_DVB_LINKAGE_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_DVB_LINKAGE_HAND_OVER_TYPE);
+  g_type_class_ref (GST_TYPE_MPEGTS_COMPONENT_STREAM_CONTENT);
+  g_type_class_ref (GST_TYPE_MPEGTS_CONTENT_NIBBLE_HI);
+  if (GST_MPEGTS_SECTION_TYPE (section) == GST_MPEGTS_SECTION_SDT)
+    dump_sdt (section, metadata);
 }

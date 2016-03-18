@@ -7,4 +7,6 @@
 
 void parse_table (GstMpegtsSection * section, void* data);
 
+void parse_sdt (GstMpegtsSection * section, void* data);
+
 #endif /* PARSE_TS_H */
