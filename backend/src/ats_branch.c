@@ -55,10 +55,16 @@ create_video_bin(const gchar* type,
 	       "program", prog,
 	       "pid", pid,
 	       NULL);
-  sink = gst_element_factory_make("xvimagesink", NULL);
   /* Overlay */
-  if (xid != 0)
-    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (sink), xid); 
+  if (xid != 0) {
+    sink = gst_element_factory_make("xvimagesink", NULL);
+    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (sink), xid);
+    g_object_set (G_OBJECT (sink), "async", FALSE, NULL);
+  }
+  else {
+    sink = gst_element_factory_make("fakesink", NULL);
+  }
+    
     /* ------- */
   bin = gst_bin_new (NULL);
   if (!bin || !parser || !decoder || !sink || !queue){
@@ -70,9 +76,7 @@ create_video_bin(const gchar* type,
     g_printerr ("One element could not be created. Exiting.\n");
     return NULL;
   }
-  //if (!analyser)
-  //  g_printerr ("Analyzer could not be created. Exiting.\n");
-  g_object_set (G_OBJECT (sink), "async", FALSE, NULL);
+
   gst_bin_add_many(GST_BIN(bin), queue, parser, decoder, analyser, sink, NULL);
   gst_element_link_many(queue, parser, decoder, analyser, sink, NULL);
   pad = gst_element_get_static_pad (queue, "sink");
