@@ -36,7 +36,7 @@
 
 #include <gst/gst.h>
 #include <gst/audio/gstaudiofilter.h>
-#include <ebur128.h>
+#include "ebur128.h"
 #include "gstaudioanalysis.h"
 
 #define DIFF(x,y)((x > y)?(x-y):(y-x))
