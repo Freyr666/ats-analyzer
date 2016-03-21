@@ -84,13 +84,11 @@ parse_sound_message(guint* message,
   branch = ats_tree_find_subbranch(tree, channel, pid);
   if(!(branch) ||
      (branch->av != 'a')){
-    g_print("Not an audio subbranch!\n");
     return FALSE;
   }
   g_object_set(branch->sink,
 	       "volume", fvolume,
 	       NULL);
-  g_print("New volume value for %d pid %d is %f\n", channel, pid, fvolume);
   return TRUE;
 }
 

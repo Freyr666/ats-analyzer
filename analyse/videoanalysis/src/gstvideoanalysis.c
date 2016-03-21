@@ -16,6 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 */
 
+#ifndef LGPL_LIC
+#define LIC "Proprietary"
+#define URL "http://www.niitv.ru/"
+#else
+#define LIC "LGPL"
+#define URL "https://github.com/Freyr666/ats-analyzer/"
+#endif
+
 /**
  * SECTION:element-gstvideoanalysis
  *
@@ -431,12 +439,12 @@ plugin_init (GstPlugin * plugin)
 #define PACKAGE_NAME "videoanalysis_package"
 #endif
 #ifndef GST_PACKAGE_ORIGIN
-#define GST_PACKAGE_ORIGIN "https://github.com/Freyr666/ats-analyzer/"
+#define GST_PACKAGE_ORIGIN URL
 #endif
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
 		   GST_VERSION_MINOR,
 		   videoanalysis,
 		   "Package for video data analysis",
-		   plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
+		   plugin_init, VERSION, LIC, PACKAGE_NAME, GST_PACKAGE_ORIGIN)
 
