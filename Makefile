@@ -1,3 +1,5 @@
+VERSION = 0.1.9
+
 VIDEOSRC = ./analyse/videoanalysis/src/
 AUDIOSRC = ./analyse/audioanalysis/src/
 BACKSRC = ./backend/src/
@@ -22,3 +24,7 @@ uninstall:
 	rm /usr/bin/ats3-backend
 	rm /usr/lib64/gstreamer-1.0/libvideoanalysis.so
 	rm /usr/lib64/gstreamer-1.0/libaudioanalysis.so
+
+tarboll:
+	tar czvf /tmp/ats-analyzer-$(VERSION).tar.gz ../ats-analyzer
+	mv /tmp/ats-analyzer-$(VERSION).tar.gz ./
