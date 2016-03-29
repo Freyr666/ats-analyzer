@@ -96,6 +96,8 @@ ats_graph_new(guint stream_id,
   rval->time = 0;
   rval->metadata_were_sent = FALSE;
   /*rval->sdt_was_sent = FALSE;*/
+
+  gst_mpegts_initialize();
   
   bus = ats_tree_get_bus(rval->tree);
 

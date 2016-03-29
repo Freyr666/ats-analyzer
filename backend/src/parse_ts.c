@@ -4,7 +4,6 @@
 #include "ats_tree.h"
 #include <string.h>
 
-
 #define dump_memory_content(desc, spacing) dump_memory_bytes((desc)->data + 2, (desc)->length, spacing)
 
 
@@ -12,7 +11,7 @@ static const gchar *
 enum_name (GType instance_type, gint val)
 {
   GEnumValue *en;
-
+  
   en = g_enum_get_value (G_ENUM_CLASS (g_type_class_peek (instance_type)), val);
 
   if (!en)
