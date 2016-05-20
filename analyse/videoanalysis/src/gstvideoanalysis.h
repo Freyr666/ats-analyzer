@@ -51,6 +51,7 @@ struct _GstVideoAnalysis
   guint period;
   guint black_lb;
   guint freeze_lb;
+  guint mark_blocks;
   /* private */
   guint counter;
   guint8 *past_buffer;

@@ -96,8 +96,9 @@ static gboolean
 parse_settings_message(guint* message,
 		       ATS_TREE* tree)
 {
-  const static gchar* black = "black-lb";
-  const static gchar* freeze = "freeze-lb";
+  const static gchar* black = "black_lb";
+  const static gchar* freeze = "freeze_lb";
+  const static gchar* mark_blocks = "mark_blocks";
   struct video_options opts;
   if ((message[0] != VIDEO_SETTINGS_HEADER) ||
       (message[3] != VIDEO_SETTINGS_HEADER)) {
@@ -111,6 +112,10 @@ parse_settings_message(guint* message,
   }
   case SETTINGS_DIFF_LEVEL: {
     opts.option = freeze;
+    break;
+  }
+  case SETTINGS_MARK_BLOCKS: {
+    opts.option = mark_blocks;
     break;
   }
   default: {

@@ -60,6 +60,7 @@ analyse_buffer(guint8* data,
 	       guint height,
 	       guint black_bnd,
 	       guint freez_bnd,
+	       guint mark_blocks,
 	       BLOCK *blocks,
 	       VideoParams *rval)
 {
@@ -176,9 +177,24 @@ analyse_buffer(guint8* data,
 	loc_counter += 1;
       if (loc_counter >= 2)
 	blc_counter += 1;
+      g_printerr("W: %d\tH: %d\n", w_blocks, h_blocks);
+      /* mark block if visible */
+      if (mark_blocks && (loc_counter >= 2)) {
+	guint left_upper_corner = 8*i + 8*j*stride;
+	for (guint p = 0; p < 8; p++) {
+	  /* first row */
+	  data[left_upper_corner + p] = 255;
+	  /* 8-th row */
+	  data[left_upper_corner + stride*7 + p] = 255;
+	  /* first column */
+	  data[left_upper_corner + p*stride] = 255;
+	  /* 8-th column */
+	  data[left_upper_corner + p*stride + 8] = 255;
+	}
+      }
     }
   
-  rval->blocks = ((float)blc_counter*100.0) / ((float)w_blocks*(float)h_blocks);
+  rval->blocks = ((float)blc_counter*100.0) / ((float)(w_blocks-1)*(float)(h_blocks-1));
   rval->avg_bright = (float)brightness / (height*width);
   rval->black_pix = ((float)black/((float)height*(float)width))*100.0;
   rval->avg_diff = (float)difference / (height*width);

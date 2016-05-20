@@ -99,6 +99,7 @@ enum
   PROP_PERIOD,
   PROP_BLACK,
   PROP_FREEZE,
+  PROP_MARK,
   LAST_PROP
 };
 
@@ -204,6 +205,15 @@ gst_videoanalysis_class_init (GstVideoAnalysisClass * klass)
 		      256,
 		      0,
 		      G_PARAM_READWRITE);
+  properties [PROP_MARK] =
+    g_param_spec_uint("mark_blocks",
+		      "Mark_blocks",
+		      "Mark borders of visible blocks",
+		      0,
+		      256,
+		      0,
+		      G_PARAM_READWRITE);
+
   g_object_class_install_properties(gobject_class, LAST_PROP, properties);
 }
 
@@ -216,6 +226,7 @@ gst_videoanalysis_init (GstVideoAnalysis *videoanalysis)
   videoanalysis->counter = 0;
   videoanalysis->black_lb = 16;
   videoanalysis->freeze_lb = 0;
+  videoanalysis->mark_blocks = 0;
   videoanalysis->period = 8;
   videoanalysis->past_buffer = (guint8*)malloc(4096*4096);
   videoanalysis->blocks = (BLOCK*)malloc(512*512);
@@ -249,6 +260,9 @@ gst_videoanalysis_set_property (GObject * object,
     break;
   case PROP_PERIOD:
     videoanalysis->period = g_value_get_uint(value);
+    break;
+  case PROP_MARK:
+    videoanalysis->mark_blocks = g_value_get_uint(value);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -284,6 +298,9 @@ gst_videoanalysis_get_property (GObject * object,
     break;
   case PROP_PERIOD: 
     g_value_set_uint(value, videoanalysis->period);
+    break;
+  case PROP_MARK: 
+    g_value_set_uint(value, videoanalysis->mark_blocks);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -407,6 +424,7 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
 		 frame->info.height,
 		 videoanalysis->black_lb,
 		 videoanalysis->freeze_lb,
+		 videoanalysis->mark_blocks,
 		 videoanalysis->blocks,
 		 &params);
  
