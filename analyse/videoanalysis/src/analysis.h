@@ -31,9 +31,9 @@
 #define KNORM 4.0
 #define L_DIFF 5
 
-#define DECLARE_COEFS()\
-  static const guint wht_coef[20] = {6, 6, 6, 6, 6, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};\
-  static const guint ght_coef[20] = {2, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+#define DECLARE_COEFS()							\
+  static const guint wht_coef[20] = {6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 9, 9, 10, 12, 15, 25}; \
+  static const guint ght_coef[20] = {2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5, 6, 8, 11, 21};
 
 #define MAX(A,B)\
   ({__typeof__(A) _A = (A);			\
