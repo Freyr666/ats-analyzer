@@ -23,6 +23,7 @@
 #include <gst/video/gstvideofilter.h>
 
 #include "videodata.h"
+#include "block.h"
 
 G_BEGIN_DECLS
 
@@ -54,6 +55,7 @@ struct _GstVideoAnalysis
   guint counter;
   guint8 *past_buffer;
   VideoData *data;
+  BLOCK *blocks;
 };
 
 struct _GstVideoAnalysisClass

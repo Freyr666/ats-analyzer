@@ -218,6 +218,7 @@ gst_videoanalysis_init (GstVideoAnalysis *videoanalysis)
   videoanalysis->freeze_lb = 0;
   videoanalysis->period = 8;
   videoanalysis->past_buffer = (guint8*)malloc(4096*4096);
+  videoanalysis->blocks = (BLOCK*)malloc(512*512);
 }
 
 void
@@ -308,6 +309,7 @@ gst_videoanalysis_finalize (GObject * object)
   GST_DEBUG_OBJECT (videoanalysis, "finalize");
 
   free(videoanalysis->past_buffer);
+  free(videoanalysis->blocks);
   
   G_OBJECT_CLASS (gst_videoanalysis_parent_class)->finalize (object);
 }
@@ -405,6 +407,7 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
 		 frame->info.height,
 		 videoanalysis->black_lb,
 		 videoanalysis->freeze_lb,
+		 videoanalysis->blocks,
 		 &params);
  
   

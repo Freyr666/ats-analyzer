@@ -20,7 +20,37 @@
 #define ANALYSIS_H
 
 #include "videodata.h"
+#include "block.h"
 #include <stdlib.h>
+#include <math.h>
+
+#define WHT_LVL 210
+#define BLK_LVL 40
+#define WHT_DIFF 6
+#define GRH_DIFF 2
+#define KNORM 4.0
+#define L_DIFF 5
+
+#define DECLARE_COEFS()\
+  static const guint wht_coef[20] = {6, 6, 6, 6, 6, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};\
+  static const guint ght_coef[20] = {2, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+
+#define MAX(A,B)\
+  ({__typeof__(A) _A = (A);			\
+    __typeof__(B) _B = (B);			\
+    _A > _B ? _A : _B;})
+
+#define GET_COEF(NOISE, ARRAY)			\
+  ({guint ret_val;				\
+    if((NOISE>100) || (NOISE<0))		\
+      ret_val = 0;				\
+    else 					\
+      ret_val = ARRAY[NOISE/5];			\
+    ret_val;					\
+  })
+
+
+DECLARE_COEFS()
 
 inline void
 analyse_buffer(guint8* data,
@@ -30,6 +60,7 @@ analyse_buffer(guint8* data,
 	       guint height,
 	       guint black_bnd,
 	       guint freez_bnd,
+	       BLOCK *blocks,
 	       VideoParams *rval)
 {
   rval->avg_bright = .0;
@@ -38,35 +69,45 @@ analyse_buffer(guint8* data,
   rval->black_pix = .0;
   rval->frozen_pix = .0;
 
+  guint w_blocks = width / 8;
+  guint h_blocks = height / 8;
+  
   long brightness = 0;
   long difference = 0;
   guint black = 0;
   guint frozen = 0;
-  double Shblock = 0;
-  double Shnonblock = 0;
+  guint blc_counter = 0;
   
-  for (guint j = 0; j < height; j++) {
+  for (guint j = 0; j < height; j++)
     for (guint i = 0; i < width; i++) {
       int ind = i + j*stride;
       guint8 current = data[ind];
       guint8 diff = 0;
-      if (i && !(i % 4)) {
-	double sum;
-	guint8 sub, subNext, subPrev;
-	int ind = i + j*stride;
-	sub = abs(data[ind - 1] - current);
-	subNext = abs(current - data[ind + 1]); 
-	subPrev = abs(data[ind - 2] - data[ind - 1]);
-	sum = (double)subNext + (double)subPrev;
-	if (sum == .0) sum = 1.0;
-	else sum = sum / 2.0; 
-	if (!(i % 8)){
-	  Shnonblock += (double)sub/sum;
+
+      /* eval-ting blocks inner noise */
+      if(((i+1)%8) && ((j+1)%8) &&
+	 ((i+2)%8) && ((j+2)%8) &&
+	 (i%8) && (j%8)) {
+	guint8 lvl;
+	guint blc_index = (i/8) + (j/8)*w_blocks;
+	BLOCK *blc = &blocks[blc_index];
+	/* resetting block data */
+	if ((i%8 == 1) && (j%8 == 1)) {
+	  blc->noise = 1.0;
+	  blc->down_diff = 0;
+	  blc->right_diff = 0;
 	}
-	else {
-	  Shblock += (double)sub/sum;
-	}
+	/* setting visibility lvl */
+	if ((current < WHT_LVL) && (current > BLK_LVL))
+	  lvl = GRH_DIFF;
+	else
+	  lvl = WHT_DIFF;
+	if (abs(current - data[ind+1]) >= lvl)
+	  blc->noise -= 1.0/(6.0*5.0*2.0);
+	if (abs(current - data[ind+stride]) >= lvl)
+	  blc->noise -= 1.0/(6.0*5.0*2.0);
       }
+      /* eval-ting brightness, freeze and diff */
       brightness += current;
       black += (current <= black_bnd) ? 1 : 0;
       if (data_prev != NULL){
@@ -77,10 +118,67 @@ analyse_buffer(guint8* data,
 	data_prev[ind] = current;
       }
     }
-  }
-  if (!Shnonblock) Shnonblock = 4;
+
+  /* eval-ting borders diff */
+  for (guint j = 0; j < h_blocks-1; j++)
+    for (guint i = 0; i < w_blocks-1; i++) {
+      guint blc_index = i + j*w_blocks;
+      int ind = (i*8) + (j*8)*stride;
+
+      guint h_noise = MAX(blocks[blc_index].noise, blocks[blc_index+1].noise);
+      guint v_noise = MAX(blocks[blc_index].noise, blocks[blc_index+w_blocks].noise);
+      guint h_wht_coef = GET_COEF(h_noise, wht_coef);
+      guint h_ght_coef = GET_COEF(h_noise, ght_coef);
+      guint v_wht_coef = GET_COEF(v_noise, wht_coef);
+      guint v_ght_coef = GET_COEF(v_noise, ght_coef);
+
+      for (guint orient = 0; orient <= 1; orient++) /* 0 = horiz, 1 = vert */ 
+	for (guint pix = 0; pix < 8; pix++) {
+	  guint8 pixel, next, next_next, prev;
+	  guint coef;
+	  float denom = 0;
+	  float norm = 0;
+	  /* pixels */
+	  pixel = data[ind + 8*(orient?stride:1) + pix*(orient?1:stride)];
+	  next = data[ind + 8*(orient?stride:1) + pix*(orient?1:stride) - (orient?stride:1)];
+	  next_next = data[ind + 8*(orient?stride:1) + pix*(orient?1:stride) - (orient?(2*stride):2)];
+	  prev = data[ind + 8*(orient?stride:1) + pix*(orient?1:stride) + (orient?stride:1)];
+	  /* coefs */
+	  if ((pixel < WHT_LVL) && (pixel > BLK_LVL))
+	    coef = orient ? v_ght_coef : h_ght_coef;
+	  else
+	    coef = orient ? v_wht_coef : h_wht_coef;
+	  /* eval */
+	  denom = roundf((float)(abs(prev - pixel) + abs(next - next_next))/KNORM);
+	  norm = (float)abs(next - pixel) / (denom == 0 ? 1 : denom);
+	  if (norm > coef) {
+	    if (orient == 0)
+	      blocks[blc_index].right_diff += 1;
+	    else
+	      blocks[blc_index].down_diff += 1;
+	  }
+	}
+    }
+  /* counting visible blocks */
+  for (guint j = 1; j < h_blocks-1; j++) 
+    for (guint i = 1; i < w_blocks-1; i++) {
+      guint loc_counter = 0;
+      BLOCK* cur = &blocks[i + j*w_blocks];
+      BLOCK* upp = &blocks[i + (j-1)*w_blocks];
+      BLOCK* lef = &blocks[(i-1) + j*w_blocks];
+      if (cur->down_diff > L_DIFF)
+	loc_counter += 1;
+      if (cur->right_diff > L_DIFF)
+	loc_counter += 1;
+      if (lef->right_diff > L_DIFF)
+	loc_counter += 1;
+      if (upp->down_diff > L_DIFF)
+	loc_counter += 1;
+      if (loc_counter >= 2)
+	blc_counter += 1;
+    }
   
-  rval->blocks = Shnonblock/Shblock;
+  rval->blocks = ((float)blc_counter*100.0) / ((float)w_blocks*(float)h_blocks);
   rval->avg_bright = (float)brightness / (height*width);
   rval->black_pix = ((float)black/((float)height*(float)width))*100.0;
   rval->avg_diff = (float)difference / (height*width);
