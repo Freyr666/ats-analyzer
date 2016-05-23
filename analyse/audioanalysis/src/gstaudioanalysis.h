@@ -20,7 +20,7 @@
 #define _GST_AUDIOANALYSIS_H_
 
 #include <gst/audio/gstaudiofilter.h>
-#include <ebur128.h>
+#include "ebur128.h"
 
 #include "audiodata.h"
 

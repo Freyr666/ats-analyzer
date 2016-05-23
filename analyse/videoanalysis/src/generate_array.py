@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import math
+import os, sys
+import re
 
 POINTS = 20
 
@@ -34,9 +36,37 @@ def eval_coef():
     #gr_coef.insert(0, gr_coef[0]+1)
     return (wh_coef, gr_coef)
 
+def coefs_to_str(lst):
+    lst.reverse()
+    coef_str = str(lst)
+    coef_str = coef_str[1:(len(coef_str)-1)]
+    #print("coefs: ", coef_str)
+    return coef_str
+    
 if __name__ == "__main__":
+    if (len(sys.argv) != 3):
+        print("Usage: " + sys.argv[0] + " template_file output_file")
+        sys.exit(-1)
+
+    if (not os.path.exists(sys.argv[1])):
+        print("Error: file " + sys.argv[1] + " does not exist")
+        sys.exit(-1)
+    
     wh_coef, gr_coef = eval_coef()
-    wh_coef.reverse()
-    gr_coef.reverse()
-    print("wh_coef:", wh_coef)
-    print("gr_coef:", gr_coef)
+    wh_str = coefs_to_str(wh_coef)
+    gr_str = coefs_to_str(gr_coef)
+
+    template_file = open(sys.argv[1], 'r')
+    template = template_file.read()
+    template_file.close()
+
+    wh_pattern = re.compile(r'WHITE_COEFS_TEMPLATE')
+    gr_pattern = re.compile(r'GREY_COEFS_TEMPLATE')
+
+    result = wh_pattern.sub(wh_str, template)
+    result = gr_pattern.sub(gr_str, result)
+    
+    output_file = open(sys.argv[2], 'w')
+    output_file.write(result)
+    output_file.close()
+
