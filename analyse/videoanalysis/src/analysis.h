@@ -94,7 +94,7 @@ analyse_buffer(guint8* data,
 	BLOCK *blc = &blocks[blc_index];
 	/* resetting block data */
 	if ((i%8 == 1) && (j%8 == 1)) {
-	  blc->noise = 1.0;
+	  blc->noise = 0.0;
 	  blc->down_diff = 0;
 	  blc->right_diff = 0;
 	}
@@ -104,9 +104,9 @@ analyse_buffer(guint8* data,
 	else
 	  lvl = WHT_DIFF;
 	if (abs(current - data[ind+1]) >= lvl)
-	  blc->noise -= 1.0/(6.0*5.0*2.0);
+	  blc->noise += 1.0/(6.0*5.0*2.0);
 	if (abs(current - data[ind+stride]) >= lvl)
-	  blc->noise -= 1.0/(6.0*5.0*2.0);
+	  blc->noise += 1.0/(6.0*5.0*2.0);
       }
       /* eval-ting brightness, freeze and diff */
       brightness += current;
@@ -126,8 +126,8 @@ analyse_buffer(guint8* data,
       guint blc_index = i + j*w_blocks;
       int ind = (i*8) + (j*8)*stride;
 
-      guint h_noise = MAX(blocks[blc_index].noise, blocks[blc_index+1].noise);
-      guint v_noise = MAX(blocks[blc_index].noise, blocks[blc_index+w_blocks].noise);
+      guint h_noise = 100.0 * MAX(blocks[blc_index].noise, blocks[blc_index+1].noise);
+      guint v_noise = 100.0 * MAX(blocks[blc_index].noise, blocks[blc_index+w_blocks].noise);
       guint h_wht_coef = GET_COEF(h_noise, wht_coef);
       guint h_ght_coef = GET_COEF(h_noise, ght_coef);
       guint v_wht_coef = GET_COEF(v_noise, wht_coef);
@@ -194,7 +194,7 @@ analyse_buffer(guint8* data,
       }
     }
   
-  rval->blocks = ((float)blc_counter*100.0) / ((float)(w_blocks-1)*(float)(h_blocks-1));
+  rval->blocks = ((float)blc_counter*100.0) / ((float)(w_blocks-2)*(float)(h_blocks-2));
   rval->avg_bright = (float)brightness / (height*width);
   rval->black_pix = ((float)black/((float)height*(float)width))*100.0;
   rval->avg_diff = (float)difference / (height*width);
