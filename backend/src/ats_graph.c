@@ -104,7 +104,11 @@ ats_graph_new(guint stream_id,
   ats_tree_set_state(rval->tree, GST_STATE_PLAYING);
   
   gst_bus_add_watch(bus, bus_call, rval);
-  g_idle_add(send_metadata, rval);
+  g_timeout_add_full (G_PRIORITY_LOW,
+		      1000, /* interval, ms */
+		      send_metadata,
+		      rval,
+		      NULL);
   
   gst_object_unref(bus);
   return rval;
