@@ -177,7 +177,6 @@ analyse_buffer(guint8* data,
 	loc_counter += 1;
       if (loc_counter >= 2)
 	blc_counter += 1;
-      g_printerr("W: %d\tH: %d\n", w_blocks, h_blocks);
       /* mark block if visible */
       if (mark_blocks && (loc_counter >= 2)) {
 	guint left_upper_corner = 8*i + 8*j*stride;

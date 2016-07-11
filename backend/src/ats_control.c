@@ -169,24 +169,75 @@ incoming_callback  (GSocketService *service,
 }
 
 ATS_CONTROL*
-ats_control_new(ATS_TREE* tree, guint stream_id)
+ats_control_init(ATS_CONTROL* ctrl,
+		 ATS_TREE* tree,
+		 guint stream_id,
+		 GError** error)
 {
-  ATS_CONTROL* rval = g_new(ATS_CONTROL, 1);
+  GError *tmp_error;
+
+  if (ctrl == NULL) {
+    g_set_error(error,
+		G_ERR_UNKNOWN,
+		-1,
+		"Error: empty object been passed to ats_control_init");
+    return NULL;
+  }
+  
+  tmp_error = NULL;
+
+  ctrl->incoming_service = NULL;
+  ctrl->client = NULL;
   /* input */
-  rval->incoming_service = g_socket_service_new ();
-  g_socket_listener_add_inet_port ((GSocketListener*)rval->incoming_service,
-                                    1500+stream_id, /* your port goes here */
-                                    NULL,
-                                    NULL);
-  g_signal_connect (rval->incoming_service,
+  ctrl->incoming_service = g_socket_service_new ();
+  g_socket_listener_add_inet_port ((GSocketListener*) ctrl->incoming_service,
+				   1500+stream_id, /* your port goes here */
+				   NULL,
+				   &tmp_error);
+  if (tmp_error != NULL) {
+    goto error;
+  }
+  
+  g_signal_connect (ctrl->incoming_service,
                     "incoming",
                     G_CALLBACK (incoming_callback),
                     tree);
-  g_socket_service_start (rval->incoming_service);
-  /* output */
-  rval->client = g_socket_client_new();
+  g_socket_service_start (ctrl->incoming_service);
+
+  return ctrl;
+  
+ error:
+  g_propagate_error(error, tmp_error);
+  g_free(ctrl->incoming_service);
+  g_free(ctrl->client);
+  return NULL;
+}
+
+ATS_CONTROL*
+ats_control_new(ATS_TREE* tree,
+		guint stream_id,
+		GError** error)
+{
+  ATS_CONTROL* rval, *tmp;
+  GError* tmp_error;
+
+  tmp_error = NULL;
+  rval = g_try_new(ATS_CONTROL, 1);
+
+  tmp = ats_control_init(rval,
+			 tree,
+			 stream_id,
+			 &tmp_error);
+  if (tmp == NULL) {
+    goto error;
+  }
 
   return rval;
+
+ error:
+  g_propagate_error(error, tmp_error);
+  g_free(rval);
+  return NULL;
 }
 
 void
@@ -196,25 +247,42 @@ ats_control_delete(ATS_CONTROL* this)
 }
 
 void
-ats_control_send(ATS_CONTROL* this, gchar* message)
+ats_control_send(ATS_CONTROL* this,
+		 gchar* message,
+		 GError** error)
 {
-  GSocketConnection* connection = g_socket_client_connect_to_host (this->client,
-								   (gchar*)"localhost",
-								   1600, /* your port goes here */
-								   NULL,
-								   NULL);
+  GSocketConnection* connection;
+  GOutputStream * ostream;
+  GError* tmp_error;
+
+  tmp_error = NULL;
+  connection = g_socket_client_connect_to_host (this->client,
+						(gchar*)"localhost",
+						1600, /* your port goes here */
+						NULL,
+						NULL);
+
   if (connection == NULL) {
+    /* Exits if it is not possible to send message. */
     g_printerr("Connection failed! Frontend is not active!\n");
     exit(-1);
   }
-  GOutputStream * ostream = g_io_stream_get_output_stream (G_IO_STREAM (connection));
+
+  ostream = g_io_stream_get_output_stream (G_IO_STREAM (connection));
+
   g_output_stream_write  (ostream,
 			  message,
-                          strlen(message),
-                          NULL,
-                          NULL);
+			  strlen(message),
+			  NULL,
+			  NULL);
+  
   g_io_stream_close(G_IO_STREAM (connection),
 		    NULL,
-		    NULL);
+		    &tmp_error);
+
+  if (tmp_error != NULL) {
+    g_propagate_error(error, tmp_error);
+  }
+  
   g_object_unref(connection);
 }

@@ -271,6 +271,11 @@ ats_branch_new(const guint stream_id,
   
   queue = gst_element_factory_make("queue2", NULL);
   demux = gst_element_factory_make("tsdemux", NULL);
+
+  g_object_set(G_OBJECT(demux),
+	       "emit-stats",
+	       TRUE,
+	       NULL);
   
   g_object_set (G_OBJECT (queue),
 		"max-size-buffers", 200000,

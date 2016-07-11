@@ -24,12 +24,19 @@ typedef struct __ats_control
   GSocketClient * client;
 } ATS_CONTROL;
 
+ATS_CONTROL* ats_control_init(ATS_CONTROL* ctrl,
+			      ATS_TREE* tree,
+			      guint stream_id,
+			      GError** error);
+
 ATS_CONTROL* ats_control_new(ATS_TREE* tree,
-			     guint stream_id);
+			     guint stream_id,
+			     GError** error);
 
 void ats_control_delete(ATS_CONTROL* this);
 
 void ats_control_send(ATS_CONTROL* this,
-		      gchar* message);
+		      gchar* message,
+		      GError** error);
 
 #endif /* ATS_CONTROL_H */

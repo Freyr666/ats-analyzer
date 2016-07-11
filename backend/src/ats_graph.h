@@ -23,7 +23,16 @@ typedef struct __ats_graph
   /*gboolean sdt_was_sent;*/
 } ATS_GRAPH;
 
-ATS_GRAPH* ats_graph_new(guint stream_id, gchar* ip, guint port);
+ATS_GRAPH* ats_graph_init(ATS_GRAPH* graph,
+			  guint stream_id,
+			  gchar* ip,
+			  guint port,
+			  GError** error);
+
+ATS_GRAPH* ats_graph_new(guint stream_id,
+			 gchar* ip,
+			 guint port,
+			 GError** error);
 
 void ats_graph_run(ATS_GRAPH* this);
 

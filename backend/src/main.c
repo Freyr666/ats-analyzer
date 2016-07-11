@@ -10,8 +10,9 @@ main(int argc,
   ATS_GRAPH* graph;
   guint port = 1234;
   guint stream = 0;
-  const gchar* ip_default = "127.0.0.1";
+  gchar* const ip_default = "127.0.0.1";
   gchar* ip = ip_default;
+  
   gst_init(&argc, &argv);
   
   for (int i = 1; i < argc; i++) {
@@ -40,7 +41,7 @@ main(int argc,
     }
   }
   
-  graph = ats_graph_new(stream, ip, port);
+  graph = ats_graph_new(stream, ip, port, NULL);
   ats_graph_run(graph);
   ats_graph_delete(graph);
   
