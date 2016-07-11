@@ -6,6 +6,7 @@
 
 #include "ats_branch.h"
 #include "ats_metadata.h"
+#include "ats_subbranch.h"
 
 typedef struct __fake_tee
 {
@@ -59,7 +60,8 @@ struct __ats_tree
 
 ATS_TREE* ats_tree_new(guint stream_id,
 		       gchar* ip,
-		       guint port);
+		       guint port,
+		       GError** error);
 
 void ats_tree_delete(ATS_TREE* this);
 

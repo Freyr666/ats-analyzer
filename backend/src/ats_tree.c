@@ -4,7 +4,8 @@
 ATS_TREE*
 ats_tree_new(guint stream_id,
 	     gchar* ip,
-	     guint port)
+	     guint port,
+	     GError** error)
 {
   ATS_TREE* rval;
   GstElement *parse, *fakesink;
@@ -13,6 +14,7 @@ ats_tree_new(guint stream_id,
   
   /* init-ing tree */
   rval = g_new(ATS_TREE, 1);
+  
   
   /* creating elements */
   rval->pipeline = gst_pipeline_new("proc-tree-pipe");
@@ -138,7 +140,8 @@ void ats_tree_add_branches(ATS_TREE* this)
 				   tmpinfo->number,
 				   tmpinfo->xid,
 				   0,
-				   this->metadata);
+				   this->metadata,
+				   NULL);
 
 	this->branches = g_slist_append(this->branches, newbranch);
 

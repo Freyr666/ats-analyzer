@@ -6,16 +6,6 @@
 
 #include "ats_metadata.h"
 
-typedef struct __ats_subbranch
-{
-  guint pid;
-  gchar* type;
-  gchar av;
-  GstElement* analyser;
-  GstElement* sink;
-  GstElement* bin;
-} ATS_SUBBRANCH;
-
 typedef struct __ats_branch
 {
   guint stream_id;
@@ -30,7 +20,8 @@ ATS_BRANCH* ats_branch_new(const guint stream_id,
 			   const guint prog_num,
 			   const guint xid,
 			   const double volume,
-			   ATS_METADATA* data);
+			   ATS_METADATA* data,
+			   GError** error);
 
 void ats_branch_delete(ATS_BRANCH *this);
 

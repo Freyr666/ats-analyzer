@@ -4,6 +4,7 @@ static gboolean
 send_metadata(gpointer data)
 {
   ATS_GRAPH* graph = (ATS_GRAPH*) data;
+  
   if (graph->tree->branches == NULL){
     if (ats_metadata_are_ready(graph->tree->metadata)) {
       if(graph->time == 0)
@@ -105,7 +106,7 @@ ats_graph_init(ATS_GRAPH* graph,
     return NULL;
   }
 
-  graph->tree = ats_tree_new(stream_id, ip, port);
+  graph->tree = ats_tree_new(stream_id, ip, port, NULL);
   graph->loop = g_main_loop_new(NULL, FALSE);
   graph->control = ats_control_new(graph->tree,
 				   stream_id, NULL);
