@@ -230,6 +230,8 @@ ats_control_init(ATS_CONTROL* ctrl,
                     G_CALLBACK (incoming_callback),
                     tree);
   g_socket_service_start (ctrl->incoming_service);
+  
+  ctrl->client = g_socket_client_new();
 
   return ctrl;
   
@@ -249,7 +251,7 @@ ats_control_new(ATS_TREE* tree,
   GError* tmp_error;
 
   tmp_error = NULL;
-  rval = g_try_new(ATS_CONTROL, 1);
+  rval = g_new(ATS_CONTROL, 1);
 
   tmp = ats_control_init(rval,
 			 tree,
@@ -287,7 +289,7 @@ ats_control_send(ATS_CONTROL* this,
 						(gchar*)"localhost",
 						1600, /* your port goes here */
 						NULL,
-						NULL);
+						&tmp_error);
 
   if (connection == NULL) {
     /* Exits if it is not possible to send message. */
