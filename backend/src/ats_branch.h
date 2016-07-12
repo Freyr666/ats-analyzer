@@ -8,12 +8,12 @@
 
 typedef struct __ats_branch
 {
-  guint stream_id;
-  guint prog_num;
+  guint         stream_id;
+  guint         prog_num;
   /* Branch pipeline*/
-  GstElement* bin;
+  GstElement*   bin;
   /* Subbranches */
-  GSList* subbranches;
+  GSList*       subbranches;
 } ATS_BRANCH;
 
 ATS_BRANCH* ats_branch_new(const guint stream_id,

@@ -10,8 +10,8 @@
 
 typedef struct __fake_tee
 {
-  GstElement *tee;
-  GstPad *pad;
+  GstElement*  tee;
+  GstPad*      pad;
 } FAKE_TEE;
 
 /*
@@ -48,19 +48,19 @@ typedef
 struct __ats_tree
 {
   /* TS metadata */
-  ATS_METADATA *metadata;
+  ATS_METADATA*  metadata;
   /* Elements */
-  GstElement *source;
-  FAKE_TEE faketee; 
-  GstElement *tee;
-  GSList *branches;
+  GstElement*    source;
+  FAKE_TEE       faketee; 
+  GstElement*    tee;
+  GSList*        branches;
   /* State */
-  GstElement *pipeline;
+  GstElement*    pipeline;
 }ATS_TREE;
 
-ATS_TREE* ats_tree_new(guint stream_id,
-		       gchar* ip,
-		       guint port,
+ATS_TREE* ats_tree_new(guint    stream_id,
+		       gchar*   ip,
+		       guint    port,
 		       GError** error);
 
 void ats_tree_delete(ATS_TREE* this);
@@ -68,13 +68,14 @@ void ats_tree_delete(ATS_TREE* this);
 GstBus* ats_tree_get_bus(ATS_TREE* this);
 
 void ats_tree_set_state(ATS_TREE* this,
-			GstState state);
+			GstState  state);
 
 ATS_SUBBRANCH* ats_tree_find_subbranch(ATS_TREE* this,
-				       guint prog,
-				       guint pid);
+				       guint     prog,
+				       guint     pid);
 
-void ats_tree_add_branches(ATS_TREE* this);
+void ats_tree_add_branches(ATS_TREE* this,
+			   GError**  error);
 
 void ats_tree_remove_branches(ATS_TREE* this);
 

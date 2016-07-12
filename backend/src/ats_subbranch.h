@@ -6,12 +6,12 @@
 
 typedef struct __ats_subbranch
 {
-  guint pid;
-  gchar* type;
-  gchar av;
-  GstElement* analyser;
-  GstElement* sink;
-  GstElement* bin;
+  guint         pid;
+  gchar*        type;
+  gchar         av;
+  GstElement*   analyser;
+  GstElement*   sink;
+  GstElement*   bin;
 } ATS_SUBBRANCH;
 
 ATS_SUBBRANCH* create_video_subbranch(const gchar* type,
