@@ -123,7 +123,7 @@ dump_sdt (GstMpegtsSection * section,
   }
 }
 
-void
+gboolean
 parse_table (GstMpegtsSection * section,
 	     void*              data)
 {
@@ -159,19 +159,19 @@ parse_table (GstMpegtsSection * section,
   switch (GST_MPEGTS_SECTION_TYPE (section)) {
   case GST_MPEGTS_SECTION_PAT:
     dump_pat (section, metadata);
-    break;
+    return TRUE;
   case GST_MPEGTS_SECTION_PMT:
-    dump_pmt(section, data);
-    break;
+    dump_pmt(section, metadata);
+    return TRUE;
   case GST_MPEGTS_SECTION_SDT:
     dump_sdt (section, metadata);
-    break;
+    return TRUE;
   default:
-    break;
+    return FALSE;
   }
 }
 
-void
+gboolean
 parse_sdt (GstMpegtsSection * section,
 	   void*              data)
 {
@@ -204,6 +204,17 @@ parse_sdt (GstMpegtsSection * section,
   g_type_class_ref (GST_TYPE_MPEGTS_DVB_LINKAGE_HAND_OVER_TYPE);
   g_type_class_ref (GST_TYPE_MPEGTS_COMPONENT_STREAM_CONTENT);
   g_type_class_ref (GST_TYPE_MPEGTS_CONTENT_NIBBLE_HI);
-  if (GST_MPEGTS_SECTION_TYPE (section) == GST_MPEGTS_SECTION_SDT)
+
+  if (GST_MPEGTS_SECTION_TYPE (section) == GST_MPEGTS_SECTION_SDT) {
     dump_sdt (section, metadata);
+    return TRUE;
+  }
+  return FALSE;
+}
+
+gboolean
+parse_scte(GstMpegtsSection * section,
+	   void*              data)
+{
+  return TRUE;
 }
