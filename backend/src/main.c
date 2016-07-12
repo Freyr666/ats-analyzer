@@ -7,6 +7,7 @@ int
 main(int argc,
      char *argv[])
 {
+  GError* local_error;
   ATS_GRAPH* graph;
   guint port = 1234;
   guint stream = 0;
@@ -14,6 +15,8 @@ main(int argc,
   gchar* ip = ip_default;
   
   gst_init(&argc, &argv);
+
+  local_error = NULL;
   
   for (int i = 1; i < argc; i++) {
     if (g_strcmp0(argv[i], "--port") == 0){
@@ -41,7 +44,7 @@ main(int argc,
     }
   }
   
-  graph = ats_graph_new(stream, ip, port, NULL);
+  graph = ats_graph_new(stream, ip, port, &local_error);
   ats_graph_run(graph);
   ats_graph_delete(graph);
   
