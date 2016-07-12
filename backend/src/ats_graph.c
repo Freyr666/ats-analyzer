@@ -140,7 +140,9 @@ ats_graph_new(guint stream_id,
 	      GError** error)
 {
   ATS_GRAPH* rval;
+  GError*    local_error;
 
+  local_error = NULL;
   rval = g_try_new(ATS_GRAPH, 1);
   
   if (rval == NULL) {
@@ -154,8 +156,8 @@ ats_graph_new(guint stream_id,
   rval = ats_graph_init(rval,
 			stream_id,
 			ip, port,
-			error);
-  
+			&local_error);
+  /* TODO:  */
   return rval;
 }
 

@@ -237,8 +237,8 @@ ats_control_init(ATS_CONTROL* ctrl,
   
  error:
   g_propagate_error(error, tmp_error);
-  g_free(ctrl->incoming_service);
-  g_free(ctrl->client);
+  g_object_unref(ctrl->incoming_service);
+  g_object_unref(ctrl->client);
   return NULL;
 }
 
