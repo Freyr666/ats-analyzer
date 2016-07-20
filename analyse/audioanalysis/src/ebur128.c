@@ -1034,3 +1034,17 @@ int ebur128_true_peak(ebur128_state* st,
   return EBUR128_SUCCESS;
 }
 #endif
+
+int ebur128_clear_block_list(ebur128_state* st) {
+  struct ebur128_dq_entry* entry;
+
+  if ((st->mode & EBUR128_MODE_I) != EBUR128_MODE_I) return EBUR128_ERROR_INVALID_MODE;
+  
+  while (!SLIST_EMPTY(&st->d->block_list)) {
+    entry = SLIST_FIRST(&st->d->block_list);
+    SLIST_REMOVE_HEAD(&st->d->block_list, entries);
+    free(entry);
+  }
+  
+  return EBUR128_SUCCESS;
+}

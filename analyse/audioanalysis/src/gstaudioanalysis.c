@@ -175,11 +175,8 @@ gst_audioanalysis_init (GstAudioanalysis *audioanalysis)
   audioanalysis->stream_id = 0;
   audioanalysis->program = 2000;
   audioanalysis->pid = 2001;
-  audioanalysis->state_momentary = NULL;
-  audioanalysis->state_short = NULL;
+  audioanalysis->state = NULL;
   audioanalysis->data = NULL;
-  //audioanalysis->clock = gst_element_get_clock(GST_ELEMENT(audioanalysis));
-  // audioanalysis->time = gst_clock_get_time(GST_ELEMENT(audioanalysis)->clock);
   audioanalysis->time = 0;
 }
 
@@ -254,10 +251,8 @@ gst_audioanalysis_finalize (GObject * object)
 
   GST_DEBUG_OBJECT (audioanalysis, "finalize");
 
-  if (audioanalysis->state_momentary != NULL)
-    ebur128_destroy(&audioanalysis->state_momentary);
-  if (audioanalysis->state_short != NULL)
-    ebur128_destroy(&audioanalysis->state_short);
+  if (audioanalysis->state != NULL)
+    ebur128_destroy(&audioanalysis->state);
 
   if (audioanalysis->data != NULL)
     audio_data_delete(audioanalysis->data);
@@ -275,17 +270,12 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
 
   GST_DEBUG_OBJECT (audioanalysis, "setup");
   
-  if (audioanalysis->state_momentary != NULL)
-    ebur128_destroy(&audioanalysis->state_momentary);
-  if (audioanalysis->state_short != NULL)
-    ebur128_destroy(&audioanalysis->state_short);
+  if (audioanalysis->state != NULL)
+    ebur128_destroy(&audioanalysis->state);
   
-  audioanalysis->state_momentary = ebur128_init(info->channels,
-						(unsigned long)info->rate,
-						EBUR128_MODE_M);
-  audioanalysis->state_short = ebur128_init(info->channels,
-					    (unsigned long)info->rate,
-					    EBUR128_MODE_S);
+  audioanalysis->state = ebur128_init(info->channels,
+				      (unsigned long)info->rate,
+				      EBUR128_MODE_S | EBUR128_MODE_M | EBUR128_MODE_I);
 
   if (audioanalysis->data != NULL)
     audio_data_delete(audioanalysis->data);
@@ -335,9 +325,7 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   gst_buffer_map(buf, &map, GST_MAP_READ);
   num_frames = map.size / (GST_AUDIO_FILTER_BPS(audioanalysis) * GST_AUDIO_FILTER_CHANNELS(audioanalysis));
 
-  ebur128_add_frames_short(audioanalysis->state_momentary, (short*)map.data, num_frames);
-  
-  ebur128_add_frames_short(audioanalysis->state_short, (short*)map.data, num_frames);
+  ebur128_add_frames_short(audioanalysis->state, (short*)map.data, num_frames);
 
   if (audio_data_is_full(audioanalysis->data)) {
     rval = audio_data_to_string(audioanalysis->data,
@@ -348,9 +336,9 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
     audio_data_reset(audioanalysis->data);
   }
   if (DIFF(current_time, audioanalysis->time) >= OBSERVATION_TIME) {
-    ebur128_loudness_momentary(audioanalysis->state_momentary, &(params.moment));
-    ebur128_loudness_shortterm(audioanalysis->state_short, &(params.shortt));
-    
+    ebur128_loudness_momentary(audioanalysis->state, &(params.moment));
+    ebur128_loudness_shortterm(audioanalysis->state, &(params.shortt));
+
     audio_data_append(audioanalysis->data, &params);
     audioanalysis->time = current_time;
   }

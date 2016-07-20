@@ -43,7 +43,7 @@ main(int argc,
       return 0;
     }
   }
-  
+
   graph = ats_graph_new(stream, ip, port, &local_error);
   ats_graph_run(graph);
   ats_graph_delete(graph);

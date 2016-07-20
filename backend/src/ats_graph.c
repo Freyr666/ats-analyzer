@@ -111,7 +111,8 @@ bus_call(GstBus*     bus,
 	g_free(str);
       }
       /* PTS packages from ts demux: */
-      if (gst_structure_has_name(st, "tsdemux")) {
+      if (gst_structure_has_name(st, "tsdemux") &&
+	  gst_structure_has_field(st, "pts")) {
 	pid_pts = g_value_get_uint(gst_structure_get_value(st, "pid"));
 	pts_pts = g_value_get_uint64(gst_structure_get_value(st, "pts"));
 	/* g_print("PTS = %lu on PID = %u\n", pts_pts, pid_pts); */

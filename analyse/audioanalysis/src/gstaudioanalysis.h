@@ -51,8 +51,7 @@ struct _GstAudioanalysis
   guint program;
   guint pid;
   /* Private */
-  ebur128_state* state_momentary;
-  ebur128_state* state_short;
+  ebur128_state* state;
   AudioData* data;
   //  GstClock* clock;
   GstClockTime time;
