@@ -75,7 +75,11 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
 			 const GstAudioInfo * info);
 static GstFlowReturn
 gst_audioanalysis_transform_ip (GstBaseTransform * trans,
-						     GstBuffer * buf);
+				GstBuffer * buf);
+
+static gboolean
+gst_filter_sink_ad_event (GstBaseTransform * parent,
+			  GstEvent * event);
 
 enum
 {
@@ -140,7 +144,8 @@ gst_audioanalysis_class_init (GstAudioanalysisClass * klass)
   gobject_class->finalize = gst_audioanalysis_finalize;
   audio_filter_class->setup = GST_DEBUG_FUNCPTR (gst_audioanalysis_setup);
   base_transform_class->transform_ip = GST_DEBUG_FUNCPTR (gst_audioanalysis_transform_ip);
-
+  base_transform_class->sink_event = GST_DEBUG_FUNCPTR (gst_filter_sink_ad_event);
+  
   properties [PROP_STREAM_ID] =
     g_param_spec_uint("stream_id",
 		      "Stream id",
@@ -346,6 +351,22 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   gst_buffer_unmap(buf, &map);
 
   return GST_FLOW_OK;
+}
+
+static gboolean
+gst_filter_sink_ad_event (GstBaseTransform * base,
+			  GstEvent * event)
+{
+  GstAudioanalysis *filter;
+
+  filter = GST_AUDIOANALYSIS(base);
+  
+  switch (GST_EVENT_TYPE (event)) {
+  default:
+    break;
+  }
+
+  return GST_BASE_TRANSFORM_CLASS (gst_audioanalysis_parent_class)->sink_event (base, event);
 }
 
 static gboolean
