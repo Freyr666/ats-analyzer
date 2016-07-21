@@ -101,6 +101,7 @@ bus_call(GstBus*     bus,
 	  if (ch_data) {
 	    ch_data->ad_pts_time = sit.splice_time;
 	    ch_data->ad_active = TRUE;
+	    ch_data->ad_is_ad = sit.ad;
 	  }
 	}
       }
@@ -149,6 +150,7 @@ bus_call(GstBus*     bus,
 		
 		info  = gst_structure_new("ad",
 					  "pid", G_TYPE_UINT, ch_data->pids[i].pid,
+					  "isad", G_TYPE_UINT, ch_data->ad_is_ad,
 					  NULL);
 		
 		event = gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM,

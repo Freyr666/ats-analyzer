@@ -67,6 +67,7 @@ gst_audioanalysis_get_property (GObject * object,
 				GParamSpec * pspec);
 static void
 gst_audioanalysis_dispose (GObject * object);
+
 static void
 gst_audioanalysis_finalize (GObject * object);
 
@@ -76,7 +77,12 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
 static GstFlowReturn
 gst_audioanalysis_transform_ip (GstBaseTransform * trans,
 				GstBuffer * buf);
-
+static inline void
+gst_audioanalysis_send_string (gchar* data,
+			       GstAudioanalysis* filter);
+static inline void
+gst_audioanalysis_eval_global (GstBaseTransform * trans,
+			       guint ad_flag);
 static gboolean
 gst_filter_sink_ad_event (GstBaseTransform * parent,
 			  GstEvent * event);
@@ -183,6 +189,9 @@ gst_audioanalysis_init (GstAudioanalysis *audioanalysis)
   audioanalysis->state = NULL;
   audioanalysis->data = NULL;
   audioanalysis->time = 0;
+  audioanalysis->glob_state = NULL;
+  audioanalysis->glob_ad_flag = FALSE;
+  audioanalysis->glob_start = 0;
 }
 
 void
@@ -258,6 +267,8 @@ gst_audioanalysis_finalize (GObject * object)
 
   if (audioanalysis->state != NULL)
     ebur128_destroy(&audioanalysis->state);
+  if (audioanalysis->glob_state != NULL)
+    ebur128_destroy(&audioanalysis->glob_state);
 
   if (audioanalysis->data != NULL)
     audio_data_delete(audioanalysis->data);
@@ -277,10 +288,15 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
   
   if (audioanalysis->state != NULL)
     ebur128_destroy(&audioanalysis->state);
+  if (audioanalysis->glob_state != NULL)
+    ebur128_destroy(&audioanalysis->glob_state);
   
   audioanalysis->state = ebur128_init(info->channels,
 				      (unsigned long)info->rate,
-				      EBUR128_MODE_S | EBUR128_MODE_M | EBUR128_MODE_I);
+				      EBUR128_MODE_S | EBUR128_MODE_M);
+  audioanalysis->glob_state = ebur128_init(info->channels,
+					   (unsigned long)info->rate,
+					   EBUR128_MODE_I);
 
   if (audioanalysis->data != NULL)
     audio_data_delete(audioanalysis->data);
@@ -289,6 +305,30 @@ gst_audioanalysis_setup (GstAudioFilter * filter,
   audioanalysis->time = gst_clock_get_time(GST_ELEMENT(audioanalysis)->clock);
   
   return TRUE;
+}
+
+static inline void
+gst_audioanalysis_eval_global (GstBaseTransform * trans,
+			       guint ad_flag)
+{
+  GstAudioanalysis *audioanalysis;
+  double result, diff_time;
+  time_t now;
+
+  audioanalysis = GST_AUDIOANALYSIS (trans);
+  now = time(NULL);
+
+  /* if measurements have already begun */
+  if (audioanalysis->glob_ad_flag) {
+    ebur128_loudness_global(audioanalysis->glob_state, &result);
+    ebur128_clear_block_list(audioanalysis->glob_state);
+    diff_time = difftime(audioanalysis->glob_start, now);
+    g_print("ad:val:%f:time:%f:is_ad:%d\n", result, diff_time, ad_flag);
+  } else {
+    audioanalysis->glob_ad_flag = TRUE;
+  }
+
+  audioanalysis->glob_start = now;
 }
 
 /* send data */
@@ -332,6 +372,9 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
 
   ebur128_add_frames_short(audioanalysis->state, (short*)map.data, num_frames);
 
+  if (audioanalysis->glob_ad_flag)
+    ebur128_add_frames_short(audioanalysis->glob_state, (short*)map.data, num_frames);
+
   if (audio_data_is_full(audioanalysis->data)) {
     rval = audio_data_to_string(audioanalysis->data,
 				audioanalysis->stream_id,
@@ -360,6 +403,7 @@ gst_filter_sink_ad_event (GstBaseTransform * base,
   GstAudioanalysis       *filter;
   const GstStructure     *st; 
   guint                  pid;
+  guint                  ad;
   
   filter = GST_AUDIOANALYSIS(base);
   
@@ -370,8 +414,13 @@ gst_filter_sink_ad_event (GstBaseTransform * base,
     if (gst_structure_has_name(st, "ad")) {
       
       pid = g_value_get_uint(gst_structure_get_value(st, "pid"));
+      ad  = g_value_get_uint(gst_structure_get_value(st, "isad"));
+      
       if (filter->pid == pid) {
+	
 	g_print("got pid: %d\n", pid);
+	gst_audioanalysis_eval_global(base, ad);
+
 	gst_event_unref(event);
 	event = NULL;
       }

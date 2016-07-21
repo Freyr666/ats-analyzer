@@ -8,6 +8,7 @@
 typedef struct {
   guint pmt_pid;
   glong splice_time;
+  guint ad;
 } SIT;
 /*
  * If section is of type sdt, pmt or pat, then true

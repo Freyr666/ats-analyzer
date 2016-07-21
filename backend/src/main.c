@@ -1,5 +1,6 @@
 #include <gst/gst.h>
 #include <glib.h>
+#include <stdlib.h>
 
 #include "ats_graph.h"
 
@@ -45,6 +46,12 @@ main(int argc,
   }
 
   graph = ats_graph_new(stream, ip, port, &local_error);
+
+  if (local_error) {
+    g_printerr(local_error->message);
+    exit(-1);
+  }
+  
   ats_graph_run(graph);
   ats_graph_delete(graph);
   

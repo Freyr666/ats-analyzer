@@ -19,6 +19,7 @@
 #ifndef _GST_AUDIOANALYSIS_H_
 #define _GST_AUDIOANALYSIS_H_
 
+#include <time.h>
 #include <gst/audio/gstaudiofilter.h>
 #include "ebur128.h"
 
@@ -51,8 +52,12 @@ struct _GstAudioanalysis
   guint program;
   guint pid;
   /* Private */
-  ebur128_state* state;
-  AudioData* data;
+  ebur128_state *state;
+  AudioData     *data;
+  /* Global loudless */
+  ebur128_state *glob_state;
+  gboolean      glob_ad_flag;
+  time_t        glob_start;
   //  GstClock* clock;
   GstClockTime time;
 };
