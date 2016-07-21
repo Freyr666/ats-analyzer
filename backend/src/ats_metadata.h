@@ -14,6 +14,8 @@ typedef struct __ats_pid_data
   guint           type;
   gchar*          codec;
   gboolean        to_be_analyzed;
+  glong           ad_pts_time;
+  gboolean        ad_active;
 } ATS_PID_DATA;
 
 typedef struct __ats_ch_data
@@ -45,6 +47,9 @@ ATS_CH_DATA* ats_metadata_find_channel(ATS_METADATA* this,
 
 ATS_PID_DATA* ats_metadata_find_pid(ATS_METADATA* data,
 				    guint ch, guint pid);
+
+ATS_PID_DATA* ats_metadata_find_pid_no_ch(ATS_METADATA* data,
+					  guint pid);
 
 #define ats_metadata_ch_number(data)\
   ((data->prog_info == NULL)?0:g_slist_length(data->prog_info))

@@ -357,16 +357,33 @@ static gboolean
 gst_filter_sink_ad_event (GstBaseTransform * base,
 			  GstEvent * event)
 {
-  GstAudioanalysis *filter;
-
+  GstAudioanalysis       *filter;
+  const GstStructure     *st; 
+  guint                  pid;
+  
   filter = GST_AUDIOANALYSIS(base);
   
-  switch (GST_EVENT_TYPE (event)) {
-  default:
-    break;
-  }
+  if (GST_EVENT_TYPE (event) == GST_EVENT_CUSTOM_DOWNSTREAM) { 
 
-  return GST_BASE_TRANSFORM_CLASS (gst_audioanalysis_parent_class)->sink_event (base, event);
+    st = gst_event_get_structure(event);
+
+    if (gst_structure_has_name(st, "ad")) {
+      
+      pid = g_value_get_uint(gst_structure_get_value(st, "pid"));
+      if (filter->pid == pid) {
+	g_print("got pid: %d\n", pid);
+	gst_event_unref(event);
+	event = NULL;
+
+      }
+    }
+  }
+  /* pass event on */
+  if (event)
+    return GST_BASE_TRANSFORM_CLASS
+      (gst_audioanalysis_parent_class)->sink_event (base, event);
+  else 
+    return TRUE;  
 }
 
 static gboolean

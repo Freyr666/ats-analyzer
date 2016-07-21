@@ -53,7 +53,8 @@ ats_metadata_reset(ATS_METADATA* this)
 }
 
 ATS_CH_DATA*
-ats_metadata_find_channel(ATS_METADATA* this, guint num)
+ats_metadata_find_channel(ATS_METADATA* this,
+			  guint num)
 {
   ATS_CH_DATA* data;
   GSList*      elem;
@@ -66,7 +67,8 @@ ats_metadata_find_channel(ATS_METADATA* this, guint num)
 }
 
 ATS_PID_DATA*
-ats_metadata_find_pid(ATS_METADATA* data, guint ch, guint pid)
+ats_metadata_find_pid(ATS_METADATA* data,
+		      guint ch, guint pid)
 {
   ATS_PID_DATA* rval;
   ATS_CH_DATA*  tmpch;
@@ -78,6 +80,26 @@ ats_metadata_find_pid(ATS_METADATA* data, guint ch, guint pid)
   for (i = 0; i < tmpch->pids_num; i++) {
     rval = &tmpch->pids[i];
     if (rval->pid == pid) return rval;
+  }
+  return NULL;
+}
+
+ATS_PID_DATA*
+ats_metadata_find_pid_no_ch(ATS_METADATA* data,
+			    guint pid)
+{
+  ATS_PID_DATA* rval;
+  ATS_CH_DATA*  tmpch;
+  GSList*       elem;
+  guint         i;
+
+  for (elem = data->prog_info; elem; elem = elem->next) {
+    tmpch = elem->data;
+
+    for (i = 0; i < tmpch->pids_num; i++) {
+      rval = &tmpch->pids[i];
+      if (rval->pid == pid) return rval;
+    }
   }
   return NULL;
 }

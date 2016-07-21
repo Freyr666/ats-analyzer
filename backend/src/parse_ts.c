@@ -50,6 +50,8 @@ dump_pmt (GstMpegtsSection * section,
     channel->pids[channel->pids_num].pid = stream->pid;
     channel->pids[channel->pids_num].type = stream->stream_type;
     channel->pids[channel->pids_num].codec = g_strdup(type);
+    channel->pids[channel->pids_num].ad_pts_time = 0;
+    channel->pids[channel->pids_num].ad_active = FALSE;
     channel->pids_num++;
   }
 }
@@ -214,7 +216,15 @@ parse_sdt (GstMpegtsSection * section,
 
 gboolean
 parse_scte(GstMpegtsSection * section,
-	   void*              data)
+	   SIT*               data)
 {
-  return TRUE;
+  const GstMpegtsSIT *sit;
+
+  if (GST_MPEGTS_SECTION_TYPE (section) == GST_MPEGTS_SECTION_SPLICE_INFO) {
+    sit = gst_mpegts_section_get_sit (section);
+    data->pmt_pid     = sit->pmt_pid;
+    data->splice_time = sit->splice_time;
+    return TRUE;
+  }
+  return FALSE;
 }
