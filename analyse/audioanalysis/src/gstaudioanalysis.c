@@ -374,7 +374,6 @@ gst_filter_sink_ad_event (GstBaseTransform * base,
 	g_print("got pid: %d\n", pid);
 	gst_event_unref(event);
 	event = NULL;
-
       }
     }
   }

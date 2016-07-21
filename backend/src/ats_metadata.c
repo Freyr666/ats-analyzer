@@ -84,26 +84,6 @@ ats_metadata_find_pid(ATS_METADATA* data,
   return NULL;
 }
 
-ATS_PID_DATA*
-ats_metadata_find_pid_no_ch(ATS_METADATA* data,
-			    guint pid)
-{
-  ATS_PID_DATA* rval;
-  ATS_CH_DATA*  tmpch;
-  GSList*       elem;
-  guint         i;
-
-  for (elem = data->prog_info; elem; elem = elem->next) {
-    tmpch = elem->data;
-
-    for (i = 0; i < tmpch->pids_num; i++) {
-      rval = &tmpch->pids[i];
-      if (rval->pid == pid) return rval;
-    }
-  }
-  return NULL;
-}
-
 gboolean
 ats_metadata_are_ready(const ATS_METADATA* data)
 {

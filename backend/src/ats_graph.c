@@ -53,7 +53,6 @@ bus_call(GstBus*     bus,
   gchar*              str;
   guint               pid_pts;
   guint64             pts_pts;
-  glong               diff_time;
   gboolean            parsed;
   GError*             error;
   GstMpegtsSection*   section;
@@ -65,7 +64,7 @@ bus_call(GstBus*     bus,
   ATS_TREE*           tree;
   ATS_CONTROL*        control;
   SIT                 sit;
-  ATS_PID_DATA*       pid_data;
+  ATS_CH_DATA*        ch_data;
   
   graph    = data;
   loop     = graph->loop;
@@ -97,14 +96,11 @@ bus_call(GstBus*     bus,
 
 	if (parsed) {
 
-	  pid_data = ats_metadata_find_pid_no_ch(tree->metadata, sit.pmt_pid);
+	  ch_data = ats_metadata_find_channel(tree->metadata, sit.pmt_pid);
 
-	  g_print("Got SCTE!\nPid: %d\n", sit.pmt_pid);
-	  if (pid_data &&
-	      (pid_data->type == PID_TYPE_AUDIO)) {
-	    pid_data->ad_pts_time = sit.splice_time;
-	    pid_data->ad_active = TRUE;
-	    g_print("Setting pid!\n");
+	  if (ch_data) {
+	    ch_data->ad_pts_time = sit.splice_time;
+	    ch_data->ad_active = TRUE;
 	  }
 	}
       }
@@ -136,21 +132,34 @@ bus_call(GstBus*     bus,
       else if (gst_structure_has_name(st, "tsdemux") &&
 	       gst_structure_has_field(st, "pts")) {
 
-	pid_pts = g_value_get_uint(gst_structure_get_value(st, "pid"));
+	/* get pid from demuxer */
+	g_object_get(G_OBJECT( GST_MESSAGE_SRC( msg )),
+		     "program-number", &pid_pts,
+		     NULL);
+	
 	pts_pts = g_value_get_uint64(gst_structure_get_value(st, "pts"));
 
-	if ((pid_data = ats_metadata_find_pid_no_ch(tree->metadata, pid_pts)) != NULL &&
-	    pid_data->ad_active) {
+	if ((ch_data = ats_metadata_find_channel(tree->metadata, pid_pts)) != NULL &&
+	    ch_data->ad_active) {
 
-	  diff_time = labs(pid_data->ad_pts_time - pts_pts);
-	  if (pid_data->ad_pts_time >= (glong)pts_pts) {
+	  if (ch_data->ad_pts_time == pts_pts)
+	    for (guint i = 0; i < ch_data->pids_num; i++) {
+	      /* if type = audio sent message */
+	      if (ch_data->pids[i].codec[0] == 'a') {
+		
+		info  = gst_structure_new("ad",
+					  "pid", G_TYPE_UINT, ch_data->pids[i].pid,
+					  NULL);
+		
+		event = gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM,
+					     info);
 
-	    info  = gst_structure_new("ad", "pid", G_TYPE_UINT, pid_pts, NULL);
-	    event = gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM, info);
+		gst_pad_push_event(graph->tree->faketee.pad,
+				   event);
 
-	    gst_pad_push_event(graph->tree->faketee.pad, event);
+	      }
+	    }
 	    
-	  }
 	}
 	/* g_print("PTS = %lu on PID = %u\n", pts_pts, pid_pts); */
       }
