@@ -143,13 +143,10 @@ bus_call(GstBus*     bus,
 	if ((ch_data = ats_metadata_find_channel(tree->metadata, pid_pts)) != NULL &&
 	    ch_data->ad_active) {
 
-	  if (ch_data->ad_pts_time == pts_pts)
-	    for (guint i = 0; i < ch_data->pids_num; i++) {
-	      /* if type = audio sent message */
-	      if (ch_data->pids[i].codec[0] == 'a') {
-		
+	  if (ch_data->ad_pts_time == pts_pts) {
+	  		
 		info  = gst_structure_new("ad",
-					  "pid", G_TYPE_UINT, ch_data->pids[i].pid,
+					  "pid", G_TYPE_UINT, pid_pts,
 					  "isad", G_TYPE_UINT, ch_data->ad_is_ad,
 					  NULL);
 		
@@ -159,10 +156,9 @@ bus_call(GstBus*     bus,
 		gst_pad_push_event(graph->tree->faketee.pad,
 				   event);
 
-	      }
-	    }
-	    
+	  }
 	}
+	
 	/* g_print("PTS = %lu on PID = %u\n", pts_pts, pid_pts); */
       }
     }

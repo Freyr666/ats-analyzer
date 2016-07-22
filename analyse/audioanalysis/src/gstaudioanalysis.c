@@ -78,7 +78,7 @@ static GstFlowReturn
 gst_audioanalysis_transform_ip (GstBaseTransform * trans,
 				GstBuffer * buf);
 static inline void
-gst_audioanalysis_send_string (gchar* data,
+gst_audioanalysis_send_string (const gchar* data,
 			       GstAudioanalysis* filter);
 static inline void
 gst_audioanalysis_eval_global (GstBaseTransform * trans,
@@ -312,18 +312,28 @@ gst_audioanalysis_eval_global (GstBaseTransform * trans,
 			       guint ad_flag)
 {
   GstAudioanalysis *audioanalysis;
-  double result, diff_time;
-  time_t now;
+  double           result, diff_time;
+  time_t           now;
+  gchar            string[40];
 
   audioanalysis = GST_AUDIOANALYSIS (trans);
   now = time(NULL);
 
   /* if measurements have already begun */
   if (audioanalysis->glob_ad_flag) {
+    
     ebur128_loudness_global(audioanalysis->glob_state, &result);
     ebur128_clear_block_list(audioanalysis->glob_state);
+
     diff_time = difftime(audioanalysis->glob_start, now);
-    g_print("ad:val:%f:time:%f:is_ad:%d\n", result, diff_time, ad_flag);
+
+    g_snprintf(string, 39, "c%d:%d:%d:*:%f:%f:%d",
+	       audioanalysis->stream_id,
+	       audioanalysis->program,
+	       audioanalysis->pid,
+	       result, diff_time, ad_flag);
+
+    gst_audioanalysis_send_string(string, audioanalysis);
   } else {
     audioanalysis->glob_ad_flag = TRUE;
   }
@@ -333,7 +343,7 @@ gst_audioanalysis_eval_global (GstBaseTransform * trans,
 
 /* send data */
 static inline void
-gst_audioanalysis_send_string(gchar* data,
+gst_audioanalysis_send_string(const gchar* data,
 			      GstAudioanalysis* filter)
 {
   if (data != NULL){
@@ -348,7 +358,6 @@ gst_audioanalysis_send_string(gchar* data,
     gst_element_post_message(GST_ELEMENT_CAST(filter),
 			     gst_message_new_element(GST_OBJECT_CAST(filter),
 						     st));
-    g_free(data);
   }
   return;
 }
@@ -382,6 +391,7 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
 				audioanalysis->pid);
     gst_audioanalysis_send_string(rval, audioanalysis);
     audio_data_reset(audioanalysis->data);
+    g_free(rval);
   }
   if (DIFF(current_time, audioanalysis->time) >= OBSERVATION_TIME) {
     ebur128_loudness_momentary(audioanalysis->state, &(params.moment));
@@ -416,11 +426,11 @@ gst_filter_sink_ad_event (GstBaseTransform * base,
       pid = g_value_get_uint(gst_structure_get_value(st, "pid"));
       ad  = g_value_get_uint(gst_structure_get_value(st, "isad"));
       
-      if (filter->pid == pid) {
+      if (filter->program == pid) {
 	
 	g_print("got pid: %d\n", pid);
 	gst_audioanalysis_eval_global(base, ad);
-
+	
 	gst_event_unref(event);
 	event = NULL;
       }
