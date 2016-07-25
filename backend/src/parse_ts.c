@@ -78,6 +78,9 @@ dump_pat (GstMpegtsSection * section,
     ch->to_be_analyzed = FALSE;
     ch->provider_name = NULL;
     ch->service_name = NULL;
+    ch->ad_active = FALSE;
+    ch->ad_pts_time = 0;
+    ch->ad_is_ad = 0;
     
     data->prog_info = g_slist_append(data->prog_info, ch);   
   }
@@ -214,7 +217,17 @@ parse_sdt (GstMpegtsSection * section,
 
 gboolean
 parse_scte(GstMpegtsSection * section,
-	   void*              data)
+	   SIT*               data)
 {
-  return TRUE;
+  const GstMpegtsSIT *sit;
+
+  if (GST_MPEGTS_SECTION_TYPE (section) == GST_MPEGTS_SECTION_SPLICE_INFO) {
+    
+    sit = gst_mpegts_section_get_sit (section);
+    data->pmt_pid     = sit->pmt_pid;
+    data->splice_time = sit->splice_time;
+    data->ad = sit->out_of_netw_ind;
+    return TRUE;
+  }
+  return FALSE;
 }

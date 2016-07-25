@@ -1,4 +1,9 @@
 #include "ats_graph.h"
+#include "parse_ts.h"
+
+#include <stdlib.h>
+
+#define DIFF_PTS 100
 
 static gboolean
 send_metadata(gpointer data)
@@ -52,10 +57,14 @@ bus_call(GstBus*     bus,
   GError*             error;
   GstMpegtsSection*   section;
   const GstStructure* st;
+  GstStructure*       info;
+  GstEvent*           event;
   ATS_GRAPH*          graph;
   GMainLoop*          loop;
   ATS_TREE*           tree;
   ATS_CONTROL*        control;
+  SIT                 sit;
+  ATS_CH_DATA*        ch_data;
   
   graph    = data;
   loop     = graph->loop;
@@ -81,14 +90,24 @@ bus_call(GstBus*     bus,
     if ((GST_MESSAGE_SRC_NAME(msg)[0] == 'p') &&
 	(section = gst_message_parse_mpegts_section (msg))) {
 
-      
-      if (!(graph->metadata_were_sent)) {
-	parsed = parse_table (section, tree->metadata);
-      }
+      /* If sit -- parse sit*/
+      if (tree->branches != NULL) {
+	parsed = parse_scte (section, &sit);
 
-      if (!parsed) {
-	parsed = parse_scte (section, tree->metadata);
+	if (parsed) {
+
+	  ch_data = ats_metadata_find_channel(tree->metadata, sit.pmt_pid);
+
+	  if (ch_data) {
+	    ch_data->ad_pts_time = sit.splice_time;
+	    ch_data->ad_active = TRUE;
+	    ch_data->ad_is_ad = sit.ad;
+	  }
+	}
       }
+      /* Try to parse pmt, pat, sdt etc */
+      if (!(graph->metadata_were_sent)) 
+	parsed = parse_table (section, tree->metadata);
       
       gst_mpegts_section_unref (section);
       
@@ -103,17 +122,43 @@ bus_call(GstBus*     bus,
 	if (tree->branches != NULL)
 	  ats_tree_remove_branches(tree);
 	g_free(str);
-      }
+      } 
       /* Data message from audio/videoanalysis */
-      if (gst_structure_get_name_id(st) == DATA_MARKER){
+      else if (gst_structure_get_name_id(st) == DATA_MARKER){
 	str = g_value_dup_string(gst_structure_id_get_value(st, DATA_MARKER));
 	ats_control_send(control, str, NULL);
 	g_free(str);
-      }
+      } 
       /* PTS packages from ts demux: */
-      if (gst_structure_has_name(st, "tsdemux")) {
-	pid_pts = g_value_get_uint(gst_structure_get_value(st, "pid"));
+      else if (gst_structure_has_name(st, "tsdemux") &&
+	       gst_structure_has_field(st, "pts")) {
+
+	/* get pid from demuxer */
+	g_object_get(G_OBJECT( GST_MESSAGE_SRC( msg )),
+		     "program-number", &pid_pts,
+		     NULL);
+	
 	pts_pts = g_value_get_uint64(gst_structure_get_value(st, "pts"));
+
+	if ((ch_data = ats_metadata_find_channel(tree->metadata, pid_pts)) != NULL &&
+	    ch_data->ad_active) {
+
+	  if (ch_data->ad_pts_time == pts_pts) {
+	  		
+		info  = gst_structure_new("ad",
+					  "pid", G_TYPE_UINT, pid_pts,
+					  "isad", G_TYPE_UINT, ch_data->ad_is_ad,
+					  NULL);
+		
+		event = gst_event_new_custom(GST_EVENT_CUSTOM_DOWNSTREAM,
+					     info);
+
+		gst_pad_push_event(graph->tree->faketee.pad,
+				   event);
+
+	  }
+	}
+	
 	/* g_print("PTS = %lu on PID = %u\n", pts_pts, pid_pts); */
       }
     }

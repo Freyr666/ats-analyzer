@@ -47,7 +47,11 @@ ats_tree_new(guint    stream_id,
 		"buffer-size", 2147483647,
 		"port",        port,
 		"address",     ip,
-		NULL);  
+		NULL);
+
+  g_object_set(G_OBJECT(parse),
+	       "parse-private-sections", TRUE,
+	       NULL);
   
   /* linking pipeline */
   gst_bin_add_many(GST_BIN(rval->pipeline),

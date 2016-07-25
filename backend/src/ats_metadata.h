@@ -25,6 +25,9 @@ typedef struct __ats_ch_data
   ATS_PID_DATA    pids[MAX_PID_NUM];
   /* backend properties */
   guint           xid;
+  guint64         ad_pts_time;
+  gboolean        ad_active;
+  guint           ad_is_ad;
   gboolean        to_be_analyzed;
 } ATS_CH_DATA;
 

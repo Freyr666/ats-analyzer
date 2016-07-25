@@ -323,6 +323,16 @@ int ebur128_true_peak(ebur128_state* st,
  */
 int ebur128_relative_threshold(ebur128_state* st, double* out);
 
+/** \brief Empty block list
+ *
+ * @param st library state
+ * @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_I" has not
+ *      been set.
+ */
+int ebur128_clear_block_list(ebur128_state* st);
+
 #ifdef __cplusplus
 }
 #endif

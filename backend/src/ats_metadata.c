@@ -53,7 +53,8 @@ ats_metadata_reset(ATS_METADATA* this)
 }
 
 ATS_CH_DATA*
-ats_metadata_find_channel(ATS_METADATA* this, guint num)
+ats_metadata_find_channel(ATS_METADATA* this,
+			  guint num)
 {
   ATS_CH_DATA* data;
   GSList*      elem;
@@ -66,7 +67,8 @@ ats_metadata_find_channel(ATS_METADATA* this, guint num)
 }
 
 ATS_PID_DATA*
-ats_metadata_find_pid(ATS_METADATA* data, guint ch, guint pid)
+ats_metadata_find_pid(ATS_METADATA* data,
+		      guint ch, guint pid)
 {
   ATS_PID_DATA* rval;
   ATS_CH_DATA*  tmpch;
