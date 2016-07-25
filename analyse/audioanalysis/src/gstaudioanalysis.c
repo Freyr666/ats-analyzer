@@ -314,20 +314,20 @@ gst_audioanalysis_eval_global (GstBaseTransform * trans,
   GstAudioanalysis *audioanalysis;
   double           result, diff_time;
   time_t           now;
-  gchar            string[40];
+  gchar            string[50];
 
   audioanalysis = GST_AUDIOANALYSIS (trans);
   now = time(NULL);
 
   /* if measurements have already begun */
   if (audioanalysis->glob_ad_flag) {
-    
+
     ebur128_loudness_global(audioanalysis->glob_state, &result);
     ebur128_clear_block_list(audioanalysis->glob_state);
 
     diff_time = difftime(audioanalysis->glob_start, now);
 
-    g_snprintf(string, 39, "c%d:%d:%d:*:%f:%f:%d",
+    g_snprintf(string, 39, "c%d:%d:%d:*:%.2f:%.2f:%d",
 	       audioanalysis->stream_id,
 	       audioanalysis->program,
 	       audioanalysis->pid,
@@ -428,7 +428,6 @@ gst_filter_sink_ad_event (GstBaseTransform * base,
       
       if (filter->program == pid) {
 	
-	g_print("got pid: %d\n", pid);
 	gst_audioanalysis_eval_global(base, ad);
 	
 	gst_event_unref(event);

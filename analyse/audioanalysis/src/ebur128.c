@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "ebur128_blocklist.h"
+
 /* This can be replaced by any BSD-like queue implementation. */
 #include <sys/queue.h>
 
@@ -23,7 +25,7 @@
 
 SLIST_HEAD(ebur128_double_queue, ebur128_dq_entry);
 struct ebur128_dq_entry {
-  double z;
+  double z; /* 27 min chunk */
   SLIST_ENTRY(ebur128_dq_entry) entries;
 };
 
@@ -49,7 +51,7 @@ struct ebur128_state_internal {
   /** BS.1770 filter state. */
   double v[5][5];
   /** Linked list of block energies. */
-  struct ebur128_double_queue block_list;
+  struct ebur128_double_queue_global block_list;
   /** Linked list of 3s-block energies, used to calculate LRA. */
   struct ebur128_double_queue short_term_block_list;
   int use_histogram;
@@ -290,7 +292,9 @@ ebur128_state* ebur128_init(unsigned int channels,
   } else {
     st->d->short_term_block_energy_histogram = NULL;
   }
-  SLIST_INIT(&st->d->block_list);
+
+  blocklist_init(&st->d->block_list);
+  /*SLIST_INIT(&st->d->block_list);*/
   SLIST_INIT(&st->d->short_term_block_list);
   st->d->short_term_frame_counter = 0;
 
@@ -332,6 +336,7 @@ free_sample_peak:
 free_channel_map:
   free(st->d->channel_map);
 free_internal:
+  blocklist_delete(&st->d->block_list);
   free(st->d);
 free_state:
   free(st);
@@ -347,11 +352,15 @@ void ebur128_destroy(ebur128_state** st) {
   free((*st)->d->channel_map);
   free((*st)->d->sample_peak);
   free((*st)->d->true_peak);
+  
+  blocklist_delete(&(*st)->d->block_list);
+  /*
   while (!SLIST_EMPTY(&(*st)->d->block_list)) {
     entry = SLIST_FIRST(&(*st)->d->block_list);
     SLIST_REMOVE_HEAD(&(*st)->d->block_list, entries);
     free(entry);
   }
+  */
   while (!SLIST_EMPTY(&(*st)->d->short_term_block_list)) {
     entry = SLIST_FIRST(&(*st)->d->short_term_block_list);
     SLIST_REMOVE_HEAD(&(*st)->d->short_term_block_list, entries);
@@ -552,11 +561,14 @@ static int ebur128_calc_gating_block(ebur128_state* st, size_t frames_per_block,
     if (st->d->use_histogram) {
       ++st->d->block_energy_histogram[find_histogram_index(sum)];
     } else {
+      blocklist_append(&st->d->block_list, sum);
+      /*
       struct ebur128_dq_entry* block;
       block = (struct ebur128_dq_entry*) malloc(sizeof(struct ebur128_dq_entry));
       if (!block) return EBUR128_ERROR_NOMEM;
       block->z = sum;
       SLIST_INSERT_HEAD(&st->d->block_list, block, entries);
+      */
     }
     return EBUR128_SUCCESS;
   } else {
@@ -721,10 +733,15 @@ static int ebur128_calc_relative_threshold(ebur128_state* st,
       *above_thresh_counter += st->d->block_energy_histogram[i];
     }
   } else {
+    blocklist_sum_size(&st->d->block_list,
+		       relative_threshold,
+		       above_thresh_counter);
+    /*
     SLIST_FOREACH(it, &st->d->block_list, entries) {
       ++*above_thresh_counter;
       *relative_threshold += it->z;
     }
+    */
   }
 
   if (*above_thresh_counter != 0) {
@@ -776,12 +793,18 @@ static int ebur128_gated_loudness(ebur128_state** sts, size_t size,
         above_thresh_counter += sts[i]->d->block_energy_histogram[j];
       }
     } else {
+      blocklist_sum_size_if_gt_or_eq(&sts[i]->d->block_list,
+				     &gated_loudness,
+				     &relative_threshold,
+				     &above_thresh_counter);
+      /*
       SLIST_FOREACH(it, &sts[i]->d->block_list, entries) {
         if (it->z >= relative_threshold) {
           ++above_thresh_counter;
           gated_loudness += it->z;
         }
       }
+      */
     }
   }
   if (!above_thresh_counter) {
@@ -1036,15 +1059,16 @@ int ebur128_true_peak(ebur128_state* st,
 #endif
 
 int ebur128_clear_block_list(ebur128_state* st) {
-  struct ebur128_dq_entry* entry;
+  /*struct ebur128_dq_entry_global* entry;*/
 
   if ((st->mode & EBUR128_MODE_I) != EBUR128_MODE_I) return EBUR128_ERROR_INVALID_MODE;
-  
+  blocklist_clear(&st->d->block_list);
+/*
   while (!SLIST_EMPTY(&st->d->block_list)) {
     entry = SLIST_FIRST(&st->d->block_list);
     SLIST_REMOVE_HEAD(&st->d->block_list, entries);
     free(entry);
   }
-  
+*/
   return EBUR128_SUCCESS;
 }
