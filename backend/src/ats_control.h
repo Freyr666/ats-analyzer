@@ -11,10 +11,11 @@
 
 #define SOUND_HEADER              0x0EFA1922
 
-#define VIDEO_SETTINGS_HEADER     0xCDDA1307
+#define SETTINGS_HEADER           0xCDDA1307
 #define SETTINGS_BLACK_LEVEL      0xBA1306BA
 #define SETTINGS_DIFF_LEVEL       0xDA0476AD
 #define SETTINGS_MARK_BLOCKS      0xCA12AD86
+#define SETTINGS_AD_TIMEOUT       0x1F2AB83D
 
 typedef struct __ats_control
 {

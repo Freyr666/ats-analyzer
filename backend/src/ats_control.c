@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct video_options {
+struct options {
   const gchar*  option;
   guint         value;
 };
@@ -14,7 +14,7 @@ set_video_option(gpointer data,
 {
   ATS_BRANCH*           branch;
   ATS_SUBBRANCH*        subbranch;
-  struct video_options* opts;
+  struct options*       opts;
   GSList*               elem;
   
   branch = data;
@@ -22,6 +22,26 @@ set_video_option(gpointer data,
   for (elem = branch->subbranches; elem; elem = elem->next) {
     subbranch = elem->data;
     if (subbranch->av != 'v') continue;
+    g_object_set(subbranch->analyser,
+		 opts->option, opts->value,
+		 NULL);
+  }
+}
+
+static void
+set_audio_option(gpointer data,
+		 gpointer user_data)
+{
+  ATS_BRANCH*           branch;
+  ATS_SUBBRANCH*        subbranch;
+  struct options*       opts;
+  GSList*               elem;
+  
+  branch = data;
+  opts   = user_data;
+  for (elem = branch->subbranches; elem; elem = elem->next) {
+    subbranch = elem->data;
+    if (subbranch->av != 'a') continue;
     g_object_set(subbranch->analyser,
 		 opts->option, opts->value,
 		 NULL);
@@ -120,40 +140,51 @@ parse_settings_message(guint*    message,
   const static gchar*  black = "black_lb";
   const static gchar*  freeze = "freeze_lb";
   const static gchar*  mark_blocks = "mark_blocks";
-  struct video_options opts;
+  const static gchar*  ad_timeout = "ad_timeout";
+  struct options       opts;
+  gboolean             is_video;
 
-  if ((message[0] != VIDEO_SETTINGS_HEADER) ||
-      (message[3] != VIDEO_SETTINGS_HEADER)) {
+  is_video = TRUE;
+
+  if ((message[0] != SETTINGS_HEADER) ||
+      (message[3] != SETTINGS_HEADER)) {
     g_printerr("Not a proper settings message!\n");
     return FALSE;
   }
   switch (message[1]) {
-  case SETTINGS_BLACK_LEVEL: {
+  case SETTINGS_BLACK_LEVEL:
     opts.option = black;
+    is_video = TRUE;
     break;
-  }
-  case SETTINGS_DIFF_LEVEL: {
+  case SETTINGS_DIFF_LEVEL:
     opts.option = freeze;
+    is_video = TRUE;
     break;
-  }
-  case SETTINGS_MARK_BLOCKS: {
+  case SETTINGS_MARK_BLOCKS:
     opts.option = mark_blocks;
+    is_video = TRUE;
     break;
-  }
-  default: {
+  case SETTINGS_AD_TIMEOUT:
+    opts.option = ad_timeout;
+    is_video = FALSE;
+    break;
+  default:
     g_printerr("Wrong option!\n");
     return FALSE;
     break;
-  }
   }
   opts.value = message[2];
   if (opts.value > 255) {
     g_printerr("Value is %d, but it should be in range (0..255)!\n", opts.value);
     return FALSE;
   }
-  
-  g_slist_foreach(tree->branches, set_video_option, &opts);
-  
+
+  if (is_video) {
+    g_slist_foreach(tree->branches, set_video_option, &opts);
+  } else {
+    g_slist_foreach(tree->branches, set_audio_option, &opts);
+  }
+    
   return TRUE;
 }
 
@@ -186,9 +217,10 @@ incoming_callback  (GSocketService*    service,
   case SOUND_HEADER:
     return parse_sound_message(message, tree);
     break;
-  case VIDEO_SETTINGS_HEADER:
+  case SETTINGS_HEADER:
     return parse_settings_message(message, tree);
     break;
+    
   default:
     break;
   }
