@@ -48,9 +48,10 @@ struct _GstAudioanalysis
 {
   GstAudioFilter base_audioanalysis;
   /* Public */
-  guint stream_id;
-  guint program;
-  guint pid;
+  guint  stream_id;
+  guint  program;
+  guint  pid;
+  gint64 ad_timeout;
   /* Private */
   ebur128_state *state;
   AudioData     *data;
