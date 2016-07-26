@@ -71,6 +71,7 @@ bus_call(GstBus*     bus,
   tree     = graph->tree;
   control  = graph->control;
   parsed   = FALSE;
+  error    = NULL;
   
   switch (GST_MESSAGE_TYPE(msg)) {
   case GST_MESSAGE_ERROR: {
@@ -117,16 +118,31 @@ bus_call(GstBus*     bus,
       st = gst_message_get_structure(msg);
       /* End Of Stream from udpsrc: */
       if (gst_structure_has_name (st, "GstUDPSrcTimeout")){
+
 	str = g_strdup_printf("e%d", tree->metadata->stream_id);
-        ats_control_send(control, str, NULL);
+        ats_control_send(control, str, &error);
+
+	if (error) {
+	  g_printerr ("Error: %s\n", error->message);
+	  g_error_free (error);
+	}
+
 	if (tree->branches != NULL)
 	  ats_tree_remove_branches(tree);
+
 	g_free(str);
       } 
       /* Data message from audio/videoanalysis */
       else if (gst_structure_get_name_id(st) == DATA_MARKER){
+
 	str = g_value_dup_string(gst_structure_id_get_value(st, DATA_MARKER));
-	ats_control_send(control, str, NULL);
+	ats_control_send(control, str, &error);
+
+	if (error) {
+	  g_printerr ("Error: %s\n", error->message);
+	  g_error_free (error);
+	}
+	
 	g_free(str);
       } 
       /* PTS packages from ts demux: */

@@ -93,6 +93,7 @@ enum
   PROP_STREAM_ID,
   PROP_PROGRAM,
   PROP_PID,
+  PROP_AD_TIMEOUT,
   LAST_PROP
 };
 
@@ -176,6 +177,14 @@ gst_audioanalysis_class_init (GstAudioanalysisClass * klass)
 		      G_MAXUINT,
 		      2001,
 		      G_PARAM_READWRITE);
+   properties [PROP_AD_TIMEOUT] =
+    g_param_spec_int64("ad_timeout",
+		       "AD timeout",
+		       "Max duration of the ad interval (seconds)",
+		       0,
+		       G_MAXINT64,
+		       4*60*60,
+		       G_PARAM_READWRITE);
   
   g_object_class_install_properties(gobject_class, LAST_PROP, properties);
 }
@@ -186,6 +195,7 @@ gst_audioanalysis_init (GstAudioanalysis *audioanalysis)
   audioanalysis->stream_id = 0;
   audioanalysis->program = 2000;
   audioanalysis->pid = 2001;
+  audioanalysis->ad_timeout = 4*60*60;
   audioanalysis->state = NULL;
   audioanalysis->data = NULL;
   audioanalysis->time = 0;
@@ -214,6 +224,9 @@ gst_audioanalysis_set_property (GObject * object,
   case PROP_PID:
     audioanalysis->pid = g_value_get_uint(value);
     break;
+  case PROP_AD_TIMEOUT:
+    audioanalysis->ad_timeout = g_value_get_int64(value);
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     break;
@@ -239,6 +252,9 @@ gst_audioanalysis_get_property (GObject * object,
     break;
   case PROP_PID:
     g_value_set_uint(value, audioanalysis->pid);
+    break;
+  case PROP_AD_TIMEOUT:
+    g_value_set_int64(value, audioanalysis->ad_timeout);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -370,6 +386,7 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   GstAudioanalysis *audioanalysis = GST_AUDIOANALYSIS (trans);
   GstMapInfo map;
   guint num_frames;
+  time_t now;
   AudioParams params;
   gchar* rval = NULL;
   GstClockTime current_time = gst_clock_get_time(GST_ELEMENT(audioanalysis)->clock);
@@ -381,9 +398,21 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
 
   ebur128_add_frames_short(audioanalysis->state, (short*)map.data, num_frames);
 
-  if (audioanalysis->glob_ad_flag)
+  /* add frames to an ad state */
+  if (audioanalysis->glob_ad_flag) {
+
+    now = time(NULL);
+    
     ebur128_add_frames_short(audioanalysis->glob_state, (short*)map.data, num_frames);
 
+    /* interval exceeded specified timeout */
+    if (DIFF(now, audioanalysis->glob_start) >= audioanalysis->ad_timeout) {
+      ebur128_clear_block_list(audioanalysis->glob_state);
+      audioanalysis->glob_ad_flag = FALSE;
+    }
+  }
+    
+  /* send data for the momentary and short term states */
   if (audio_data_is_full(audioanalysis->data)) {
     rval = audio_data_to_string(audioanalysis->data,
 				audioanalysis->stream_id,
@@ -393,7 +422,10 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
     audio_data_reset(audioanalysis->data);
     g_free(rval);
   }
+
+  /* eval loudness for the 100ms interval */
   if (DIFF(current_time, audioanalysis->time) >= OBSERVATION_TIME) {
+    
     ebur128_loudness_momentary(audioanalysis->state, &(params.moment));
     ebur128_loudness_shortterm(audioanalysis->state, &(params.shortt));
 
