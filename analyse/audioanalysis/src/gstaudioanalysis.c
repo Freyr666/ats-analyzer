@@ -402,7 +402,7 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
   if (audioanalysis->glob_ad_flag) {
 
     now = time(NULL);
-    
+
     ebur128_add_frames_short(audioanalysis->glob_state, (short*)map.data, num_frames);
 
     /* interval exceeded specified timeout */
@@ -459,7 +459,7 @@ gst_filter_sink_ad_event (GstBaseTransform * base,
       ad  = g_value_get_uint(gst_structure_get_value(st, "isad"));
       
       if (filter->program == pid) {
-	
+
 	gst_audioanalysis_eval_global(base, ad);
 	
 	gst_event_unref(event);

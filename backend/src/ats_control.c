@@ -151,6 +151,7 @@ parse_settings_message(guint*    message,
     g_printerr("Not a proper settings message!\n");
     return FALSE;
   }
+
   switch (message[1]) {
   case SETTINGS_BLACK_LEVEL:
     opts.option = black;
@@ -174,7 +175,7 @@ parse_settings_message(guint*    message,
     break;
   }
   opts.value = message[2];
-  if (opts.value > 255) {
+  if (is_video && (opts.value > 255)) {
     g_printerr("Value is %d, but it should be in range (0..255)!\n", opts.value);
     return FALSE;
   }
