@@ -36,7 +36,7 @@ blocklist_append (struct ebur128_double_queue_global* st,
   }
 
   /* add val */
-  *head->pt += x;
+  *head->pt = x;
   head->pt++;
 }
 
