@@ -58,8 +58,8 @@ branch_on_pad_added(GstElement* el,
   g_print("Result: %s\n", pad_type);
 
   /* Getting pad's type and pid */
-  pid_tocs = g_strsplit(GST_PAD_NAME (pad), "_", 2);
-  pid_num = strtoul(pid_tocs[1], NULL, 16);
+  pid_tocs = g_strsplit(GST_PAD_NAME (pad), "_", 3);
+  pid_num = strtoul(pid_tocs[2], NULL, 16);
   type_tocs = g_strsplit(pad_type, "/", 2);
   g_print("Got %s of type %s\n", type_tocs[0], type_tocs[1]);
   
