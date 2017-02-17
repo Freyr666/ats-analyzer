@@ -1,15 +1,14 @@
-CC = gcc
+CC = g++
 
-CFLAGS = -Wall -O3 -march=native -c -g
-CFLAGS += `pkg-config --cflags gstreamer-1.0 gstreamer-video-1.0 gstreamer-mpegts-1.0 gio-2.0 glib-2.0`
+CFLAGS = -Wall -O3 -march=native -c
+CFLAGS += $(pkg-config --cflags gstreamermm-1.0 glibmm-2.4)
 
 LDFLAGS = 
-LDFLAGS += `pkg-config --libs gstreamer-1.0 gstreamer-video-1.0 gstreamer-mpegts-1.0 gio-2.0 glib-2.0`
+LDFLAGS += $(pkg-config --libs gstreamermm-1.0 glibmm-2.4)
 
-SOURCES = main.c parse_ts.c ats_branch.c ats_control.c
-SOURCES += ats_tree.c ats_metadata.c ats_graph.c ats_subbranch.c
+SOURCES = main.cpp
 
-OBJECTS=$(SOURCES:.c=.o)
+OBJECTS=$(SOURCES:.cpp=.o)
 
 all: $(SOURCES) ats3-backend
 
