@@ -12,13 +12,21 @@ Meta_pid::to_string () {
     string rval = "Pid: ";
     rval += std::to_string(pid);
     rval += " Type: ";
-    rval += (type == Type::Video)? "Video " : "Audio ";
-    rval += "Codec: ";
+    rval += std::to_string(type);
+    rval += " Codec: ";
     rval += codec;
     return rval;
 }
 
 // --------- Meta_channel  ---------------
+
+Meta_pid*
+Meta_channel::find_pid (uint pid) {
+    for (Meta_pid& p : pids) {
+	if (p.pid == pid) return &p;
+    }
+    return nullptr;
+}
 
 string
 Meta_channel::to_string () {
@@ -26,7 +34,7 @@ Meta_channel::to_string () {
     rval += std::to_string(number);
     rval += " Service name: ";
     rval += service_name;
-    rval += " Provider name";
+    rval += " Provider name: ";
     rval += provider_name;
     rval += " Pids: ";
     for_each (pids.begin(), pids.end(), [&rval](Meta_pid& p) {
@@ -40,7 +48,7 @@ Meta_channel::to_string () {
 // ---------- Metadata ---------------------
 
 
-experimental::optional<Meta_pid*>
+Meta_pid*
 Metadata::find_pid (uint chan, uint pid) {
     for (Meta_channel& c : channels) {
 	if (c.number == chan)
@@ -48,15 +56,15 @@ Metadata::find_pid (uint chan, uint pid) {
 		if (p.pid == pid) return &p;
 	    }
     }
-    return {};
+    return nullptr;
 }
 
-experimental::optional<Meta_channel*>
+Meta_channel*
 Metadata::find_channel (uint chan) {
     for (Meta_channel& c : channels) {
 	if (c.number == chan) return &c;
     }
-    return {};
+    return nullptr;
 }
 
 string

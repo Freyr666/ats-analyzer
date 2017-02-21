@@ -5,6 +5,8 @@
 #include <gstreamermm.h>
 #include <glibmm.h>
 
+#include "metadata.hpp"
+
 using namespace Glib;
 
 namespace Ats {
@@ -14,7 +16,8 @@ namespace Ats {
 	int                   stream;
 	RefPtr<Gst::Pipeline> pipe;
 	RefPtr<Gst::Bus>      bus;
-
+	Metadata              m;
+	
 	Probe(int stream);
 	Probe(const Probe&) = delete;
 	Probe(Probe&&);

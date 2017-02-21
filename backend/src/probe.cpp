@@ -1,5 +1,6 @@
 #include "probe.hpp"
 #include "address.hpp"
+#include "parser.hpp"
 
 #include <cstdio>
 #include <iostream>
@@ -10,9 +11,9 @@
 
 using namespace Ats;
 
-Probe::Probe(int s) {
+Probe::Probe(int s) : m(s) {
     stream = s;
-  
+
     address a = get_address(s);
 
     auto src   = Gst::ElementFactory::create_element("udpsrc");
@@ -36,7 +37,7 @@ Probe::Probe(int s) {
 		   });
 }
 
-Probe::Probe(Probe&& src) {
+Probe::Probe(Probe&& src) : m(src.m) {
     swap(this->pipe, src.pipe);
 }
 
@@ -56,7 +57,9 @@ Probe::on_bus_message(const Glib::RefPtr<Gst::Bus>& bus,
     case Gst::MESSAGE_ELEMENT: {
 	if ((msg->get_source()->get_name().substr(0, 11) == "mpegtsparse") &&
 	    (section = gst_message_parse_mpegts_section (msg->gobj()))) {
-	    fprintf(stderr, "Got table at %d\n", stream);
+
+	    if(Parse::table(section, m))
+		cerr << "Got table at " << stream << "\nData:\n" << m.to_string() << "\n";
 	    
 	    gst_mpegts_section_unref (section);
 	}

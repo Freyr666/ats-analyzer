@@ -3,13 +3,14 @@
 
 #include <string>
 #include <vector>
-#include <experimental/optional>
 #include <gstreamermm.h>
 #include <glibmm.h>
 
 #include <gst/gst.h>
 #include <gst/mpegts/mpegts.h>
 #include <glib.h>
+
+#include "metadata.hpp"
 
 namespace Ats {
     
@@ -24,12 +25,12 @@ namespace Ats {
  * If section is of type sdt, pmt or pat, then true
  * else false
  */ 
-	bool table (GstMpegtsSection * section, void* data);
+	bool table (GstMpegtsSection * section, Metadata& data);
 
 /*
  * If section is of type sdt, then true
  */
-	bool sdt   (GstMpegtsSection * section, void* data);
+	bool sdt   (GstMpegtsSection * section, Metadata& data);
 
 	bool scte  (GstMpegtsSection * section, SIT* data);
 

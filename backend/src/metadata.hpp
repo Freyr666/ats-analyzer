@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <experimental/optional>
 #include <gstreamermm.h>
 #include <glibmm.h>
 
@@ -11,14 +10,12 @@ using namespace std;
 
 namespace Ats {
 
-    struct Meta_pid {
-     	enum class Type {Video, Audio};
-	
+    struct Meta_pid {	
 	uint    pid;
-	Type    type;
+	uint    type;
 	string  codec;
 
-	Meta_pid (uint p, Type t, string c) : pid(p), type(t), codec(c) {}
+	Meta_pid (uint p, uint t, string c) : pid(p), type(t), codec(c) {}
 	~Meta_pid () {}
 
 	string to_string ();
@@ -31,8 +28,12 @@ namespace Ats {
 	vector<Meta_pid> pids;
 
 	Meta_channel (uint n, string s, string p) : number(n), service_name(s), provider_name(p) {}
+	Meta_channel (uint n) : number(n) {}
 	~Meta_channel () {}
 
+	Meta_pid*     find_pid (uint pid);
+	
+	void   append_pid (Meta_pid&& p) { pids.push_back(p); }
 	uint   pids_num () { return pids.size(); }
 	string to_string ();
     };
@@ -42,10 +43,12 @@ namespace Ats {
 	vector<Meta_channel> channels;
 
 	Metadata (uint s) : stream(s) {}
-	~Metadata ();
+	~Metadata () {}
 
-	experimental::optional<Meta_pid*>     find_pid (uint chan, uint pid);
-	experimental::optional<Meta_channel*> find_channel (uint chan);
+	Meta_pid*     find_pid (uint chan, uint pid);
+	Meta_channel* find_channel (uint chan);
+
+	void   append_channel (Meta_channel&& c) { channels.push_back(c); }
 	uint   channels_num () { return channels.size(); }
 	string to_string ();
     };
