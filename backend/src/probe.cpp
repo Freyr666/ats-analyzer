@@ -2,6 +2,11 @@
 #include "address.hpp"
 
 #include <cstdio>
+#include <iostream>
+
+#include <gst/gst.h>
+#include <gst/mpegts/mpegts.h>
+#include <glib.h>
 
 using namespace Ats;
 
@@ -25,9 +30,9 @@ Probe::Probe(int s) {
 
     bus    = pipe->get_bus();
 
-    bus->add_watch([s] (const Glib::RefPtr<Gst::Bus>& bus,
-			const Glib::RefPtr<Gst::Message>& msg) -> bool {
-		       return on_bus_message(bus, msg, s);
+    bus->add_watch([this] (const Glib::RefPtr<Gst::Bus>& bus,
+			   const Glib::RefPtr<Gst::Message>& msg) -> bool {
+		       return this->on_bus_message(bus, msg);
 		   });
 }
 
@@ -35,20 +40,28 @@ Probe::Probe(Probe&& src) {
     swap(this->pipe, src.pipe);
 }
 
+Probe::~Probe() {}
+
 void
 Probe::set_state(Gst::State s) {
     pipe->set_state(s);
 }
 
-std::string
-Probe::to_string() {
-    return "TODO";
-}
-
 bool
 Probe::on_bus_message(const Glib::RefPtr<Gst::Bus>& bus,
-		      const Glib::RefPtr<Gst::Message>& msg,
-		      int val) {
-    fprintf(stderr, "Got msg from %d\n", val);
+		      const Glib::RefPtr<Gst::Message>& msg) {
+    GstMpegtsSection*   section;
+  
+    switch (msg->get_message_type()) {
+    case Gst::MESSAGE_ELEMENT: {
+	if ((msg->get_source()->get_name().substr(0, 11) == "mpegtsparse") &&
+	    (section = gst_message_parse_mpegts_section (msg->gobj()))) {
+	    fprintf(stderr, "Got table at %d\n", stream);
+	    
+	    gst_mpegts_section_unref (section);
+	}
+    }
+    default: break;
+    }
     return true;
 }

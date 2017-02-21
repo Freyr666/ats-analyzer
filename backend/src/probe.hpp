@@ -18,15 +18,13 @@ namespace Ats {
 	Probe(int stream);
 	Probe(const Probe&) = delete;
 	Probe(Probe&&);
-	// ~Probe();
+	~Probe();
 
 	void        set_state(Gst::State);
-	std::string to_string();
 
     private:
-	static bool on_bus_message(const Glib::RefPtr<Gst::Bus>&,
-				   const Glib::RefPtr<Gst::Message>&,
-				   int);
+	bool on_bus_message(const Glib::RefPtr<Gst::Bus>&,
+			    const Glib::RefPtr<Gst::Message>&);
     };
 
 };
