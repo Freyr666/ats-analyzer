@@ -48,6 +48,7 @@ namespace Ats {
 	Meta_pid*     find_pid (uint chan, uint pid);
 	Meta_channel* find_channel (uint chan);
 
+	void   clear () { channels.clear(); }
 	void   append_channel (Meta_channel&& c) { channels.push_back(c); }
 	uint   channels_num () { return channels.size(); }
 	string to_string ();

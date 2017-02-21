@@ -28,6 +28,7 @@ Probe::Probe(int s) : m(s) {
 
     src->set_property("address", a.addr);
     src->set_property("port", a.port);
+    src->set_property("timeout", 5000000000);
 
     bus    = pipe->get_bus();
 
@@ -62,9 +63,16 @@ Probe::on_bus_message(const Glib::RefPtr<Gst::Bus>& bus,
 		cerr << "Got table at " << stream << "\nData:\n" << m.to_string() << "\n";
 	    
 	    gst_mpegts_section_unref (section);
+	} else {
+	    cerr << msg->get_structure().get_name() << "\n";
+	    if (msg->get_structure().get_name() == "GstUDPSrcTimeout") {
+		m.clear();
+		cerr << "Clear table at " << stream << "\nData:\n" << m.to_string() << "\n";
+	    }
 	}
     }
+	break;
     default: break;
     }
-    return true;
+    return    true;
 }
