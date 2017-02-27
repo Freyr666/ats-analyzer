@@ -11,7 +11,7 @@
 
 using namespace Ats;
 
-Probe::Probe(int s) : m(s) {
+Probe::Probe(int s) : metadata(s) {
     stream = s;
 
     address a = get_address(s);
@@ -38,7 +38,7 @@ Probe::Probe(int s) : m(s) {
 		   });
 }
 
-Probe::Probe(Probe&& src) : m(src.m) {
+Probe::Probe(Probe&& src) : metadata(src.metadata) {
     swap(this->pipe, src.pipe);
 }
 
@@ -59,15 +59,19 @@ Probe::on_bus_message(const Glib::RefPtr<Gst::Bus>& bus,
 	if ((msg->get_source()->get_name().substr(0, 11) == "mpegtsparse") &&
 	    (section = gst_message_parse_mpegts_section (msg->gobj()))) {
 
-	    if(Parse::table(section, m))
-		cerr << "Got table at " << stream << "\nData:\n" << m.to_string() << "\n";
+	    if(Parse::table(section, metadata))
+	        updated.emit(metadata);
 	    
 	    gst_mpegts_section_unref (section);
 	} else {
-	    cerr << msg->get_structure().get_name() << "\n";
 	    if (msg->get_structure().get_name() == "GstUDPSrcTimeout") {
-		m.clear();
-		cerr << "Clear table at " << stream << "\nData:\n" << m.to_string() << "\n";
+
+		if (! metadata.is_empty()) {
+		    metadata.clear();
+		    pipe->set_state(Gst::STATE_NULL);
+		    pipe->set_state(Gst::STATE_PLAYING);
+		    updated.emit(metadata);
+		}
 	    }
 	}
     }

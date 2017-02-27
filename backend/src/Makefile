@@ -7,7 +7,7 @@ LDFLAGS =
 LDFLAGS += `pkg-config --libs gstreamermm-1.0 glibmm-2.4 gstreamer-1.0 gstreamer-video-1.0 gstreamer-mpegts-1.0`
 
 SOURCES = main.cpp probe.cpp address.cpp \
-          metadata.cpp parser.cpp
+          metadata.cpp parser.cpp options.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

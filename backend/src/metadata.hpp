@@ -14,8 +14,10 @@ namespace Ats {
 	uint    pid;
 	uint    type;
 	string  codec;
-
-	Meta_pid (uint p, uint t, string c) : pid(p), type(t), codec(c) {}
+	// Options
+	bool   to_be_analyzed;
+	
+	Meta_pid (uint p, uint t, string c) : pid(p), type(t), codec(c), to_be_analyzed(false) {}
 	~Meta_pid () {}
 
 	string to_string ();
@@ -51,6 +53,7 @@ namespace Ats {
 	void   clear () { channels.clear(); }
 	void   append_channel (Meta_channel&& c) { channels.push_back(c); }
 	uint   channels_num () { return channels.size(); }
+	bool   is_empty() { return channels.empty(); }
 	string to_string ();
     };
 };

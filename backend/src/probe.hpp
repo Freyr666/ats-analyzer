@@ -16,7 +16,7 @@ namespace Ats {
 	int                   stream;
 	RefPtr<Gst::Pipeline> pipe;
 	RefPtr<Gst::Bus>      bus;
-	Metadata              m;
+	Metadata              metadata;
 	
 	Probe(int stream);
 	Probe(const Probe&) = delete;
@@ -24,6 +24,8 @@ namespace Ats {
 	~Probe();
 
 	void        set_state(Gst::State);
+
+	sigc::signal<void,const Metadata&> updated;
 
     private:
 	bool on_bus_message(const Glib::RefPtr<Gst::Bus>&,
