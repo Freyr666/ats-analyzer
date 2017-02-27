@@ -32,10 +32,7 @@ Probe::Probe(int s) : metadata(s) {
 
     bus    = pipe->get_bus();
 
-    bus->add_watch([this] (const Glib::RefPtr<Gst::Bus>& bus,
-			   const Glib::RefPtr<Gst::Message>& msg) -> bool {
-		       return this->on_bus_message(bus, msg);
-		   });
+    bus->add_watch(sigc::mem_fun(this, &Probe::on_bus_message));
 }
 
 Probe::Probe(Probe&& src) : metadata(src.metadata) {
