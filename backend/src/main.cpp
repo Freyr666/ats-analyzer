@@ -4,6 +4,7 @@
 
 #include "probe.hpp"
 #include "options.hpp"
+#include "graph.hpp"
 
 using namespace Ats;
 
@@ -20,9 +21,13 @@ main(int argc, char *argv[])
     auto t1 = Probe(1);
     auto t2 = Probe(2);
 
+    auto g = Graph();
+
     opts.connect(t0);
     opts.connect(t1);
     opts.connect(t2);
+
+    g.connect(opts);
     
     t0.set_state(Gst::STATE_PLAYING);
 

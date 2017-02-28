@@ -14,6 +14,8 @@ namespace Ats {
     struct Options {
 	vector<Metadata> data;
 	int              dummy;
+
+	sigc::signal<void,const Options&> updated;
     
 	Options() {}
 	~Options() {}
@@ -23,8 +25,8 @@ namespace Ats {
 	}
 
 	void   set_data(const Metadata&);
-	string to_string();
-	string to_json();
+	string to_string() const;
+	string to_json()   const;
 	void   of_json(const string&);
 
 	void operator=(const Metadata& m) { set_data(m); }

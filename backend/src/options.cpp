@@ -21,13 +21,13 @@ Options::set_data(const Metadata& m) {
 	    data.push_back(Metadata(m));
 	}
     }
-    cout << this->to_string() << endl;;
+    updated.emit(*this);
 }
 
 string
-Options::to_string() {
+Options::to_string() const {
     string rval = "\tOptions:\n\tStreams:\n";
-    for_each(data.begin(),data.end(),[&rval](Metadata& m){
+    for_each(data.begin(),data.end(),[&rval](const Metadata& m){
 	    rval += "\n";
 	    rval += m.to_string();
 	    rval += "\n";
@@ -40,7 +40,7 @@ Options::to_string() {
 }
 
 string
-Options::to_json() {
+Options::to_json() const {
     return "todo";
 }
 

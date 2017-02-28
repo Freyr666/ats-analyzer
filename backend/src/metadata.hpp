@@ -20,7 +20,7 @@ namespace Ats {
 	Meta_pid (uint p, uint t, string c) : pid(p), type(t), codec(c), to_be_analyzed(false) {}
 	~Meta_pid () {}
 
-	string to_string ();
+	string to_string () const;
     };
 
     struct Meta_channel {
@@ -34,10 +34,11 @@ namespace Ats {
 	~Meta_channel () {}
 
 	Meta_pid*     find_pid (uint pid);
-	
+
+	bool   to_be_analyzed () const;
 	void   append_pid (Meta_pid&& p) { pids.push_back(p); }
 	uint   pids_num () { return pids.size(); }
-	string to_string ();
+	string to_string () const;
     };
     
     struct Metadata {
@@ -52,9 +53,12 @@ namespace Ats {
 
 	void   clear () { channels.clear(); }
 	void   append_channel (Meta_channel&& c) { channels.push_back(c); }
-	uint   channels_num () { return channels.size(); }
-	bool   is_empty() { return channels.empty(); }
-	string to_string ();
+	uint   channels_num () const { return channels.size(); }
+	bool   is_empty() const { return channels.empty(); }
+	bool   to_be_analyzed () const;
+	string to_string () const;
+
+	void   for_analyzable (std::function<void(const Meta_channel&)>) const;
     };
 };
 

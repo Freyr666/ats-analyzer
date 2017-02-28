@@ -12,11 +12,12 @@ using namespace Glib;
 namespace Ats {
 
     class Probe {
+
     public:
 	int                   stream;
-	RefPtr<Gst::Pipeline> pipe;
-	RefPtr<Gst::Bus>      bus;
 	Metadata              metadata;
+
+	sigc::signal<void,const Metadata&> updated;
 	
 	Probe(int stream);
 	Probe(const Probe&) = delete;
@@ -25,9 +26,10 @@ namespace Ats {
 
 	void        set_state(Gst::State);
 
-	sigc::signal<void,const Metadata&> updated;
-
     private:
+	RefPtr<Gst::Pipeline> pipe;
+	RefPtr<Gst::Bus>      bus;
+	
 	bool on_bus_message(const Glib::RefPtr<Gst::Bus>&,
 			    const Glib::RefPtr<Gst::Message>&);
     };
