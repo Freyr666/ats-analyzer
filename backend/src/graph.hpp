@@ -6,6 +6,7 @@
 #include <string>
 #include <gstreamermm.h>
 #include <glibmm.h>
+#include <functional>
 
 using namespace std;
 using namespace Glib;
@@ -30,6 +31,12 @@ namespace Ats {
 	RefPtr<Gst::Pipeline> pipe;
 	RefPtr<Gst::Bus>      bus;
 	
+	static RefPtr<Gst::Bin> create_root(const Metadata&);
+	static RefPtr<Gst::Bin> create_branch(const uint,
+					      const uint,
+					      const string,
+					      const string,
+					      const Metadata&);
     };
     
 };

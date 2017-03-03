@@ -17,7 +17,7 @@ namespace Ats {
 	// Options
 	bool   to_be_analyzed;
 	
-	Meta_pid (uint p, uint t, string c) : pid(p), type(t), codec(c), to_be_analyzed(false) {}
+	Meta_pid (uint p, uint t, string c) : pid(p), type(t), codec(c), to_be_analyzed(true) {}
 	~Meta_pid () {}
 
 	string to_string () const;
@@ -49,7 +49,11 @@ namespace Ats {
 	~Metadata () {}
 
 	Meta_pid*     find_pid (uint chan, uint pid);
+	const Meta_pid* find_pid (uint chan, uint pid) const;
+	Meta_pid*     find_pid (uint pid);
+	const Meta_pid* find_pid (uint pid) const;
 	Meta_channel* find_channel (uint chan);
+	const Meta_channel* find_channel (uint chan) const;
 
 	void   clear () { channels.clear(); }
 	void   append_channel (Meta_channel&& c) { channels.push_back(c); }

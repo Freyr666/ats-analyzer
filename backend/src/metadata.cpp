@@ -47,10 +47,12 @@ Meta_channel::to_string () const {
 
 bool
 Meta_channel::to_be_analyzed () const {
+    if (pids.empty()) return false;
+    
     auto result = find_if (pids.begin(), pids.end(), [](const Meta_pid& p){
 	    return p.to_be_analyzed;
 	});
-    return result->to_be_analyzed;
+    return result != pids.end();
 }
 
 // ---------- Metadata ---------------------
@@ -67,9 +69,48 @@ Metadata::find_pid (uint chan, uint pid) {
     return nullptr;
 }
 
+const Meta_pid*
+Metadata::find_pid (uint chan, uint pid) const {
+    for (const Meta_channel& c : channels) {
+	if (c.number == chan)
+	    for (const Meta_pid& p : c.pids) {
+		if (p.pid == pid) return &p;
+	    }
+    }
+    return nullptr;
+}
+
+Meta_pid*
+Metadata::find_pid (uint pid) {
+    for (Meta_channel& c : channels) {
+	for (Meta_pid& p : c.pids) {
+	    if (p.pid == pid) return &p;
+	}
+    }
+    return nullptr;
+}
+
+const Meta_pid*
+Metadata::find_pid (uint pid) const {
+    for (const Meta_channel& c : channels) {
+	for (const Meta_pid& p : c.pids) {
+	    if (p.pid == pid) return &p;
+	}
+    }
+    return nullptr;
+}
+
 Meta_channel*
 Metadata::find_channel (uint chan) {
     for (Meta_channel& c : channels) {
+	if (c.number == chan) return &c;
+    }
+    return nullptr;
+}
+
+const Meta_channel*
+Metadata::find_channel (uint chan) const {
+    for (const Meta_channel& c : channels) {
 	if (c.number == chan) return &c;
     }
     return nullptr;
@@ -90,10 +131,12 @@ Metadata::to_string () const {
 
 bool
 Metadata::to_be_analyzed () const {
+    if (channels.empty()) return false;
+    
     auto rval = find_if (channels.begin(),channels.end(),[](const Meta_channel& c){
 	    return c.to_be_analyzed();
 	});
-    return rval->to_be_analyzed();
+    return rval != channels.end();
 }
 
 void

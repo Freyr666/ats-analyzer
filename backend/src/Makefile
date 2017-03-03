@@ -1,6 +1,6 @@
 CC = clang++
 
-CFLAGS = -Wall -O2 -std=c++1y -g -c
+CFLAGS = -Wall -O0 -std=c++1y -g -c
 CFLAGS += `pkg-config --cflags gstreamermm-1.0 glibmm-2.4 gstreamer-1.0 gstreamer-video-1.0 gstreamer-mpegts-1.0`
 
 LDFLAGS = 
