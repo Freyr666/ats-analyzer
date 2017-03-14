@@ -46,7 +46,12 @@ namespace Ats {
 	vector<Meta_channel> channels;
 
 	Metadata (uint s) : stream(s) {}
-	~Metadata () {}
+	Metadata () : Metadata(0) {}
+	//Metadata (Metadata&& m) : stream(m.stream),channels(std::move(m.channels)) {}
+	//Metadata (const Metadata& m) : stream(m.stream),channels(m.channels) {}
+	//~Metadata () {}
+
+	Metadata& operator=(const Metadata&) = default;
 
 	Meta_pid*     find_pid (uint chan, uint pid);
 	const Meta_pid* find_pid (uint chan, uint pid) const;

@@ -20,9 +20,9 @@ namespace Ats {
 	sigc::signal<void,const Metadata&> updated;
 	
 	Probe(int stream);
-	Probe(const Probe&) = delete;
-	Probe(Probe&&);
-	~Probe();
+	//Probe(const Probe&) = delete;
+	//Probe(Probe&& p);
+	//~Probe();
 
 	void        set_state(Gst::State);
 
