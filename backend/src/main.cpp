@@ -27,7 +27,7 @@ main(int argc, char *argv[])
     opts.connect(t1);
     opts.connect(t2);
 
-    g.connect(opts);
+    // g.connect(opts);
     
     t0.set_state(Gst::STATE_PLAYING);
 
@@ -35,7 +35,7 @@ main(int argc, char *argv[])
 
     t2.set_state(Gst::STATE_PLAYING);
 
-    /*
+    
     Glib::signal_timeout().connect([&g, &opts](){
 	    g.apply(opts);
 	    return false;
@@ -53,7 +53,7 @@ main(int argc, char *argv[])
 	    return false;
 	},
 	20000);
-    */
+    
     main_loop->run();
     
     return 0;

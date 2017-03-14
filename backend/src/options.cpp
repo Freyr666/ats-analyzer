@@ -34,7 +34,7 @@ Options::to_string() const {
 	});
     rval += "\tOther options:\n";
     rval += "Dummy: ";
-    rval += std::to_string(dummy);
+    rval += std::to_string(resolution.first);
     rval += "\n";
     return rval;
 }
