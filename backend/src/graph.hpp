@@ -24,6 +24,7 @@ namespace Ats {
 	}
 	
 	void   apply(const Options&);
+	void   reset();
 	void   set_state(Gst::State);
 	string to_string() const;
 	

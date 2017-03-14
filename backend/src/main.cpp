@@ -34,7 +34,26 @@ main(int argc, char *argv[])
     t1.set_state(Gst::STATE_PLAYING);
 
     t2.set_state(Gst::STATE_PLAYING);
-    
+
+    /*
+    Glib::signal_timeout().connect([&g, &opts](){
+	    g.apply(opts);
+	    return false;
+	},
+	2000);
+
+    Glib::signal_timeout().connect([&g, &opts](){
+	    g.reset();
+	    return false;
+	},
+	10000);
+
+    Glib::signal_timeout().connect([&g, &opts](){
+	    g.apply(opts);
+	    return false;
+	},
+	20000);
+    */
     main_loop->run();
     
     return 0;

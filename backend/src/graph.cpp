@@ -14,8 +14,8 @@ void
 Graph::apply(const Options& o) {
     if (o.data[0].channels[0].service_name.empty()) return;
     cout << o.to_string() << endl;
-    if (bus)    bus.reset();
-    if (pipe)   pipe.reset();
+    
+    reset();
 	
     pipe = Gst::Pipeline::create();
  
@@ -24,8 +24,6 @@ Graph::apply(const Options& o) {
 
     pipe->add(mixer)->add(output);
     mixer->link(output);
-    mixer->sync_state_with_parent();
-    output->sync_state_with_parent();
     
     for_each(o.data.begin(),o.data.end(),[this, mixer](const Metadata& m){
 	    auto root = create_root(m);
@@ -62,6 +60,15 @@ Graph::apply(const Options& o) {
     pipe->set_state(Gst::STATE_PLAYING);
 
     // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+}
+
+void
+Graph::reset() {
+    if (bus)   bus.reset();
+    if (pipe)  {
+	set_state(Gst::STATE_NULL);
+	pipe.reset();
+    }
 }
 
 void
