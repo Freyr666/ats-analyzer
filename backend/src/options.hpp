@@ -13,7 +13,7 @@ namespace Ats {
 
     struct Options {
 	vector<Metadata> data;
-	int              dummy;
+	pair<int,int>    resolution;
 
 	sigc::signal<void,const Options&> updated;
     

@@ -39,12 +39,12 @@ Graph::apply(const Options& o) {
 			vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
 			auto type    = name_toks[1];
 			
-			if (type != "video") return;
-			pipe->set_state(Gst::STATE_PAUSED);
-			auto mixer_pad = mixer->get_request_pad("sink_%u");
-			p->link(mixer_pad);
-			pipe->set_state(Gst::STATE_PLAYING);
-			GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+			if (type == "video") {
+			    pipe->set_state(Gst::STATE_PAUSED);
+			    auto mixer_pad = mixer->get_request_pad("sink_%u");
+			    p->link(mixer_pad);
+			    pipe->set_state(Gst::STATE_PLAYING);
+			}
 		    });
 	    }
 	});
