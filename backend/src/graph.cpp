@@ -20,11 +20,10 @@ Graph::apply(const Options& o) {
     pipe = Gst::Pipeline::create();
  
     auto mixer  = Gst::ElementFactory::create_element("glvideomixer");
-    auto conv   = Gst::ElementFactory::create_element("videoconvert");
-    auto output = Gst::ElementFactory::create_element("xvimagesink");
+    auto output = Gst::ElementFactory::create_element("glimagesink");
 
-    pipe->add(mixer)->add(conv)->add(output);
-    mixer->link(conv)->link(output);
+    pipe->add(mixer)->add(output);
+    mixer->link(output);
     mixer->sync_state_with_parent();
     output->sync_state_with_parent();
     
@@ -57,7 +56,7 @@ Graph::apply(const Options& o) {
 	    gst_bin_sync_children_states(GST_BIN(pipe->gobj()));
 	    //   GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
 	});
-
+    
     bus = pipe->get_bus();
    
     pipe->set_state(Gst::STATE_PLAYING);
@@ -93,7 +92,7 @@ Graph::create_root(const Metadata& m) {
 
     src->link(parse)->link(tee);
 
-    m.for_analyzable ([&m,bin,tee](const Meta_channel& c) {
+    m.for_analyzable ([&m,&bin,tee](const Meta_channel& c) {
 	    uint num = c.number;
 	    
 	    string demux_name = "demux_";
@@ -154,6 +153,7 @@ Graph::create_root(const Metadata& m) {
 		    bin->set_state(Gst::STATE_PLAYING);
 		    branch->sync_state_with_parent();
 		});
+	    
 	});
     return bin;
 }
@@ -165,6 +165,8 @@ Graph::create_branch(const uint channel,
 		     const string subtype,
 		     const Metadata& m) {
     RefPtr<Gst::Element> decoder;
+    RefPtr<Gst::Element> deint;
+    RefPtr<Gst::Pad> src_pad;
     
     auto pidinfo = m.find_pid(channel, pid);
 
@@ -187,9 +189,10 @@ Graph::create_branch(const uint channel,
 	} else {
 	    return RefPtr<Gst::Bin>(nullptr);
 	}
+	deint = Gst::ElementFactory::create_element("deinterlace");
 	// TODO: add analyzer
-	bin->add(queue)->add(parser)->add(decoder);
-	queue->link(parser)->link(decoder);
+	bin->add(queue)->add(parser)->add(decoder)->add(deint);
+	queue->link(parser)->link(decoder)->link(deint);
 	
     } else if (type == "audio_no") {
 	
@@ -215,8 +218,12 @@ Graph::create_branch(const uint channel,
 	return RefPtr<Gst::Bin>(nullptr);
     }
     auto sink_pad = queue->get_static_pad("sink");
-    auto src_pad  = decoder->get_static_pad("src");
-
+    if (type == "video") {
+	src_pad  = deint->get_static_pad("src");
+    } else {
+	src_pad  = decoder->get_static_pad("src");
+    }
+    
     auto sink_ghost = Gst::GhostPad::create(sink_pad, "sink");
     auto src_ghost = Gst::GhostPad::create(src_pad, "src");
 

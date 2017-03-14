@@ -191,6 +191,7 @@ Parse::sdt (GstMpegtsSection *section,
     return FALSE;
 }
 
+/*
 bool
 Parse::scte(GstMpegtsSection * section,
 	    SIT*               data)
@@ -207,3 +208,4 @@ Parse::scte(GstMpegtsSection * section,
     }
     return FALSE;
 }
+*/
