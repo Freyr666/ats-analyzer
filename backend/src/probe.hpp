@@ -4,6 +4,7 @@
 #include <string>
 #include <gstreamermm.h>
 #include <glibmm.h>
+#include <exception>
 
 #include "metadata.hpp"
 
@@ -12,17 +13,17 @@ using namespace Glib;
 namespace Ats {
 
     class Probe {
-
     public:
+	class No_pipe : std::exception {};
+	
 	int                   stream;
 	Metadata              metadata;
 
 	sigc::signal<void,const Metadata&> updated;
 	
 	Probe(int stream);
-	//Probe(const Probe&) = delete;
-	//Probe(Probe&& p);
-	//~Probe();
+	Probe(const Probe&) = delete;
+	Probe(Probe&&) = delete;
 
 	void        set_state(Gst::State);
 

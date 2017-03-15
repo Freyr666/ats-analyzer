@@ -35,15 +35,13 @@ Probe::Probe(int s) : metadata(s) {
     bus->add_watch(sigc::mem_fun(this, &Probe::on_bus_message));
 }
 
-/*
-Probe::Probe(Probe&& src) : metadata(std::move(src.metadata)) {
-    swap(pipe, src.pipe);
-}
-*/
-
 void
 Probe::set_state(Gst::State s) {
-    pipe->set_state(s);
+    if (pipe) {
+	pipe->set_state(s);
+    } else {
+	throw No_pipe();
+    }
 }
 
 bool

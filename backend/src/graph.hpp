@@ -17,7 +17,8 @@ namespace Ats {
     
     public:
 	Graph() {}
-	~Graph() {}
+	Graph(const Graph&) = delete;
+	Graph(Graph&&) = delete;
 
 	void   connect(Options& o) { o.updated.connect(
 		sigc::mem_fun(this, &Graph::apply));
