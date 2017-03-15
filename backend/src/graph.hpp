@@ -17,7 +17,8 @@ namespace Ats {
     
     public:
 	Graph() {}
-	~Graph() {}
+	Graph(const Graph&) = delete;
+	Graph(Graph&&) = delete;
 
 	void   connect(Options& o) { o.updated.connect(
 		sigc::mem_fun(this, &Graph::apply));
@@ -35,8 +36,6 @@ namespace Ats {
 	static RefPtr<Gst::Bin> create_root(const Metadata&);
 	static RefPtr<Gst::Bin> create_branch(const uint,
 					      const uint,
-					      const string,
-					      const string,
 					      const Metadata&);
     };
     
