@@ -16,14 +16,14 @@ Context::Context(uint size) {
 	probes[i]->set_state(Gst::STATE_PLAYING);
     }
 
-    graph.connect(opts);
-    /*
-    Glib::signal_timeout().connect([&g, &opts](){
-	    g.apply(opts);
+    // graph.connect(opts);
+    
+    Glib::signal_timeout().connect([this](){
+	    graph.apply(opts);
 	    return false;
 	},
 	2000);
-
+    /*
     Glib::signal_timeout().connect([&g, &opts](){
 	    g.reset();
 	    return false;
