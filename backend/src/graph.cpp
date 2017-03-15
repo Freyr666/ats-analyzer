@@ -85,6 +85,7 @@ Graph::create_root(const Metadata& m) {
 
     src->set_property("address", a.addr);
     src->set_property("port", a.port);
+    src->set_property("buffer-size", 2147483647);
 
     bin->add(src)->add(parse)->add(tee);
 
@@ -103,7 +104,9 @@ Graph::create_root(const Metadata& m) {
 	    auto demux = Gst::ElementFactory::create_element("tsdemux",demux_name);
 
 	    demux->set_property("program-number", c.number);
-	    
+	    queue->set_property("max-size-buffers", 200000);
+	    queue->set_property("max-size-bytes", 429496729);
+
 	    auto sinkpad = queue->get_static_pad("sink"); 
 	    auto srcpad = tee->get_request_pad("src_%u");
 
@@ -169,6 +172,9 @@ Graph::create_branch(const uint channel,
     auto bin     = Gst::Bin::create();
     auto queue   = Gst::ElementFactory::create_element("queue");
     auto decoder = Gst::ElementFactory::create_element("decodebin");
+    
+    queue->set_property("max-size-buffers", 20000);
+    queue->set_property("max-size-bytes", 12000000);
 
     bin->add(queue)->add(decoder);
     queue->link(decoder);
