@@ -7,8 +7,8 @@ Pre-pre-alpha goals:
 - [ ] Implement Options type
 - [ ] Implement JSON support
 - [ ] Implement Graph type
--- [ ] frame size validation support
--- [ ] mosaic compositing
+- - [ ] frame size validation support
+- - [ ] mosaic compositing
 
 Pre-alpha goals:
 
