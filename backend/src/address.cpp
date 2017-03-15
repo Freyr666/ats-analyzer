@@ -2,7 +2,7 @@
 
 using namespace Ats;
 
-address
+Address
 Ats::get_address(int stream,
 	    const std::string a,
 	    const int base) {
