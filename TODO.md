@@ -5,18 +5,19 @@ Pre-pre-alpha goals:
 - [ ] Reimplement Metadata type as Metadata<Pid_type,Channel_type>
 - [ ] Implement Control type
 - [ ] Implement Options type
-- [ ] Implement JSON support
+- [ ] Add JSON support
 - [ ] Implement Graph type
 - - [ ] frame size validation support
 - - [ ] mosaic compositing
 
 Pre-alpha goals:
 
-- [ ] Implement msgpack support
+- [ ] Add msgpack support
 - [ ] Add analysing elements
 - [ ] Inplement drawing element
 
 Beta goals:
+- [ ] Implement custom msg drawing support
 - [ ] Man pages
 
 Release goals:
