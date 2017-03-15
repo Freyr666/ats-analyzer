@@ -4,7 +4,7 @@ Pre-pre-alpha goals:
 - [x] Extend udpsrc buffer size [171ecff]
 - [x] Switch to decodebin element for decoding [3cb0858]
 - [ ] Implement command-line options parser
-- [ ] Reimplement Metadata type as Metadata<Pid_type,Channel_type>
+- [ ] Reimplement Metadata
 - [ ] Implement Control type
 - [ ] Implement Options type
 - [ ] Add JSON support
