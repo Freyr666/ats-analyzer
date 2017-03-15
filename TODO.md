@@ -1,6 +1,6 @@
 Pre-pre-alpha goals:
 
-- [x] Forbid move and copy constructors for any non-copyable objects
+- [x] Forbid move and copy constructors for any non-copyable objects [Done 15ee6b4]
 - [ ] Switch to decodebin element for decoding
 - [ ] Implement command-line options parser
 - [ ] Reimplement Metadata type as Metadata<Pid_type,Channel_type>
