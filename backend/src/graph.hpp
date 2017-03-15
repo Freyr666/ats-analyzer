@@ -36,8 +36,6 @@ namespace Ats {
 	static RefPtr<Gst::Bin> create_root(const Metadata&);
 	static RefPtr<Gst::Bin> create_branch(const uint,
 					      const uint,
-					      const string,
-					      const string,
 					      const Metadata&);
     };
     
