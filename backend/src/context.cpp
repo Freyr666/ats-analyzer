@@ -7,11 +7,13 @@ Context::Context(uint size) {
     if (size < 1) throw Context::Size_error();
 
     main_loop = Glib::MainLoop::create();
+    
     probes.reserve(size);
+    
     for (uint i = 0; i < size; i++) {
-	probes.push_back(Probe(i));
-	opts.connect(probes[i]);
-	probes[i].set_state(Gst::STATE_PLAYING);
+	probes.push_back(unique_ptr<Probe>(new Probe(i)));
+	opts.connect(*probes[i]);
+	probes[i]->set_state(Gst::STATE_PLAYING);
     }
 
     graph.connect(opts);

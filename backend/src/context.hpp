@@ -20,7 +20,7 @@ namespace Ats {
 	
     private:
 	Graph         graph;
-	vector<Probe> probes;
+	vector< unique_ptr<Probe> > probes;
 	Options       opts;
 	
 	RefPtr<MainLoop> main_loop;
