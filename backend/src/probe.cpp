@@ -14,7 +14,7 @@ using namespace Ats;
 Probe::Probe(int s) : metadata(s) {
     stream = s;
 
-    address a = get_address(s);
+    Address a = get_address(s);
 
     auto src   = Gst::ElementFactory::create_element("udpsrc");
     auto parse = Gst::ElementFactory::create_element("tsparse");

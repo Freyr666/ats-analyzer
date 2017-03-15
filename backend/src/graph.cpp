@@ -85,7 +85,7 @@ RefPtr<Gst::Bin>
 Graph::create_root(const Metadata& m) {
     if (! m.to_be_analyzed()) return RefPtr<Gst::Bin>(nullptr);
     
-    address a = get_address(m.stream);
+    Address a = get_address(m.stream);
 
     auto bin   = Gst::Bin::create();
     auto src   = Gst::ElementFactory::create_element("udpsrc");

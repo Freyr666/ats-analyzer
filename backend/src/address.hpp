@@ -5,13 +5,13 @@
 
 namespace Ats {
 
-    struct address {
-	std::string addr;
-	int         port;
-    };
+  struct Address {
+    std::string addr;
+    int         port;
+  };
 
-    address get_address(int, const std::string = "224.1.2.2", const int = 1234);
-    
+  Address get_address(int, const std::string = "224.1.2.2", const int = 1234);
+
 };
 
 #endif /* ADDRESS_H */
