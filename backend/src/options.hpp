@@ -87,7 +87,7 @@ namespace Ats {
     ~Options() {}
 
     void   connect(Probe& p) { p.updated.connect(
-                                                 sigc::mem_fun(this, &Options::set_data));
+	    sigc::mem_fun(this, &Options::set_data));
     }
 
     void   set_data(const Metadata&);
