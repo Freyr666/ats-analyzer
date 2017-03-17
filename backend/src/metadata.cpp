@@ -199,35 +199,60 @@ Metadata::for_analyzable (std::function<void(const Meta_channel&)> fun) const {
 bool
 Metadata::validate_grid (uint width, uint height) const {
 
-    auto do_rects_overlap = [](Meta_pid::Position& a, Meta_pid::Position& b) {
-        return ((a.x <= (b.width - b.x)) and
-                ((a.width - a.x) >= b.x) and
-                (a.y <= (b.height - b.y)) and
+    auto is_overlap = [](const Meta_pid::Position& a, const Meta_pid::Position& b){
+        return ((a.x < (b.width - b.x)) &&
+                ((a.width - a.x) > b.x) &&
+                (a.y < (b.height - b.y)) &&
                 ((a.height - a.y) > b.y));
-    }
-    /*
-      logic:
-      * first check if pid positions are equal or, if not, if they do not cross
-      * then check if unique pid positions do not cross with positions of pids in other progs
-      */
+    };
 
-    for (channel = channels.begin(); channel != channels.end(); channel++) {
+    auto is_equal = [](const Meta_pid::Position& a, const Meta_pid::Position& b) {
+        return a == b;
+    };
 
-        bool failure = false;
+    bool failure = false;
 
-        for (pid = *channel.pids.begin(); pid != *channel.pid.end(); pid++) {
-            if (((*pid.position.first > width) || (*pid.position.first < 0)) &&
-                ((*pid.position.second > height) || (*pid.position.second < 0))
-                (for_each ((pid+1), *channel.pids.end(), [&(*pid)](Meta_pid& p) {
-                        return do_rects_overlap(p.position, pid.position);
-                    }))) {
+    for (auto channel = channels.begin(); channel != channels.end(); channel++) {
+
+        for (auto pid = (*channel).pids.begin(); pid != (*channel).pids.end(); pid++) {
+
+            auto cur_pid = *pid;
+
+            /* check current program pids */
+            auto rval_inner = find_if ((pid+1), (*channel).pids.end(),
+                                       [&cur_pid,&is_overlap](const Meta_pid& p) {
+                                           if (!is_equal(&cur_pid.position, &p.position)) {
+                                               if (p.type == cur_pid.type == Meta_pid::Type::Video)
+                                                   return false;
+                                               else
+                                                   return is_overlap(&cur_pid.position, &p.position);
+                                           }
+                                           else return true;
+                                       });
+
+            /* compare with other programs pids */
+            auto rval_outer = find_if ((channel+1), channels.end(), [&cur_pid](const Meta_channel& c){
+                    return (channelds.end() ==
+                            find_if((*channel).pids.begin(),
+                                    (*channel).pids.end(),
+                                    [&cur_pid](const Meta_pid &p) {
+                                        return is_overlap(&cur_pid.position, &p.position);
+                                    }));
+                });
+
+            /* decide if there is a problem in a grid */
+            if (((cur_pid.position.width > width) || (cur_pid.position.x < 0)) ||
+                ((cur_pid.position.height > height) || (cur_pid.position.y < 0)) ||
+                (rval_inner != (*channel).pids.end())
+                (rval_outer != channels.end())) {
                 failure = true;
                 break;
             }
+
         }
 
-        auto rval = find_if_not ((channel+1), channels.end(), compare);
+        if (failure) break;
     }
 
-    return rval == channels.end();
+    return !failure;
 }
