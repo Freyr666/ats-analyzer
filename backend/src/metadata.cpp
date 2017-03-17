@@ -21,8 +21,8 @@ Position::operator!= (const Position& a) {
 
 bool
 Position::is_overlap (const Position& a) {
-    return ((a.x < (width - x)) && ((a.width - a.x) > x) &&
-            (a.y < (height - y)) && ((a.height - a.y) > y));
+    return ((a.x < (width + x)) && ((a.width + a.x) > x) &&
+            (a.y < (height + y)) && ((a.height + a.y) > y));
 }
 
 // --------- Meta_pid -------------------
@@ -78,12 +78,11 @@ Meta_pid::get_video () {
 string
 Meta_pid::to_string () const {
     string rval = "Pid: ";
-    // rval += std::to_string(pid);
-    // rval += " Type: ";
-    // rval += std::to_string(type);
-    // rval += " Codec: ";
-    // rval += codec;
-    // return rval;
+    rval += std::to_string(pid);
+    rval += " Type: ";
+    rval += std::to_string(strean_type);
+    rval += " Codec: ";
+    rval += stream_type_name;
     return rval;
 }
 
