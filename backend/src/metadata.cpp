@@ -80,7 +80,7 @@ Meta_pid::to_string () const {
     string rval = "Pid: ";
     rval += std::to_string(pid);
     rval += " Type: ";
-    rval += std::to_string(strean_type);
+    rval += std::to_string(stream_type);
     rval += " Codec: ";
     rval += stream_type_name;
     return rval;
