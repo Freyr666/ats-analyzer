@@ -11,6 +11,17 @@ using namespace std;
 
 namespace Ats {
 
+    struct Position {
+        int x = 0;
+        int y = 0;
+        int width = 0;
+        int height = 0;
+
+        bool operator== (const Position&);
+        bool operator!= (const Position&);
+        bool is_overlap (const Position&);
+    };
+
     struct Meta_pid {
         class Wrong_type : std::exception {};
         enum class Type {Video, Audio, Subtitles, Teletext, Empty};
@@ -29,13 +40,6 @@ namespace Ats {
             string codec;
             string bitrate;
             uint sample_rate = 0;
-        };
-
-        struct Position {
-            int x = 0;
-            int y = 0;
-            int width = 0;
-            int height = 0;
         };
 
         uint pid;
