@@ -46,8 +46,8 @@ dump_pmt (GstMpegtsSection *section,
 	if (pid == nullptr) {
 	    channel->append_pid(Meta_pid(stream->pid, stream->stream_type, type));
 	} else {
-	    pid->type = stream->stream_type;
-	    pid->codec = type;
+	    pid->stream_type = stream->stream_type;
+	    pid->stream_type_name = type;
 	}
     }
 }

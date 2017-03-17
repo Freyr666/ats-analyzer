@@ -11,29 +11,28 @@ Context::Context(uint size) {
     probes.reserve(size);
     
     for (uint i = 0; i < size; i++) {
-	probes.push_back(unique_ptr<Probe>(new Probe(i)));
-	opts.connect(*probes[i]);
-	probes[i]->set_state(Gst::STATE_PLAYING);
+        probes.push_back(unique_ptr<Probe>(new Probe(i)));
+        opts.connect(*probes[i]);
+        probes[i]->set_state(Gst::STATE_PLAYING);
     }
 
     // graph.connect(opts);
     
     Glib::signal_timeout().connect([this](){
-	    graph.apply(opts);
-	    return false;
-	},
-	2000);
+            graph.apply(opts);
+            return false;
+        },
+        2000);
     /*
-    Glib::signal_timeout().connect([&g, &opts](){
+      Glib::signal_timeout().connect([&g, &opts](){
 	    g.reset();
 	    return false;
-	},
-	10000);
-
-    Glib::signal_timeout().connect([&g, &opts](){
+      },
+      10000);
+      Glib::signal_timeout().connect([&g, &opts](){
 	    g.apply(opts);
 	    return false;
-	},
-	20000);
+      },
+      20000);
     */
 }
