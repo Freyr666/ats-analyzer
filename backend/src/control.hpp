@@ -3,26 +3,35 @@
 
 #include <gstreamermm.h>
 #include <glibmm.h>
+#include <exception>
 
 #include "options.hpp"
 #include "graph.hpp"
 
 namespace Ats {
 
+    enum class Msg_type {Json, Msgpack};
+
     class Control{
+
+    public:
+	class Wrong_msg : exception {};
+	
     private:
 	RefPtr<IOChannel> in;
 	RefPtr<IOChannel> out;
+	Msg_type          msg_type;
 	
     public:
-	Control ();
+	Control (Msg_type t = Msg_type::Json);
 	Control (const Control&) = delete;
 	Control (Control&&) = delete;
 
-	sigc::signal<void,const string&> msg_recieved;
+	sigc::signal<void,const string&> control_received;
+	sigc::signal<void,const int&>    options_received;
 
-	std::string recv_msg ();
-	void send_msg (const std::string&);
+        void recv ();
+	void send (const std::string&);
 	
 	void connect (const Options&);
 	void connect (const Graph&);

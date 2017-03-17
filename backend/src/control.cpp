@@ -2,12 +2,12 @@
 
 using namespace Ats;
 
-Control::Control () {
+Control::Control (Msg_type t) : msg_type(t) {
     in  = IOChannel::create_from_fd(0);
     out = IOChannel::create_from_fd(1);
 
     const auto read_in = [this](Glib::IOCondition c) -> bool {
-        msg_recieved.emit(recv_msg());
+	recv();
 	return true;
     };
 
@@ -16,14 +16,13 @@ Control::Control () {
 	
 }
 
-string
-Control::recv_msg () {
+void
+Control::recv () {
     Glib::ustring s;
     in->read_to_end(s);
-    return s;
 }
 
 void
-Control::send_msg (const std::string& s) {
+Control::send (const std::string& s) {
     out->write(s);
 }
