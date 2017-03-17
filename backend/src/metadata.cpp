@@ -53,7 +53,7 @@ Meta_pid::get_type (uint stream_type) {
     }
 }
 
-Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(true),
+Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
                                                  stream_type(t), stream_type_name(tn) {
     type = get_type (t);
     if (type == Type::Empty) throw Wrong_type ();

@@ -4,6 +4,7 @@
 #include "probe.hpp"
 #include "options.hpp"
 #include "graph.hpp"
+#include "control.hpp"
 
 #include <exception>
 #include <vector>
@@ -22,6 +23,7 @@ namespace Ats {
 	Graph         graph;
 	vector< unique_ptr<Probe> > probes;
 	Options       opts;
+	Control       control;
 	
 	RefPtr<MainLoop> main_loop;
 	
