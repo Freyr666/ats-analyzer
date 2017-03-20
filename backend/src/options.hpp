@@ -35,7 +35,7 @@ namespace Ats {
             struct Audio_meter {
                 enum class Audio_meter_pos {Off, Left, Right};
 
-                Audio_meter_pos audio_meter_pos = Audio_meter_display::Right;
+                Audio_meter_pos audio_meter_pos = Audio_meter_pos::Right;
                 bool overlay = true;
                 int width = 8; // tbd. Units? Pixels?
                 int height = 100; // tbd. In percents?
