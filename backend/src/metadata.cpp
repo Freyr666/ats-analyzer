@@ -96,6 +96,14 @@ Meta_channel::find_pid (uint pid) {
     return nullptr;
 }
 
+const Meta_pid*
+Meta_channel::find_pid (uint pid) const {
+    for (const Meta_pid& p : pids) {
+	if (p.pid == pid) return &p;
+    }
+    return nullptr;
+}
+
 string
 Meta_channel::to_string () const {
     string rval = "Channel: ";

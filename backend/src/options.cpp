@@ -6,6 +6,16 @@
 using namespace std;
 using namespace Ats;
 
+bool
+Options::is_empty () const {
+    if (data.empty()) return true;
+
+    auto v = find_if (data.begin(), data.end(), [](const Metadata& m){
+	    return ! m.to_be_analyzed();
+	});
+    return v == data.end();
+}
+
 void
 Options::set_data(const Metadata& m) {
     if (data.empty()) {

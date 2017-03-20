@@ -71,7 +71,8 @@ namespace Ats {
         Meta_channel (uint n) : number(n) {}
         ~Meta_channel () {}
 
-        Meta_pid*     find_pid (uint pid);
+        Meta_pid*       find_pid (uint pid);
+	const Meta_pid* find_pid (uint pid) const;
 
         bool   to_be_analyzed () const;
         void   append_pid (Meta_pid&& p) { pids.push_back(p); }

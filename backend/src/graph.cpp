@@ -12,7 +12,7 @@ using namespace Ats;
 
 void
 Graph::apply(const Options& o) {
-    if (o.data[0].channels[0].service_name.empty()) return;
+    if (o.is_empty()) return;
     
     reset();
 	
