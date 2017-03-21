@@ -24,6 +24,7 @@ namespace Ats {
     private:
         RefPtr<IOChannel> in;
         RefPtr<IOChannel> out;
+        RefPtr<IOChannel> out_log;
         Msg_type          msg_type;
 	
     public:
@@ -36,9 +37,13 @@ namespace Ats {
 
         void recv ();
         void send (const Chatterer&);
-
+        void error(const std::string&);
+        void log  (const std::string&);
+        
         void   connect(Chatterer& c) {
             c.send.connect(sigc::mem_fun(this, &Control::send));
+            c.send_err.connect(sigc::mem_fun(this, &Control::error));
+            c.send_log.connect(sigc::mem_fun(this, &Control::log));
         }
     };
 

@@ -3,8 +3,9 @@
 using namespace Ats;
 
 Control::Control (Msg_type t) : msg_type(t) {
-    in  = IOChannel::create_from_fd(0);
-    out = IOChannel::create_from_fd(1);
+    in      = IOChannel::create_from_fd(0);
+    out     = IOChannel::create_from_fd(1);
+    out_log = IOChannel::create_from_fd(2);
     
     const auto read_in = [this](Glib::IOCondition c) -> bool {
         recv();
@@ -42,4 +43,27 @@ Control::send (const Chatterer& c) {
     }
     out->write(s);
     out->flush();
+}
+
+void
+Control::error (const string& s) {
+    string tmp;
+    switch (msg_type) {
+    case Msg_type::Debug:
+        tmp = s;  break;
+    case Msg_type::Json:
+        tmp = Chatterer::err_to_json(s);    break;
+    case Msg_type::Msgpack:
+        tmp = Chatterer::err_to_msgpack(s); break;
+    }
+    out->write(tmp);
+    out->flush();
+}
+
+void
+Control::log (const string& s) {
+    string tmp = "Log: " + s; 
+   
+    out_log->write(s);
+    out_log->flush();
 }
