@@ -28,7 +28,7 @@ dump_pmt (GstMpegtsSection *section,
   
     auto channel = data.find_channel(pmt->program_number);
     
-    if (channel == nullptr) {
+    if (! channel) {
 	data.append_channel(Meta_channel(pmt->program_number));
 	channel = data.find_channel(pmt->program_number);
     }
@@ -43,7 +43,7 @@ dump_pmt (GstMpegtsSection *section,
 
 	auto pid = channel->find_pid(stream->pid);
 
-	if (pid == nullptr) {
+	if (! pid) {
 	    channel->append_pid(Meta_pid(stream->pid, stream->stream_type, type));
 	} else {
 	    pid->stream_type = stream->stream_type;
@@ -65,7 +65,7 @@ dump_pat (GstMpegtsSection *section,
 
 	auto channel = data.find_channel(patp->program_number);
 
-	if (channel == nullptr) data.append_channel(Meta_channel(patp->program_number)); 
+	if (! channel) data.append_channel(Meta_channel(patp->program_number)); 
     }
     g_ptr_array_unref (pat);
 }
@@ -89,7 +89,7 @@ dump_sdt (GstMpegtsSection *section,
     
 	auto channel = data.find_channel(service->service_id);
 
-	if (channel == nullptr) {
+	if (! channel) {
 	    data.append_channel(Meta_channel(service->service_id));
 	    channel = data.find_channel(service->service_id);
 	}

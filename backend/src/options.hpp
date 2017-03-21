@@ -4,15 +4,19 @@
 #include <vector>
 #include <gstreamermm.h>
 
+#include "chatterer.hpp"
 #include "metadata.hpp"
 #include "probe.hpp"
 #include "address.hpp"
 
 using namespace std;
+using namespace Glib;
 
 namespace Ats {
 
-    struct Options {
+    class Options : public Chatterer {
+
+    public:
 
         struct Channel_settings {
 
@@ -22,7 +26,7 @@ namespace Ats {
                 bool enabled = true;
 
                 string to_json() const;
-                void from_json(const string&);
+                void   of_json(const string&);
             };
 
             struct Channel_name {
@@ -34,7 +38,7 @@ namespace Ats {
                 bool fullscreen = false;
 
                 string to_json() const;
-                void from_json(const string&);
+                void   of_json(const string&);
             };
 
             struct Audio_meter {
@@ -52,7 +56,7 @@ namespace Ats {
                 string background_color = "";
 
                 string to_json() const;
-                void from_json(const string&);
+                void   of_json(const string&);
             };
 
             struct Status_bar {
@@ -69,7 +73,7 @@ namespace Ats {
                 bool scte35 = true;
 
                 string to_json() const;
-                void from_json(const string&);
+                void   of_json(const string&);
             };
 
             bool show_border = false;
@@ -82,7 +86,7 @@ namespace Ats {
             Status_bar status_bar;
 
             string to_json() const;
-            void from_json(const string&);
+            void   of_json(const string&);
         };
 
         struct Qoe_settings {
@@ -135,7 +139,7 @@ namespace Ats {
             int adv_buf;
 
             string to_json() const;
-            void from_json(const string&);
+            void   of_json(const string&);
         };
 
         /* ------- Prog list -------------------- */
@@ -152,24 +156,27 @@ namespace Ats {
         /* ------- Output stream settings ------- */
         Address output_sink;
 
-        sigc::signal<void,const Options&> updated;
+        sigc::signal<void,const Options&>   set;
     
         Options() {}
-        ~Options() {}
+        virtual ~Options() {}
+
+        bool   is_empty () const;
+        void   set_data(const Metadata&);
+
+        // Chatter implementation
+        string to_string() const;	
+        string to_json()   const;
+        void   of_json(const string&);
+        string to_msgpack()   const;
+        void   of_msgpack(const string&);
+
+        void operator=(const Metadata& m) { set_data(m); }
 
         void   connect(Probe& p) { p.updated.connect(
                 sigc::mem_fun(this, &Options::set_data));
         }
-
-        void   set_data(const Metadata&);
-        string to_string() const;
-        string to_json()   const;
-        void   of_json(const string&);
-
-        void operator=(const Metadata& m) { set_data(m); }
-        void operator=(const string& js) { of_json(js); }
     };
-
 };
 
 #endif /* OPTIONS_H */

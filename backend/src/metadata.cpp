@@ -53,7 +53,7 @@ Meta_pid::get_type (uint stream_type) {
     }
 }
 
-Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(true),
+Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
                                                  stream_type(t), stream_type_name(tn) {
     type = get_type (t);
     if (type == Type::Empty) throw Wrong_type ();
@@ -91,6 +91,14 @@ Meta_pid::to_string () const {
 Meta_pid*
 Meta_channel::find_pid (uint pid) {
     for (Meta_pid& p : pids) {
+	if (p.pid == pid) return &p;
+    }
+    return nullptr;
+}
+
+const Meta_pid*
+Meta_channel::find_pid (uint pid) const {
+    for (const Meta_pid& p : pids) {
 	if (p.pid == pid) return &p;
     }
     return nullptr;

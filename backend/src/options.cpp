@@ -213,23 +213,35 @@ Options::Qoe_settings::to_json() const {
 
 /* ---------- Options -------------------- */
 
+bool
+Options::is_empty () const {
+    if (data.empty()) return true;
+
+    auto v = find_if (data.begin(), data.end(), [](const Metadata& m){
+            return ! m.to_be_analyzed();
+        });
+    return v == data.end();
+}
+
 void
 Options::set_data(const Metadata& m) {
     if (data.empty()) {
-	data.push_back(Metadata(m));
+        data.push_back(Metadata(m));
     } else {
-	auto v = find_if(data.begin(),data.end(),[&m](Metadata& el) {
-		return el.stream == m.stream;
-	    });
+        auto v = find_if(data.begin(),data.end(),[&m](Metadata& el) {
+                return el.stream == m.stream;
+            });
 
-	if (v->stream == m.stream) {
-	    *v = m;
-	} else {
-	    data.push_back(Metadata(m));
-	}
+        if (v->stream == m.stream) {
+            *v = m;
+        } else {
+            data.push_back(Metadata(m));
+        }
     }
-    updated.emit(*this);
+    talk.emit(*this);
 }
+
+// Chatter implementation
 
 string
 Options::to_string() const {
@@ -259,6 +271,16 @@ Options::to_json() const {
 }
 
 void
-of_json(const string&) {
-    
+Options::of_json(const string&) {
+    talk.emit(*this);
+}
+
+string
+Options::to_msgpack() const {
+    return "todo";
+}
+
+void
+Options::of_msgpack(const string&) {
+    talk.emit(*this);
 }
