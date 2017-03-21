@@ -6,6 +6,8 @@
 
 namespace Ats {
 
+    inline std::string to_string (bool b) { return b ? "true" : "false"; }
+
     class Chatterer {
     public:
         sigc::signal<void,const Chatterer&> send;

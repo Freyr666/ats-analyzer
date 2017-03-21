@@ -158,9 +158,6 @@ namespace Ats {
         Address output_sink;
 
         sigc::signal<void,const Options&>   set;
-
-
-        sigc::signal<void,const Options&>   set;
         sigc::signal<void,const Options&>   destructive_set;
     
         Options() {}
