@@ -32,7 +32,7 @@ Options::set_data(const Metadata& m) {
 	    data.push_back(Metadata(m));
 	}
     }
-    talk.emit(*this);
+    talk();
 }
 
 // Chatter implementation

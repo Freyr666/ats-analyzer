@@ -75,11 +75,9 @@ Context::of_json(const string& j) {
 	} 
     }
     
-    talk.emit(*this);
 }
 
 void
 Context::of_msgpack(const string&) {
     // TODO
-    talk.emit(*this);
 }
