@@ -19,6 +19,10 @@ Context::Context(uint size) {
     control.connect (opts);
     control.connect (graph);
     control.connect (*this);
+
+    control.received_json.connect(sigc::mem_fun(this, &Context::of_json));
+    control.received_msgpack.connect(sigc::mem_fun(this, &Context::of_msgpack));
+    
     // graph.connect(opts);
     
     Glib::signal_timeout().connect([this](){
