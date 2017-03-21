@@ -16,6 +16,9 @@ Context::Context(uint size) {
         probes[i]->set_state(Gst::STATE_PLAYING);
     }
 
+    control.connect (opts);
+    control.connect (graph);
+    control.connect (*this);
     // graph.connect(opts);
     
     Glib::signal_timeout().connect([this](){
@@ -35,4 +38,29 @@ Context::Context(uint size) {
       },
       20000);
     */
+}
+
+string
+Context::to_string() const {
+    return "todo";
+}
+
+string
+Context::to_json() const {
+    return "todo";
+}
+
+void
+Context::of_json(const string&) {
+    talk.emit(*this);
+}
+
+string
+Context::to_msgpack() const {
+    return "todo";
+}
+
+void
+Context::of_msgpack(const string&) {
+    talk.emit(*this);
 }

@@ -31,8 +31,10 @@ Options::set_data(const Metadata& m) {
 	    data.push_back(Metadata(m));
 	}
     }
-    updated.emit(*this);
+    talk.emit(*this);
 }
+
+// Chatter implementation
 
 string
 Options::to_string() const {
@@ -55,6 +57,16 @@ Options::to_json() const {
 }
 
 void
-of_json(const string&) {
-    
+Options::of_json(const string&) {
+    talk.emit(*this);
+}
+
+string
+Options::to_msgpack() const {
+    return "todo";
+}
+
+void
+Options::of_msgpack(const string&) {
+    talk.emit(*this);
 }

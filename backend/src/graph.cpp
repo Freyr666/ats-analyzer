@@ -1,11 +1,11 @@
-#include "graph.hpp"
-#include "address.hpp"
-
 #include <iostream>
 #include <cstdlib> //strtoul
 #include <vector>
 #include <gstreamermm/tee.h>
 #include <gst/gst.h>
+
+#include "graph.hpp"
+#include "address.hpp"
 
 using namespace std;
 using namespace Ats;
@@ -65,11 +65,6 @@ Graph::reset() {
 void
 Graph::set_state(Gst::State s) {
     pipe->set_state(s);
-}
-
-string
-Graph::to_string() const {
-    return "todo";
 }
 
 RefPtr<Gst::Bin>
@@ -210,4 +205,36 @@ Graph::create_branch(const uint channel,
     bin->add_pad(sink_ghost);
 
     return bin;
+}
+
+void
+Graph::connect(Options& o) {
+    o.set.connect(sigc::mem_fun(this, &Graph::apply));
+}
+
+// Chatterer
+
+string
+Graph::to_string() const {
+    return "todo";
+}
+
+string
+Graph::to_json() const {
+    return "todo";
+}
+
+void
+Graph::of_json(const string&) {
+    talk.emit(*this);
+}
+
+string
+Graph::to_msgpack() const {
+    return "todo";
+}
+
+void
+Graph::of_msgpack(const string&) {
+    talk.emit(*this);
 }

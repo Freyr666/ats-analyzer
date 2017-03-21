@@ -7,10 +7,14 @@
 
 #include "options.hpp"
 #include "graph.hpp"
+#include "chatterer.hpp"
+
+using namespace std;
 
 namespace Ats {
 
-    enum class Msg_type {Json, Msgpack};
+    // Msg format types. Debug = of_json/to_string
+    enum class Msg_type {Json, Msgpack, Debug};
 
     class Control{
 
@@ -23,18 +27,19 @@ namespace Ats {
 	Msg_type          msg_type;
 	
     public:
-	Control (Msg_type t = Msg_type::Json);
+	Control (Msg_type t = Msg_type::Debug);
 	Control (const Control&) = delete;
 	Control (Control&&) = delete;
 
-	sigc::signal<void,const string&> control_received;
-	sigc::signal<void,const int&>    options_received;
+	sigc::signal<void,const string&> received_json;
+	sigc::signal<void,const string&> received_msgpack;
 
         void recv ();
-	void send (const std::string&);
-	
-	void connect (const Options&);
-	void connect (const Graph&);
+	void send (const Chatterer&);
+
+	void   connect(Chatterer& c) {
+	    c.talk.connect(sigc::mem_fun(this, &Control::send));
+	}
     };
 
 };
