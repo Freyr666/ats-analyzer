@@ -6,9 +6,18 @@
 
 #include "graph.hpp"
 #include "address.hpp"
+#include "json.hpp"
 
 using namespace std;
 using namespace Ats;
+
+static inline Gst::State
+to_state(string& s) {
+    if (s == "null") return Gst::STATE_NULL;
+    if (s == "pause") return Gst::STATE_PAUSED;
+    if (s == "play") return Gst::STATE_PLAYING;
+    if (s == "stop") return Gst::STATE_NULL;
+}
 
 void
 Graph::apply(const Options& o) {
@@ -64,7 +73,20 @@ Graph::reset() {
 
 void
 Graph::set_state(Gst::State s) {
-    pipe->set_state(s);
+    if (pipe)
+	pipe->set_state(s);
+}
+
+Gst::State
+Graph::get_state() {
+    Gst::State rval;
+    Gst::State pend;
+    if (pipe) {
+	pipe->get_state(rval, pend, Gst::MICRO_SECOND);
+    } else {
+	rval = Gst::STATE_NULL;
+    }
+    return rval;
 }
 
 RefPtr<Gst::Bin>
@@ -209,6 +231,7 @@ Graph::create_branch(const uint channel,
 
 void
 Graph::connect(Options& o) {
+    o.destructive_set.connect(sigc::mem_fun(this, &Graph::apply));
     o.set.connect(sigc::mem_fun(this, &Graph::apply));
 }
 
@@ -224,17 +247,29 @@ Graph::to_json() const {
     return "todo";
 }
 
-void
-Graph::of_json(const string&) {
-    talk.emit(*this);
-}
-
 string
 Graph::to_msgpack() const {
     return "todo";
 }
 
 void
+Graph::of_json(const string& j) {
+    using json = nlohmann::json;
+    auto js = json::parse(j);
+ 
+    // TODO throw Wrong_json
+    if (! js.is_object()) return;
+
+    for (json::iterator el = js.begin(); el != js.end(); ++el) {
+ 	if (el.key() == "state") {
+	    auto sst = el.value().get<string>();
+	    auto st = to_state(sst);
+	    set_state(st);
+	} 
+    }
+}
+
+void
 Graph::of_msgpack(const string&) {
-    talk.emit(*this);
+    
 }

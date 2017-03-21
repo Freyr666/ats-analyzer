@@ -6,11 +6,11 @@
 
 namespace Ats {
 
-    inline std::string to_string (bool b) { return b ? "true" : "false"; }
-
     class Chatterer {
     public:
-        sigc::signal<void,const Chatterer&> talk;
+        sigc::signal<void,const Chatterer&> send;
+
+        void talk() { send.emit(*this); }
 	
         virtual std::string to_string() const = 0;	
         virtual std::string to_json()   const = 0;

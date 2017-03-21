@@ -38,7 +38,7 @@ namespace Ats {
         void send (const Chatterer&);
 
         void   connect(Chatterer& c) {
-            c.talk.connect(sigc::mem_fun(this, &Control::send));
+            c.send.connect(sigc::mem_fun(this, &Control::send));
         }
     };
 

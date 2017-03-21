@@ -23,9 +23,10 @@ namespace Ats {
 	Graph(Graph&&) = delete;
 	virtual ~Graph() {}
 	
-	void   apply(const Options&);
-	void   reset();
-	void   set_state(Gst::State);
+	void       apply(const Options&);
+	void       reset();
+	void       set_state(Gst::State);
+	Gst::State get_state();
 
 	void   connect(Options& o);
 
