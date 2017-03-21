@@ -1,4 +1,5 @@
 #include "options.hpp"
+#include "json.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -56,17 +57,39 @@ Options::to_json() const {
     return "todo";
 }
 
-void
-Options::of_json(const string&) {
-    talk.emit(*this);
-}
-
 string
 Options::to_msgpack() const {
     return "todo";
 }
 
 void
+Options::of_json(const string& j) {
+    bool o_set = false;
+    bool o_destr_set = false;
+    
+    using json = nlohmann::json;
+    auto js = json::parse(j);
+
+    // TODO throw Wrong_json
+    if (! js.is_object()) return;
+
+    for (json::iterator el = js.begin(); el != js.end(); ++el) {
+ 	if (el.key() == "option" && el.value().is_string()) {
+	    o_set = true; // not so serious option
+	} else if (el.key() == "other option") {
+	    o_destr_set = true; // serious option
+	} 
+    }
+
+    if (o_set)
+	set.emit(*this);
+    if (o_destr_set)
+	destructive_set(*this);
+}
+
+void
 Options::of_msgpack(const string&) {
-    talk.emit(*this);
+
+    destructive_set(*this);
+    set.emit(*this);
 }

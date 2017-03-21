@@ -1,4 +1,5 @@
 #include "context.hpp"
+#include "json.hpp"
 
 using namespace Glib;
 using namespace Ats;
@@ -54,17 +55,31 @@ Context::to_json() const {
     return "todo";
 }
 
-void
-Context::of_json(const string&) {
-    talk.emit(*this);
-}
-
 string
 Context::to_msgpack() const {
     return "todo";
 }
 
 void
+Context::of_json(const string& j) {
+    using json = nlohmann::json;
+    auto js = json::parse(j);
+    // TODO throw Wrong_json
+    if (! js.is_object()) return;
+
+    for (json::iterator el = js.begin(); el != js.end(); ++el) {
+	if (el.key() == "options" && el.value().is_object()) {
+	    opts.of_json(el.value().dump());
+	} else if (el.key() == "graph" && el.value().is_object()) {
+	    graph.of_json(el.value().dump());
+	} 
+    }
+    
+    talk.emit(*this);
+}
+
+void
 Context::of_msgpack(const string&) {
+    // TODO
     talk.emit(*this);
 }
