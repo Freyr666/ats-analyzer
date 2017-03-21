@@ -30,12 +30,12 @@ Position::to_json () const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"x\": %d, "
-        "\"y\": %d, "
-        "\"width\": %d, "
-        "\"height\": %d"
-        " }";
+    std::string fmt = "{"
+        "\"x\":%d,"
+        "\"y\":%d,"
+        "\"width\":%d,"
+        "\"height\":%d"
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(), x, y, width, height);
     if ( (n>=0) && (n<size) ) return string(buffer);
@@ -85,14 +85,14 @@ Meta_pid::Video_pid::to_json () const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"codec\": \"%s\", "
-        "\"width\": %d, "
-        "\"height\": %d, "
-        "\"aspect_ratio\": { \"x\": %d, \"y\": %d }, "
-        "\"interlaced\": \"%s\", "
-        "\"frame_rate\": %.2f"
-        " }";
+    std::string fmt = "{"
+        "\"codec\":\"%s\","
+        "\"width\":%d,"
+        "\"height\":%d,"
+        "\"aspect_ratio\":{\"x\":%d,\"y\":%d},"
+        "\"interlaced\":\"%s\","
+        "\"frame_rate\":%.2f"
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(),
                       codec.c_str(),
@@ -113,11 +113,11 @@ Meta_pid::Audio_pid::to_json () const {
     constexpr int size = 512;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"codec\": \"%s\", "
-        "\"bitrate\": \"%s\", "
-        "\"sample_rate\": %d"
-        " }";
+    std::string fmt = "{"
+        "\"codec\":\"%s\","
+        "\"bitrate\":\"%s\","
+        "\"sample_rate\":%d"
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(),
                       codec.c_str(), bitrate.c_str(), sample_rate);
@@ -162,15 +162,15 @@ Meta_pid::to_json () const {
     constexpr int size = 5 * 1024;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"pid\": %d, "
-        "\"to_be_analyzed\": %s, "
-        "\"type\": \"%s\", "
-        "\"stream_type\": %d, "
-        "\"stream_type_name\": \"%s\", "
-        "\"description\": %s, "
-        "\"position\": %s"
-        " }";
+    std::string fmt = "{"
+        "\"pid\":%d,"
+        "\"to_be_analyzed\":%s,"
+        "\"type\":\"%s\","
+        "\"stream_type\":%d,"
+        "\"stream_type_name\":\"%s\","
+        "\"description\":%s,"
+        "\"position\":%s"
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(),
                       pid, Ats::to_string(to_be_analyzed).c_str(),
@@ -244,17 +244,19 @@ Meta_channel::to_json () const {
     constexpr int size = 20 * (5 * 1024);
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"number\": %d, "
-        "\"service_name\": \"%s\", "
-        "\"provider_name\": \"%s\", "
-        "\"pids\": [ %s ]"
-        " }";
+    std::string fmt = "{"
+        "\"number\":%d,"
+        "\"service_name\":\"%s\","
+        "\"provider_name\":\"%s\","
+        "\"pids\":[%s]"
+        "}";
 
     string s = "";
-    for_each(pids.begin(), pids.end(), [&s](const Meta_pid& p) {
-            s += (p.to_json() + ", ");
-        });
+    for (auto it = pids.begin(); it != pids.end(); ++it) {
+        if ( it != pids.begin() )
+            s += ",";
+        s += it->to_json();
+    }
     int n = snprintf (buffer, size, fmt.c_str(),
                       number,
                       service_name.c_str(), provider_name.c_str(),
@@ -274,10 +276,10 @@ Meta_channel::of_json (const string& s) {
 Meta_pid*
 Metadata::find_pid (uint chan, uint pid) {
     for (Meta_channel& c : channels) {
-	if (c.number == chan)
-	    for (Meta_pid& p : c.pids) {
-		if (p.pid == pid) return &p;
-	    }
+        if (c.number == chan)
+            for (Meta_pid& p : c.pids) {
+                if (p.pid == pid) return &p;
+            }
     }
     return nullptr;
 }
@@ -285,10 +287,10 @@ Metadata::find_pid (uint chan, uint pid) {
 const Meta_pid*
 Metadata::find_pid (uint chan, uint pid) const {
     for (const Meta_channel& c : channels) {
-	if (c.number == chan)
-	    for (const Meta_pid& p : c.pids) {
-		if (p.pid == pid) return &p;
-	    }
+        if (c.number == chan)
+            for (const Meta_pid& p : c.pids) {
+                if (p.pid == pid) return &p;
+            }
     }
     return nullptr;
 }
@@ -296,9 +298,9 @@ Metadata::find_pid (uint chan, uint pid) const {
 Meta_pid*
 Metadata::find_pid (uint pid) {
     for (Meta_channel& c : channels) {
-	for (Meta_pid& p : c.pids) {
-	    if (p.pid == pid) return &p;
-	}
+        for (Meta_pid& p : c.pids) {
+            if (p.pid == pid) return &p;
+        }
     }
     return nullptr;
 }
@@ -306,9 +308,9 @@ Metadata::find_pid (uint pid) {
 const Meta_pid*
 Metadata::find_pid (uint pid) const {
     for (const Meta_channel& c : channels) {
-	for (const Meta_pid& p : c.pids) {
-	    if (p.pid == pid) return &p;
-	}
+        for (const Meta_pid& p : c.pids) {
+            if (p.pid == pid) return &p;
+        }
     }
     return nullptr;
 }
@@ -316,7 +318,7 @@ Metadata::find_pid (uint pid) const {
 Meta_channel*
 Metadata::find_channel (uint chan) {
     for (Meta_channel& c : channels) {
-	if (c.number == chan) return &c;
+        if (c.number == chan) return &c;
     }
     return nullptr;
 }
@@ -324,7 +326,7 @@ Metadata::find_channel (uint chan) {
 const Meta_channel*
 Metadata::find_channel (uint chan) const {
     for (const Meta_channel& c : channels) {
-	if (c.number == chan) return &c;
+        if (c.number == chan) return &c;
     }
     return nullptr;
 }
@@ -335,10 +337,10 @@ Metadata::to_string () const {
     rval += std::to_string(stream);
     rval += " Channels: ";
     for_each (channels.begin(), channels.end(), [&rval](const Meta_channel& c) {
-	    rval += "[";
-	    rval += c.to_string();
-	    rval += "];";
-	});
+            rval += "[";
+            rval += c.to_string();
+            rval += "];";
+        });
     return rval;
 }
 
@@ -347,15 +349,17 @@ Metadata::to_json () const {
     constexpr int size = 50 * (20 * 5 * 1024);
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"stream\": %d, "
-        "\"channels\": [ %s ]"
-        " }";
+    std::string fmt = "{"
+        "\"stream\":%d,"
+        "\"channels\":[%s]"
+        "}";
 
     string s = "";
-    for_each(channels.begin(), channels.end(), [&s](const Meta_channel& p) {
-            s += (p.to_json() + ", ");
-        });
+    for (auto it = channels.begin(); it != channels.end(); ++it) {
+        if ( it != channels.begin() )
+            s += ",";
+        s += it->to_json();
+    }
     int n = snprintf (buffer, size, fmt.c_str(),stream, s.c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
     else return "{}";

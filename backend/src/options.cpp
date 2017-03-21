@@ -15,11 +15,11 @@ Options::Channel_settings::Error_overlay::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"error_color\": \"%s\", "
-        "\"blink_speed\": %.2f, "
-        "\"enabled\": %s"
-        " }";
+    std::string fmt = "{"
+        "\"error_color\":\"%s\","
+        "\"blink_speed\":%.2f,"
+        "\"enabled\":%s"
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(),
                       error_color.c_str(),
@@ -34,12 +34,12 @@ Options::Channel_settings::Channel_name::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"position\": \"%s\", "
-        "\"font_size\": %d, "
-        "\"fmt\": \"%s\", "
-        "\"fullscreen\": %s"
-        " }";
+    std::string fmt = "{"
+        "\"position\":\"%s\","
+        "\"font_size\":%d,"
+        "\"fmt\":\"%s\","
+        "\"fullscreen\":%s"
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(),
                       position == Channel_name_pos::Left ? "left" :
@@ -58,17 +58,17 @@ Options::Channel_settings::Audio_meter::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"position\": \"%s\", "
-        "\"overlay\": %s, "
-        "\"width\": %d, "
-        "\"height\": %d, "
-        "\"peak_color\": \"%s\", "
-        "\"high_color\": \"%s\", "
-        "\"mid_color\": \"%s\", "
-        "\"low_color\": \"%s\", "
-        "\"background_color\": \"%s\""
-        " }";
+    std::string fmt = "{"
+        "\"position\":\"%s\","
+        "\"overlay\":%s,"
+        "\"width\":%d,"
+        "\"height\":%d,"
+        "\"peak_color\":\"%s\","
+        "\"high_color\":\"%s\","
+        "\"mid_color\":\"%s\","
+        "\"low_color\":\"%s\","
+        "\"background_color\":\"%s\""
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(),
                       position == Audio_meter_pos::Left ? "left" :
@@ -90,15 +90,15 @@ Options::Channel_settings::Status_bar::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"position\": \"%s\", "
-        "\"aspect\": %s, "
-        "\"subtitles\": %s, "
-        "\"teletext\": %s, "
-        "\"eit\": %s, "
-        "\"qos\": %s, "
-        "\"scte35\": %s"
-        " }";
+    std::string fmt = "{"
+        "\"position\":\"%s\","
+        "\"aspect\":%s,"
+        "\"subtitles\":%s,"
+        "\"teletext\":%s,"
+        "\"eit\":%s,"
+        "\"qos\":%s,"
+        "\"scte35\":%s"
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(),
                       position == Status_bar_pos::Top_left ? "top_left" :
@@ -123,16 +123,16 @@ Options::Channel_settings::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"error_overlay\": %s, "
-        "\"channel_name\": %s, "
-        "\"audio_meter\": %s, "
-        "\"status_bar\": %s, "
-        "\"show_border\": %s, "
-        "\"border_color\": \"%s\", "
-        "\"show_aspect_border\": %s, "
-        "\"aspect_border_color\": \"%s\""
-        " }";
+    std::string fmt = "{"
+        "\"error_overlay\":%s,"
+        "\"channel_name\":%s,"
+        "\"audio_meter\":%s,"
+        "\"status_bar\":%s,"
+        "\"show_border\":%s,"
+        "\"border_color\":\"%s\","
+        "\"show_aspect_border\":%s,"
+        "\"aspect_border_color\":\"%s\""
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(),
                       error_overlay.to_json().c_str(),
@@ -154,48 +154,48 @@ Options::Qoe_settings::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"vloss\": %.2f, "
-        "\"aloss\": %.2f, "
-        "\"black_cont_en\": %s, "
-        "\"black_cont\": %.2f, "
-        "\"black_peak_en\": %s, "
-        "\"black_peak\": %.2f, "
-        "\"luma_cont_en\": %s, "
-        "\"luma_cont\": %.2f, "
-        "\"luma_peak_en\": %s, "
-        "\"luma_peak\": %.2f, "
-        "\"black_time\": %.2f, "
-        "\"black_pixel\": %d, "
-        "\"freeze_cont_en\": %s, "
-        "\"freeze_cont\": %.2f, "
-        "\"freeze_peak_en\": %s, "
-        "\"freeze_peak\": %.2f, "
-        "\"diff_cont_en\": %s, "
-        "\"diff_cont\": %.2f, "
-        "\"diff_peak_en\": %s, "
-        "\"diff_peak\": %.2f, "
-        "\"freeze_time\": %.2f, "
-        "\"pixel_diff\": %d, "
-        "\"blocky_cont_en\": %s, "
-        "\"blocky_cont\": %.2f, "
-        "\"blocky_peak_en\": %s, "
-        "\"blocky_peak\": %.2f, "
-        "\"blocky_time\": %.2f, "
-        "\"mark_blocks\": %s, "
-        "\"silence_cont_en\": %s, "
-        "\"silence_cont\": %.2f, "
-        "\"silence_peak_en\": %s, "
-        "\"silence_peak\": %.2f, "
-        "\"silence_time\": %.2f, "
-        "\"loudness_cont_en\": %s, "
-        "\"loudness_cont\": %.2f, "
-        "\"loudness_peak_en\": %s, "
-        "\"loudness_peak\": %.2f, "
-        "\"loudness_time\": %.2f, "
-        "\"adv_diff\": %.2f, "
-        "\"adv_buff\": %d"
-        " }";
+    std::string fmt = "{"
+        "\"vloss\":%.2f,"
+        "\"aloss\":%.2f,"
+        "\"black_cont_en\":%s,"
+        "\"black_cont\":%.2f,"
+        "\"black_peak_en\":%s,"
+        "\"black_peak\":%.2f,"
+        "\"luma_cont_en\":%s,"
+        "\"luma_cont\":%.2f,"
+        "\"luma_peak_en\":%s,"
+        "\"luma_peak\":%.2f,"
+        "\"black_time\":%.2f,"
+        "\"black_pixel\":%d,"
+        "\"freeze_cont_en\":%s,"
+        "\"freeze_cont\":%.2f,"
+        "\"freeze_peak_en\":%s,"
+        "\"freeze_peak\":%.2f,"
+        "\"diff_cont_en\":%s,"
+        "\"diff_cont\":%.2f,"
+        "\"diff_peak_en\":%s,"
+        "\"diff_peak\":%.2f,"
+        "\"freeze_time\":%.2f,"
+        "\"pixel_diff\":%d,"
+        "\"blocky_cont_en\":%s,"
+        "\"blocky_cont\":%.2f,"
+        "\"blocky_peak_en\":%s,"
+        "\"blocky_peak\":%.2f,"
+        "\"blocky_time\":%.2f,"
+        "\"mark_blocks\":%s,"
+        "\"silence_cont_en\":%s,"
+        "\"silence_cont\":%.2f,"
+        "\"silence_peak_en\":%s,"
+        "\"silence_peak\":%.2f,"
+        "\"silence_time\":%.2f,"
+        "\"loudness_cont_en\":%s,"
+        "\"loudness_cont\":%.2f,"
+        "\"loudness_peak_en\":%s,"
+        "\"loudness_peak\":%.2f,"
+        "\"loudness_time\":%.2f,"
+        "\"adv_diff\":%.2f,"
+        "\"adv_buff\":%d"
+        "}";
 
     int n = snprintf (buffer, size, fmt.c_str(),
                       vloss, aloss,
@@ -279,19 +279,21 @@ Options::to_json() const {
     constexpr int size = 1024 * 8;
 
     char buffer[size];
-    std::string fmt = "{ "
-        "\"prog_list\": [ %s ], "
-        "\"qoe_settings\": %s, "
-        "\"resolution\": { \"width\": %d, \"height\" %d }, "
-        "\"background_color\": %s, "
-        "\"channel_settings\": %s, "
-        "\"output_sink\": %s"
-        " }";
+    std::string fmt = "{"
+        "\"prog_list\":[%s],"
+        "\"qoe_settings\":%s,"
+        "\"resolution\":{\"width\":%d,\"height\":%d},"
+        "\"background_color\":%s,"
+        "\"channel_settings\":%s,"
+        "\"output_sink\":%s"
+        "}";
 
     string s = "";
-    for_each (data.begin(), data.end(), [&s](const Metadata& d) {
-            s += (d.to_json() + ", ");
-        });
+    for (auto it = data.begin(); it != data.end(); ++it) {
+        if ( it != data.begin() )
+            s += ",";
+        s += it->to_json();
+    }
     int n = snprintf (buffer, size, fmt.c_str(),
                       s.c_str(),
                       qoe_settings.to_json().c_str(),

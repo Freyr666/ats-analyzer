@@ -17,6 +17,8 @@ to_state(string& s) {
     if (s == "pause") return Gst::STATE_PAUSED;
     if (s == "play") return Gst::STATE_PLAYING;
     if (s == "stop") return Gst::STATE_NULL;
+    // FIXME
+    return Gst::STATE_NULL;
 }
 
 void
