@@ -20,22 +20,27 @@ namespace Ats {
                 string error_color = "";
                 float blink_speed = 1; // in Hz
                 bool enabled = true;
+
+                string to_json() const;
+                void from_json(const string&);
             };
 
             struct Channel_name {
                 enum class Channel_name_pos {Off, Left, Right, Center};
 
-                Channel_name_pos fs_pos = Channel_name_pos::Center;
+                Channel_name_pos position = Channel_name_pos::Center;
                 int font_size = 14; //maybe should be relative to normal size
-                bool with_input_name = false;
-                bool input_name_fmt = "$INPUT_TYPE, $INPUT_NAME, $CH_NAME";
+                string fmt = "$INPUT_TYPE, $INPUT_NAME, $CH_NAME";
                 bool fullscreen = false;
+
+                string to_json() const;
+                void from_json(const string&);
             };
 
             struct Audio_meter {
                 enum class Audio_meter_pos {Off, Left, Right};
 
-                Audio_meter_pos audio_meter_pos = Audio_meter_pos::Right;
+                Audio_meter_pos position = Audio_meter_pos::Right;
                 bool overlay = true;
                 int width = 8; // tbd. Units? Pixels?
                 int height = 100; // tbd. In percents?
@@ -45,6 +50,9 @@ namespace Ats {
                 string mid_color = "";
                 string low_color = "";
                 string background_color = "";
+
+                string to_json() const;
+                void from_json(const string&);
             };
 
             struct Status_bar {
@@ -52,13 +60,16 @@ namespace Ats {
                                            Left, Right,
                                            Bottom_left, Bottom_right};
 
-                Status_bar_pos status_bar_pos = Status_bar_pos::Top_left;
+                Status_bar_pos position = Status_bar_pos::Top_left;
                 bool aspect = true;
                 bool subtitles = true;
                 bool teletext = true;
                 bool eit = true;
                 bool qos = true;
                 bool scte35 = true;
+
+                string to_json() const;
+                void from_json(const string&);
             };
 
             bool show_border = false;
@@ -69,6 +80,9 @@ namespace Ats {
             Channel_name channel_name;
             Audio_meter audio_meter;
             Status_bar status_bar;
+
+            string to_json() const;
+            void from_json(const string&);
         };
 
         struct Qoe_settings {
@@ -119,6 +133,9 @@ namespace Ats {
             /* adv loudness */
             float adv_diff;
             int adv_buf;
+
+            string to_json() const;
+            void from_json(const string&);
         };
 
         /* ------- Prog list -------------------- */
