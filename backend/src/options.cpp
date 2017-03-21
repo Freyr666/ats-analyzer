@@ -11,28 +11,28 @@ using namespace Ats;
 
 string
 Options::Channel_settings::Error_overlay::to_json() const {
-    #define SIZE 1024
+    constexpr int size = 1024;
 
-    char buffer[SIZE];
+    char buffer[size];
     std::string fmt = "{ "
         "\"error_color\": \"%s\", "
-        "\"blink_speed\": %f, "
+        "\"blink_speed\": %.2f, "
         "\"enabled\": %s"
         " }";
 
-    int n = snprintf (buffer, SIZE, fmt.c_str(),
+    int n = snprintf (buffer, size, fmt.c_str(),
                       error_color.c_str(),
                       blink_speed,
-                      enabled ? "true" : "false");
-    if ( (n>=0) && (n<SIZE) ) return string(buffer);
+                      Ats::to_string(enabled).c_str());
+    if ( (n>=0) && (n<size) ) return string(buffer);
     else return "{}";
 }
 
 string
 Options::Channel_settings::Channel_name::to_json() const {
-    #define SIZE 1024
+    constexpr int size = 1024;
 
-    char buffer[SIZE];
+    char buffer[size];
     std::string fmt = "{ "
         "\"position\": \"%s\", "
         "\"font_size\": %d, "
@@ -40,23 +40,23 @@ Options::Channel_settings::Channel_name::to_json() const {
         "\"fullscreen\": %s"
         " }";
 
-    int n = snprintf (buffer, SIZE, fmt.c_str(),
+    int n = snprintf (buffer, size, fmt.c_str(),
                       position == Channel_name_pos::Left ? "left" :
                       position == Channel_name_pos::Right ? "right" :
                       position == Channel_name_pos::Center ? "center" :
                       "off",
                       font_size,
                       this->fmt.c_str(),
-                      fullscreen ? "true" : "false");
-    if ( (n>=0) && (n<SIZE) ) return string(buffer);
+                      Ats::to_string(fullscreen).c_str());
+    if ( (n>=0) && (n<size) ) return string(buffer);
     else return "{}";
 }
 
 string
 Options::Channel_settings::Audio_meter::to_json() const {
-#define SIZE 1024
+    constexpr int size = 1024;
 
-    char buffer[SIZE];
+    char buffer[size];
     std::string fmt = "{ "
         "\"position\": \"%s\", "
         "\"overlay\": %s, "
@@ -69,26 +69,26 @@ Options::Channel_settings::Audio_meter::to_json() const {
         "\"background_color\": \"%s\""
         " }";
 
-    int n = snprintf (buffer, SIZE, fmt.c_str(),
+    int n = snprintf (buffer, size, fmt.c_str(),
                       position == Audio_meter_pos::Left ? "left" :
                       position == Audio_meter_pos::Right ? "right" :
                       "off",
-                      overlay ? "true" : "false",
+                      Ats::to_string(overlay).c_str(),
                       width, height,
                       peak_color.c_str(),
                       high_color.c_str(),
                       mid_color.c_str(),
                       low_color.c_str(),
                       background_color.c_str());
-    if ( (n>=0) && (n<SIZE) ) return string(buffer);
+    if ( (n>=0) && (n<size) ) return string(buffer);
     else return "{}";
 }
 
 string
 Options::Channel_settings::Status_bar::to_json() const {
-    #define SIZE 1024
+    constexpr int size = 1024;
 
-    char buffer[SIZE];
+    char buffer[size];
     std::string fmt = "{ "
         "\"position\": \"%s\", "
         "\"aspect\": %s, "
@@ -99,7 +99,7 @@ Options::Channel_settings::Status_bar::to_json() const {
         "\"scte35\": %s"
         " }";
 
-    int n = snprintf (buffer, SIZE, fmt.c_str(),
+    int n = snprintf (buffer, size, fmt.c_str(),
                       position == Status_bar_pos::Top_left ? "top_left" :
                       position == Status_bar_pos::Top_right ? "top_right" :
                       position == Status_bar_pos::Left ? "left" :
@@ -107,21 +107,21 @@ Options::Channel_settings::Status_bar::to_json() const {
                       position == Status_bar_pos::Bottom_left ? "bottom_left" :
                       position == Status_bar_pos::Bottom_right ? "bottom_right" :
                       "off",
-                      aspect ? "true" : "false",
-                      subtitles ? "true" : "false",
-                      teletext ? "true" : "false",
-                      eit ? "true" : "false",
-                      qos ? "true" : "false",
-                      scte35 ? "true" : "false");
-    if ( (n>=0) && (n<SIZE) ) return string(buffer);
+                      Ats::to_string(aspect).c_str(),
+                      Ats::to_string(subtitles).c_str(),
+                      Ats::to_string(teletext).c_str(),
+                      Ats::to_string(eit).c_str(),
+                      Ats::to_string(qos).c_str(),
+                      Ats::to_string(scte35).c_str());
+    if ( (n>=0) && (n<size) ) return string(buffer);
     else return "{}";
 }
 
 string
 Options::Channel_settings::to_json() const {
-    #define SIZE 1024
+    constexpr int size = 1024;
 
-    char buffer[SIZE];
+    char buffer[size];
     std::string fmt = "{ "
         "\"error_overlay\": %s, "
         "\"channel_name\": %s, "
@@ -133,16 +133,16 @@ Options::Channel_settings::to_json() const {
         "\"aspect_border_color\": \"%s\""
         " }";
 
-    int n = snprintf (buffer, SIZE, fmt.c_str(),
+    int n = snprintf (buffer, size, fmt.c_str(),
                       error_overlay.to_json().c_str(),
                       channel_name.to_json().c_str(),
                       audio_meter.to_json().c_str(),
                       status_bar.to_json().c_str(),
-                      show_border ? "true" : "false",
+                      Ats::to_string(show_border).c_str(),
                       border_color.c_str(),
-                      show_aspect_border ? "true" : "false",
+                      Ats::to_string(show_aspect_border).c_str(),
                       aspect_border_color.c_str());
-    if ( (n>=0) && (n<SIZE) ) return string(buffer);
+    if ( (n>=0) && (n<size) ) return string(buffer);
     else return "{}";
 }
 
@@ -150,65 +150,76 @@ Options::Channel_settings::to_json() const {
 
 string
 Options::Qoe_settings::to_json() const {
-    #define SIZE 1024
+    constexpr int size = 1024;
 
-    char buffer[SIZE];
+    char buffer[size];
     std::string fmt = "{ "
-        "\"vloss\": %f, "
-        "\"aloss\": %f, "
+        "\"vloss\": %.2f, "
+        "\"aloss\": %.2f, "
         "\"black_cont_en\": %s, "
-        "\"black_cont\": %f, "
+        "\"black_cont\": %.2f, "
         "\"black_peak_en\": %s, "
-        "\"black_peak\": %f, "
+        "\"black_peak\": %.2f, "
         "\"luma_cont_en\": %s, "
-        "\"luma_cont\": %f, "
+        "\"luma_cont\": %.2f, "
         "\"luma_peak_en\": %s, "
-        "\"luma_peak\": %f, "
-        "\"black_time\": %f, "
+        "\"luma_peak\": %.2f, "
+        "\"black_time\": %.2f, "
         "\"black_pixel\": %d, "
         "\"freeze_cont_en\": %s, "
-        "\"freeze_cont\": %f, "
+        "\"freeze_cont\": %.2f, "
         "\"freeze_peak_en\": %s, "
-        "\"freeze_peak\": %f, "
+        "\"freeze_peak\": %.2f, "
         "\"diff_cont_en\": %s, "
-        "\"diff_cont\": %f, "
+        "\"diff_cont\": %.2f, "
         "\"diff_peak_en\": %s, "
-        "\"diff_peak\": %f, "
-        "\"freeze_time\": %f, "
+        "\"diff_peak\": %.2f, "
+        "\"freeze_time\": %.2f, "
         "\"pixel_diff\": %d, "
         "\"blocky_cont_en\": %s, "
-        "\"blocky_cont\": %f, "
+        "\"blocky_cont\": %.2f, "
         "\"blocky_peak_en\": %s, "
-        "\"blocky_peak\": %f, "
-        "\"blocky_time\": %f, "
+        "\"blocky_peak\": %.2f, "
+        "\"blocky_time\": %.2f, "
         "\"mark_blocks\": %s, "
         "\"silence_cont_en\": %s, "
-        "\"silence_cont\": %f, "
+        "\"silence_cont\": %.2f, "
         "\"silence_peak_en\": %s, "
-        "\"silence_peak\": %f, "
-        "\"silence_time\": %f, "
+        "\"silence_peak\": %.2f, "
+        "\"silence_time\": %.2f, "
         "\"loudness_cont_en\": %s, "
-        "\"loudness_cont\": %f, "
+        "\"loudness_cont\": %.2f, "
         "\"loudness_peak_en\": %s, "
-        "\"loudness_peak\": %f, "
-        "\"loudness_time\": %f, "
-        "\"adv_diff\": %f, "
+        "\"loudness_peak\": %.2f, "
+        "\"loudness_time\": %.2f, "
+        "\"adv_diff\": %.2f, "
         "\"adv_buff\": %d"
         " }";
 
-    // int n = snprintf (buffer, SIZE, fmt.c_str(),
-    //                   error_overlay.to_json().c_str(),
-    //                   channel_name.to_json().c_str(),
-    //                   audio_meter.to_json().c_str(),
-    //                   status_bar.to_json().c_str(),
-    //                   show_border ? "true" : "false",
-    //                   border_color.c_str(),
-    //                   show_aspect_border ? "true" : "false",
-    //                   aspect_border_color.c_str());
-    // if ( (n>=0) && (n<SIZE) ) return string(buffer);
-    // else return "{}";
-
-    return "{}";
+    int n = snprintf (buffer, size, fmt.c_str(),
+                      vloss, aloss,
+                      Ats::to_string(black_cont_en).c_str(), black_cont,
+                      Ats::to_string(black_peak_en).c_str(), black_peak,
+                      Ats::to_string(luma_cont_en).c_str(), luma_cont,
+                      Ats::to_string(luma_peak_en).c_str(), luma_peak,
+                      black_time, black_pixel,
+                      Ats::to_string(freeze_cont_en).c_str(), freeze_cont,
+                      Ats::to_string(freeze_peak_en).c_str(), freeze_peak,
+                      Ats::to_string(diff_cont_en).c_str(), diff_cont,
+                      Ats::to_string(diff_peak_en).c_str(), diff_peak,
+                      freeze_time, pixel_diff,
+                      Ats::to_string(blocky_cont_en).c_str(), blocky_cont,
+                      Ats::to_string(blocky_peak_en).c_str(), blocky_peak,
+                      blocky_time, Ats::to_string(mark_blocks).c_str(),
+                      Ats::to_string(silence_cont_en).c_str(), silence_cont,
+                      Ats::to_string(silence_peak_en).c_str(), silence_peak,
+                      silence_time,
+                      Ats::to_string(loudness_cont_en).c_str(), loudness_cont,
+                      Ats::to_string(loudness_peak_en).c_str(), loudness_peak,
+                      loudness_time,
+                      adv_diff, adv_buf);
+    if ( (n>=0) && (n<size) ) return string(buffer);
+    else return "{}";
 }
 
 /* ---------- Options -------------------- */
@@ -231,8 +242,8 @@ Options::set_data(const Metadata& m) {
         auto v = find_if(data.begin(),data.end(),[&m](Metadata& el) {
                 return el.stream == m.stream;
             });
-
-        if (v->stream == m.stream) {
+        
+        if ( (v != data.end()) && (v->stream == m.stream) ) {
             *v = m;
         } else {
             data.push_back(Metadata(m));
@@ -257,17 +268,38 @@ Options::to_string() const {
     // rval += "\n";
 
     string rval = "Options testing:\n";
-    rval += "Channel settings:\n";
-    rval += channel_settings.to_json();
-
+    rval += this->to_json();
     rval += "\n";
-
     return rval;
 }
 
 string
 Options::to_json() const {
-    return "TODO";
+    constexpr int size = 1024 * 8;
+
+    char buffer[size];
+    std::string fmt = "{ "
+        "\"prog_list\": [ %s ], "
+        "\"qoe_settings\": %s, "
+        "\"resolution\": { \"width\": %d, \"height\" %d }, "
+        "\"background_color\": %s, "
+        "\"channel_settings\": %s, "
+        "\"output_sink\": %s"
+        " }";
+
+    string s = "";
+    for_each (data.begin(), data.end(), [&s](const Metadata& d) {
+            s += (d.to_json() + ", ");
+        });
+    int n = snprintf (buffer, size, fmt.c_str(),
+                      s.c_str(),
+                      qoe_settings.to_json().c_str(),
+                      resolution.first, resolution.second,
+                      background_color.c_str(),
+                      channel_settings.to_json().c_str(),
+                      "{}");
+    if ( (n>=0) && (n<size) ) return string(buffer);
+    else return "{}";
 }
 
 void

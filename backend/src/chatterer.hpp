@@ -6,15 +6,17 @@
 
 namespace Ats {
 
+    inline std::string to_string (bool b) { return b ? "true" : "false"; }
+
     class Chatterer {
     public:
-	sigc::signal<void,const Chatterer&> talk;
+        sigc::signal<void,const Chatterer&> talk;
 	
-	virtual std::string to_string() const = 0;	
-	virtual std::string to_json()   const = 0;
-	virtual void   of_json(const std::string&) = 0;
-	virtual std::string to_msgpack()   const = 0;
-	virtual void   of_msgpack(const std::string&) = 0;
+        virtual std::string to_string() const = 0;	
+        virtual std::string to_json()   const = 0;
+        virtual void   of_json(const std::string&) = 0;
+        virtual std::string to_msgpack()   const = 0;
+        virtual void   of_msgpack(const std::string&) = 0;
     };
 
 }

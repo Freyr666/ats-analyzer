@@ -19,27 +19,27 @@ namespace Ats {
     class Control{
 
     public:
-	class Wrong_msg : exception {};
+        class Wrong_msg : exception {};
 	
     private:
-	RefPtr<IOChannel> in;
-	RefPtr<IOChannel> out;
-	Msg_type          msg_type;
+        RefPtr<IOChannel> in;
+        RefPtr<IOChannel> out;
+        Msg_type          msg_type;
 	
     public:
-	Control (Msg_type t = Msg_type::Debug);
-	Control (const Control&) = delete;
-	Control (Control&&) = delete;
+        Control (Msg_type t = Msg_type::Debug);
+        Control (const Control&) = delete;
+        Control (Control&&) = delete;
 
-	sigc::signal<void,const string&> received_json;
-	sigc::signal<void,const string&> received_msgpack;
+        sigc::signal<void,const string&> received_json;
+        sigc::signal<void,const string&> received_msgpack;
 
         void recv ();
-	void send (const Chatterer&);
+        void send (const Chatterer&);
 
-	void   connect(Chatterer& c) {
-	    c.talk.connect(sigc::mem_fun(this, &Control::send));
-	}
+        void   connect(Chatterer& c) {
+            c.talk.connect(sigc::mem_fun(this, &Control::send));
+        }
     };
 
 };

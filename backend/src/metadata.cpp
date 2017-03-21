@@ -25,6 +25,27 @@ Position::is_overlap (const Position& a) {
             (a.y < (height + y)) && ((a.height + a.y) > y));
 }
 
+string
+Position::to_json () const {
+    constexpr int size = 1024;
+
+    char buffer[size];
+    std::string fmt = "{ "
+        "\"x\": %d, "
+        "\"y\": %d, "
+        "\"width\": %d, "
+        "\"height\": %d"
+        " }";
+
+    int n = snprintf (buffer, size, fmt.c_str(), x, y, width, height);
+    if ( (n>=0) && (n<size) ) return string(buffer);
+    else return "{}";
+}
+
+void
+Position::of_json(const string& s) {
+    
+}
 // --------- Meta_pid -------------------
 
 Meta_pid::Type
@@ -59,16 +80,66 @@ Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
     if (type == Type::Empty) throw Wrong_type ();
 }
 
-Meta_pid::Audio_pid&
-Meta_pid::get_audio () {
+string
+Meta_pid::Video_pid::to_json () const {
+    constexpr int size = 1024;
+
+    char buffer[size];
+    std::string fmt = "{ "
+        "\"codec\": \"%s\", "
+        "\"width\": %d, "
+        "\"height\": %d, "
+        "\"aspect_ratio\": { \"x\": %d, \"y\": %d }, "
+        "\"interlaced\": \"%s\", "
+        "\"frame_rate\": %.2f"
+        " }";
+
+    int n = snprintf (buffer, size, fmt.c_str(),
+                      codec.c_str(),
+                      width, height,
+                      aspect_ratio.first, aspect_ratio.second,
+                      interlaced.c_str(), frame_rate);
+    if ( (n>=0) && (n<size) ) return string(buffer);
+    else return "{}";
+}
+
+void
+Meta_pid::Video_pid::of_json(const string& s) {
+    
+}
+
+string
+Meta_pid::Audio_pid::to_json () const {
+    constexpr int size = 512;
+
+    char buffer[size];
+    std::string fmt = "{ "
+        "\"codec\": \"%s\", "
+        "\"bitrate\": \"%s\", "
+        "\"sample_rate\": %d"
+        " }";
+
+    int n = snprintf (buffer, size, fmt.c_str(),
+                      codec.c_str(), bitrate.c_str(), sample_rate);
+    if ( (n>=0) && (n<size) ) return string(buffer);
+    else return "{}";
+}
+
+void
+Meta_pid::Audio_pid::of_json(const string& s) {
+    
+}
+
+const Meta_pid::Audio_pid&
+Meta_pid::get_audio () const {
     if(type == Meta_pid::Type::Audio)
         return audio;
     else
         throw Wrong_type();
 }
 
-Meta_pid::Video_pid&
-Meta_pid::get_video () {
+const Meta_pid::Video_pid&
+Meta_pid::get_video () const {
     if(type == Meta_pid::Type::Video)
         return video;
     else
@@ -85,6 +156,43 @@ Meta_pid::to_string () const {
     rval += stream_type_name;
     return rval;
 }
+
+string
+Meta_pid::to_json () const {
+    constexpr int size = 5 * 1024;
+
+    char buffer[size];
+    std::string fmt = "{ "
+        "\"pid\": %d, "
+        "\"to_be_analyzed\": %s, "
+        "\"type\": \"%s\", "
+        "\"stream_type\": %d, "
+        "\"stream_type_name\": \"%s\", "
+        "\"description\": %s, "
+        "\"position\": %s"
+        " }";
+
+    int n = snprintf (buffer, size, fmt.c_str(),
+                      pid, Ats::to_string(to_be_analyzed).c_str(),
+                      type == Type::Video ? "video" :
+                      type == Type::Audio ? "audio" :
+                      type == Type::Subtitles ? "subtitles" :
+                      type == Type::Teletext ? "teletext" :
+                      "empty",
+                      stream_type, stream_type_name.c_str(),
+                      type == Type::Video ? this->get_video().to_json().c_str() :
+                      type == Type::Audio ? this->get_audio().to_json().c_str() :
+                      "{}",
+                      position.to_json().c_str());
+    if ( (n>=0) && (n<size) ) return string(buffer);
+    else return "{}";
+}
+
+void
+Meta_pid::of_json (const string& s) {
+    
+}
+
 
 // --------- Meta_channel  ---------------
 
@@ -129,6 +237,35 @@ Meta_channel::to_be_analyzed () const {
 	    return p.to_be_analyzed;
 	});
     return result != pids.end();
+}
+
+string
+Meta_channel::to_json () const {
+    constexpr int size = 20 * (5 * 1024);
+
+    char buffer[size];
+    std::string fmt = "{ "
+        "\"number\": %d, "
+        "\"service_name\": \"%s\", "
+        "\"provider_name\": \"%s\", "
+        "\"pids\": [ %s ]"
+        " }";
+
+    string s = "";
+    for_each(pids.begin(), pids.end(), [&s](const Meta_pid& p) {
+            s += (p.to_json() + ", ");
+        });
+    int n = snprintf (buffer, size, fmt.c_str(),
+                      number,
+                      service_name.c_str(), provider_name.c_str(),
+                      s.c_str());
+    if ( (n>=0) && (n<size) ) return string(buffer);
+    else return "{}";
+}
+
+void
+Meta_channel::of_json (const string& s) {
+    
 }
 
 // ---------- Metadata ---------------------
@@ -203,6 +340,30 @@ Metadata::to_string () const {
 	    rval += "];";
 	});
     return rval;
+}
+
+string
+Metadata::to_json () const {
+    constexpr int size = 50 * (20 * 5 * 1024);
+
+    char buffer[size];
+    std::string fmt = "{ "
+        "\"stream\": %d, "
+        "\"channels\": [ %s ]"
+        " }";
+
+    string s = "";
+    for_each(channels.begin(), channels.end(), [&s](const Meta_channel& p) {
+            s += (p.to_json() + ", ");
+        });
+    int n = snprintf (buffer, size, fmt.c_str(),stream, s.c_str());
+    if ( (n>=0) && (n<size) ) return string(buffer);
+    else return "{}";
+}
+
+void
+Metadata::of_json (const string& s) {
+    
 }
 
 bool

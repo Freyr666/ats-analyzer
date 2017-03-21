@@ -25,26 +25,26 @@ Graph::apply(const Options& o) {
     mixer->link(output);
     
     for_each(o.data.begin(),o.data.end(),[this, mixer](const Metadata& m){
-	    auto root = create_root(m);
+            auto root = create_root(m);
 
-	    if (root) {
-		pipe->add(root);
-		root->sync_state_with_parent();
+            if (root) {
+                pipe->add(root);
+                root->sync_state_with_parent();
 		
-		root->signal_pad_added().connect([this, mixer](const RefPtr<Gst::Pad>& p) {
+                root->signal_pad_added().connect([this, mixer](const RefPtr<Gst::Pad>& p) {
 			
-			auto pname = p->get_name();
-			//cout << "Caps: " << pname << "\n";
-			vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
-			auto type    = name_toks[1];
+                        auto pname = p->get_name();
+                        //cout << "Caps: " << pname << "\n";
+                        vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
+                        auto type    = name_toks[1];
 			
-			if (type == "video") {
-			    auto mixer_pad = mixer->get_request_pad("sink_%u");
-			    p->link(mixer_pad);
-			}
-		    });
-	    }
-	});
+                        if (type == "video") {
+                            auto mixer_pad = mixer->get_request_pad("sink_%u");
+                            p->link(mixer_pad);
+                        }
+                    });
+            }
+        });
 
     bus = pipe->get_bus();
    
@@ -57,8 +57,8 @@ void
 Graph::reset() {
     if (bus)   bus.reset();
     if (pipe)  {
-	set_state(Gst::STATE_NULL);
-	pipe.reset();
+        set_state(Gst::STATE_NULL);
+        pipe.reset();
     }
 }
 
@@ -87,78 +87,78 @@ Graph::create_root(const Metadata& m) {
     src->link(parse)->link(tee);
 
     m.for_analyzable ([&m,&bin,tee](const Meta_channel& c) {
-	    uint num = c.number;
+            uint num = c.number;
 	    
-	    string demux_name = "demux_";
-	    demux_name += std::to_string(m.stream);
-	    demux_name += "_";
-	    demux_name += std::to_string(c.number);
-	    //cout << "Demux name: " << demux_name << endl;
+            string demux_name = "demux_";
+            demux_name += std::to_string(m.stream);
+            demux_name += "_";
+            demux_name += std::to_string(c.number);
+            //cout << "Demux name: " << demux_name << endl;
 
-	    auto queue = Gst::ElementFactory::create_element("queue2");
-	    auto demux = Gst::ElementFactory::create_element("tsdemux",demux_name);
+            auto queue = Gst::ElementFactory::create_element("queue2");
+            auto demux = Gst::ElementFactory::create_element("tsdemux",demux_name);
 
-	    demux->set_property("program-number", c.number);
-	    queue->set_property("max-size-buffers", 200000);
-	    queue->set_property("max-size-bytes", 429496729);
+            demux->set_property("program-number", c.number);
+            queue->set_property("max-size-buffers", 200000);
+            queue->set_property("max-size-bytes", 429496729);
 
-	    auto sinkpad = queue->get_static_pad("sink"); 
-	    auto srcpad = tee->get_request_pad("src_%u");
+            auto sinkpad = queue->get_static_pad("sink"); 
+            auto srcpad = tee->get_request_pad("src_%u");
 
-	    bin->add(queue)->add(demux);
-	    queue->link(demux);
+            bin->add(queue)->add(demux);
+            queue->link(demux);
 
-	    srcpad->link(sinkpad);
+            srcpad->link(sinkpad);
 	    
-	    demux->signal_pad_added().connect([&m, bin, num](const RefPtr<Gst::Pad>& p) {	    
-		    auto pname = p->get_name();
-		    auto pcaps = p->get_current_caps()->get_structure(0).get_name();
+            demux->signal_pad_added().connect([&m, bin, num](const RefPtr<Gst::Pad>& p) {	    
+                    auto pname = p->get_name();
+                    auto pcaps = p->get_current_caps()->get_structure(0).get_name();
         
-		    vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
-		    vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
+                    vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
+                    vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
 
-		    auto& type = caps_toks[0];
+                    auto& type = caps_toks[0];
 		    
-		    if (type != "video" && type != "audio") return;	    
+                    if (type != "video" && type != "audio") return;	    
 		    
-		    auto pid  = strtoul(name_toks[2].data(), NULL, 16);
+                    auto pid  = strtoul(name_toks[2].data(), NULL, 16);
 
-		    auto branch = create_branch(num, pid, m);
+                    auto branch = create_branch(num, pid, m);
 		    
-		    if (!branch) return;
+                    if (!branch) return;
 
-		    bin->add(branch);
-		    auto sink_pad  = branch->get_static_pad("sink");
-		    p->link(sink_pad);
+                    bin->add(branch);
+                    auto sink_pad  = branch->get_static_pad("sink");
+                    p->link(sink_pad);
 
-		    auto stream = m.stream;
+                    auto stream = m.stream;
 
-		    branch->signal_pad_added().connect([bin, type, pid, num, stream](const RefPtr<Gst::Pad>& p) {
-			    if (type != "video") return;
+                    branch->signal_pad_added().connect([bin, type, pid, num, stream](const RefPtr<Gst::Pad>& p) {
+                            if (type != "video") return;
 			    
-			    string src_pad_name = "src_";
-			    src_pad_name += type + "_";
-			    src_pad_name += std::to_string(stream);
-			    src_pad_name += "_";
-			    src_pad_name += std::to_string(num);
-			    src_pad_name += "_";
-			    src_pad_name += std::to_string(pid);
+                            string src_pad_name = "src_";
+                            src_pad_name += type + "_";
+                            src_pad_name += std::to_string(stream);
+                            src_pad_name += "_";
+                            src_pad_name += std::to_string(num);
+                            src_pad_name += "_";
+                            src_pad_name += std::to_string(pid);
 
-			    auto src_ghost = Gst::GhostPad::create(p, src_pad_name);
-			    src_ghost->set_active();
-			    bin->add_pad(src_ghost);
-			});
-		    branch->sync_state_with_parent();
-		});
+                            auto src_ghost = Gst::GhostPad::create(p, src_pad_name);
+                            src_ghost->set_active();
+                            bin->add_pad(src_ghost);
+                        });
+                    branch->sync_state_with_parent();
+                });
 	    
-	});
+        });
     return bin;
 }
 
 RefPtr<Gst::Bin>
 Graph::create_branch(const uint channel,
-		     const uint pid,
-		     const Metadata& m) {
+                     const uint pid,
+                     const Metadata& m) {
     RefPtr<Gst::Pad> src_pad;
     auto pidinfo = m.find_pid(channel, pid);
 
@@ -175,28 +175,28 @@ Graph::create_branch(const uint channel,
     queue->link(decoder);
 
     decoder->signal_pad_added().connect([bin](const RefPtr<Gst::Pad>& p) {
-	    RefPtr<Gst::Pad> src_pad;
+            RefPtr<Gst::Pad> src_pad;
 	    
-	    auto pcaps = p->get_current_caps()->get_structure(0).get_name();
-	    vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
-	    auto& type    = caps_toks[0];
+            auto pcaps = p->get_current_caps()->get_structure(0).get_name();
+            vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
+            auto& type    = caps_toks[0];
 
-	    if (type == "video") {		
-		auto deint = Gst::ElementFactory::create_element("deinterlace");
-		auto deint_sink = deint->get_static_pad("sink");
-		src_pad = deint->get_static_pad("src");
-		bin->add(deint);
-		deint->sync_state_with_parent();
-		p->link(deint_sink);
-	    } else if (type == "audio") {
-		src_pad = p;
-	    } else {
-		return;
-	    }
-	    auto src_ghost = Gst::GhostPad::create(src_pad, "src");
-	    src_ghost->set_active();
-	    bin->add_pad(src_ghost);
-	});
+            if (type == "video") {		
+                auto deint = Gst::ElementFactory::create_element("deinterlace");
+                auto deint_sink = deint->get_static_pad("sink");
+                src_pad = deint->get_static_pad("src");
+                bin->add(deint);
+                deint->sync_state_with_parent();
+                p->link(deint_sink);
+            } else if (type == "audio") {
+                src_pad = p;
+            } else {
+                return;
+            }
+            auto src_ghost = Gst::GhostPad::create(src_pad, "src");
+            src_ghost->set_active();
+            bin->add_pad(src_ghost);
+        });
 
     auto sink_pad = queue->get_static_pad("sink");
     auto sink_ghost = Gst::GhostPad::create(sink_pad, "sink");

@@ -90,53 +90,54 @@ namespace Ats {
         };
 
         struct Qoe_settings {
+            /* FIXME add correct defaults */
             /* loss */
-            float vloss;
-            float aloss;
+            float vloss = 2.;
+            float aloss = 2.;
             /* black frame */
-            bool black_cont_en;
-            float black_cont;
-            bool black_peak_en;
-            float black_peak;
-            bool luma_cont_en;
-            float luma_cont;
-            bool luma_peak_en;
-            float luma_peak;
-            float black_time;
-            int black_pixel;
+            bool black_cont_en = true;
+            float black_cont = 90.;
+            bool black_peak_en = true;
+            float black_peak = 100.;
+            bool luma_cont_en = true;
+            float luma_cont = 20.;
+            bool luma_peak_en = false;
+            float luma_peak = 16.;
+            float black_time = 10.;
+            int black_pixel = 16;
             /* freeze */
-            bool freeze_cont_en;
-            float freeze_cont;
-            bool freeze_peak_en;
-            float freeze_peak;
-            bool diff_cont_en;
-            float diff_cont;
-            bool diff_peak_en;
-            float diff_peak;
-            float freeze_time;
-            int pixel_diff;
+            bool freeze_cont_en = true;
+            float freeze_cont = 90.;
+            bool freeze_peak_en = true;
+            float freeze_peak = 100.;
+            bool diff_cont_en = true;
+            float diff_cont = .1;
+            bool diff_peak_en = false;
+            float diff_peak = .02;
+            float freeze_time = 10.;
+            int pixel_diff = 0;
             /* blockiness */
-            bool blocky_cont_en;
-            float blocky_cont;
-            bool blocky_peak_en;
-            float blocky_peak;
-            float blocky_time;
-            bool mark_blocks;
+            bool blocky_cont_en = true;
+            float blocky_cont = 4.;
+            bool blocky_peak_en = true;
+            float blocky_peak = 7.;
+            float blocky_time = 3.;
+            bool mark_blocks = false;
             /* silence */
-            bool silence_cont_en;
-            float silence_cont;
-            bool silence_peak_en;
-            float silence_peak;
-            float silence_time;
+            bool silence_cont_en = true;
+            float silence_cont = -35.;
+            bool silence_peak_en = false;
+            float silence_peak = -45.;
+            float silence_time = 10.;
             /* loudness */
-            bool loudness_cont_en;
-            float loudness_cont;
-            bool loudness_peak_en;
-            float loudness_peak;
-            float loudness_time;
+            bool loudness_cont_en = true;
+            float loudness_cont = -22.;
+            bool loudness_peak_en = true;
+            float loudness_peak = -15.;
+            float loudness_time = 2.;
             /* adv loudness */
-            float adv_diff;
-            int adv_buf;
+            float adv_diff = 1.5;
+            int adv_buf = 2 * 60 * 60;
 
             string to_json() const;
             void   of_json(const string&);
