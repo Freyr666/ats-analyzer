@@ -4,9 +4,9 @@ Pre-pre-alpha goals:
 - [x] Extend udpsrc buffer size [171ecff]
 - [x] Switch to decodebin element for decoding [3cb0858]
 - [ ] Implement command-line options parser
-- [x] Reimplement Metadata []
-- [x] Implement Control type
-- [x] Implement Options type
+- [x] Reimplement Metadata [6fb6470]
+- [x] Implement Control type [6fb6470]
+- [x] Implement Options type [6fb6470]
 - [ ] Add JSON support
 - [ ] Implement Graph type
 - - [ ] frame size validation support
