@@ -10,6 +10,8 @@ namespace Ats {
 
     class Chatterer {
     public:
+        class Serializer_failure : std::exception {};
+
         sigc::signal<void,const Chatterer&> send;
         sigc::signal<void,const std::string&> send_err;
         sigc::signal<void,const std::string&> send_log;

@@ -30,16 +30,16 @@ Position::to_json () const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{"
+    constexpr const char* fmt = "{"
         "\"x\":%d,"
         "\"y\":%d,"
         "\"width\":%d,"
         "\"height\":%d"
         "}";
 
-    int n = snprintf (buffer, size, fmt.c_str(), x, y, width, height);
+    int n = snprintf (buffer, size, fmt, x, y, width, height);
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else return "{}";
+    else throw Chatterer::Serializer_failure ();
 }
 
 void
@@ -85,7 +85,7 @@ Meta_pid::Video_pid::to_json () const {
     constexpr int size = 1024;
 
     char buffer[size];
-    std::string fmt = "{"
+    constexpr const char* fmt = "{"
         "\"codec\":\"%s\","
         "\"width\":%d,"
         "\"height\":%d,"
@@ -94,13 +94,11 @@ Meta_pid::Video_pid::to_json () const {
         "\"frame_rate\":%.2f"
         "}";
 
-    int n = snprintf (buffer, size, fmt.c_str(),
-                      codec.c_str(),
-                      width, height,
+    int n = snprintf (buffer, size, fmt, codec.c_str(), width, height,
                       aspect_ratio.first, aspect_ratio.second,
                       interlaced.c_str(), frame_rate);
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else return "{}";
+    else throw Chatterer::Serializer_failure ();
 }
 
 void
@@ -113,16 +111,15 @@ Meta_pid::Audio_pid::to_json () const {
     constexpr int size = 512;
 
     char buffer[size];
-    std::string fmt = "{"
+    constexpr const char* fmt = "{"
         "\"codec\":\"%s\","
         "\"bitrate\":\"%s\","
         "\"sample_rate\":%d"
         "}";
 
-    int n = snprintf (buffer, size, fmt.c_str(),
-                      codec.c_str(), bitrate.c_str(), sample_rate);
+    int n = snprintf (buffer, size, fmt, codec.c_str(), bitrate.c_str(), sample_rate);
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else return "{}";
+    else throw Chatterer::Serializer_failure ();
 }
 
 void
@@ -162,7 +159,7 @@ Meta_pid::to_json () const {
     constexpr int size = 5 * 1024;
 
     char buffer[size];
-    std::string fmt = "{"
+    constexpr const char* fmt = "{"
         "\"pid\":%d,"
         "\"to_be_analyzed\":%s,"
         "\"type\":\"%s\","
@@ -172,7 +169,7 @@ Meta_pid::to_json () const {
         "\"position\":%s"
         "}";
 
-    int n = snprintf (buffer, size, fmt.c_str(),
+    int n = snprintf (buffer, size, fmt,
                       pid, Ats::to_string(to_be_analyzed).c_str(),
                       type == Type::Video ? "video" :
                       type == Type::Audio ? "audio" :
@@ -185,7 +182,7 @@ Meta_pid::to_json () const {
                       "{}",
                       position.to_json().c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else return "{}";
+    else throw Chatterer::Serializer_failure ();
 }
 
 void
@@ -244,7 +241,7 @@ Meta_channel::to_json () const {
     constexpr int size = 20 * (5 * 1024);
 
     char buffer[size];
-    std::string fmt = "{"
+    constexpr const char* fmt = "{"
         "\"number\":%d,"
         "\"service_name\":\"%s\","
         "\"provider_name\":\"%s\","
@@ -257,12 +254,10 @@ Meta_channel::to_json () const {
             s += ",";
         s += it->to_json();
     }
-    int n = snprintf (buffer, size, fmt.c_str(),
-                      number,
-                      service_name.c_str(), provider_name.c_str(),
+    int n = snprintf (buffer, size, fmt, number, service_name.c_str(), provider_name.c_str(),
                       s.c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else return "{}";
+    else throw Chatterer::Serializer_failure ();
 }
 
 void
@@ -349,7 +344,7 @@ Metadata::to_json () const {
     constexpr int size = 50 * (20 * 5 * 1024);
 
     char buffer[size];
-    std::string fmt = "{"
+    constexpr const char* fmt = "{"
         "\"stream\":%d,"
         "\"channels\":[%s]"
         "}";
@@ -360,9 +355,9 @@ Metadata::to_json () const {
             s += ",";
         s += it->to_json();
     }
-    int n = snprintf (buffer, size, fmt.c_str(),stream, s.c_str());
+    int n = snprintf (buffer, size, fmt, stream, s.c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else return "{}";
+    else throw Chatterer::Serializer_failure ();
 }
 
 void
