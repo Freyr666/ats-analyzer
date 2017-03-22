@@ -152,11 +152,10 @@ namespace Ats {
         /* ------- Output sink settings ------- */
         Output_sink output_sink_settings;
 
-        sigc::signal<void,const Options&>   set;
-        sigc::signal<void,const Options&>   destructive_set;
+        sigc::signal<void,const Settings&>   set;
     
-        Options() {}
-        virtual ~Options() {}
+        Settings() {}
+        virtual ~Settings() {}
 
         // Chatter implementation
         string to_string() const;	
@@ -164,12 +163,6 @@ namespace Ats {
         void   of_json(const string&);
         string to_msgpack()   const;
         void   of_msgpack(const string&);
-
-        void operator=(const Metadata& m) { set_data(m); }
-
-        void   connect(Probe& p) { p.updated.connect(
-                sigc::mem_fun(this, &Options::set_data));
-        }
     };
 };
 

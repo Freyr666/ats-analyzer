@@ -238,7 +238,7 @@ Settings::Output_sink::to_json() const {
 }
 
 
-/* ---------- Options -------------------- */
+/* ---------- Settings -------------------- */
 
 // Chatter implementation
 
@@ -255,7 +255,7 @@ Settings::to_string() const {
     // rval += std::to_string(resolution.first);
     // rval += "\n";
 
-    string rval = "Options testing:\n";
+    string rval = "Settings testing:\n";
     rval += this->to_json();
     rval += "\n";
     return rval;
@@ -299,15 +299,11 @@ Settings::of_json(const string& j) {
     for (json::iterator el = js.begin(); el != js.end(); ++el) {
         if (el.key() == "option" && el.value().is_string()) {
             o_set = true; // not so serious option
-        } else if (el.key() == "other option") {
-            o_destr_set = true; // serious option
-        } 
+        }
     }
 
     if (o_set)
         set.emit(*this);
-    if (o_destr_set)
-        destructive_set(*this);
 }
 
 void
