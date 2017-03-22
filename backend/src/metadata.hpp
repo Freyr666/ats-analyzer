@@ -7,6 +7,8 @@
 #include <gstreamermm.h>
 #include <glibmm.h>
 
+#include "chatterer.hpp"
+
 using namespace std;
 
 namespace Ats {
@@ -20,6 +22,8 @@ namespace Ats {
         bool operator== (const Position&);
         bool operator!= (const Position&);
         bool is_overlap (const Position&);
+        string to_json()   const;
+        void   of_json(const string&);
     };
 
     struct Meta_pid {
@@ -28,18 +32,23 @@ namespace Ats {
 
         struct Video_pid {
             string codec;
-            string profile;
             uint width = 0;
             uint height = 0;
             pair<uint, uint> aspect_ratio = {0, 0};
             string interlaced;
             float frame_rate = 0;
+
+            string to_json()   const;
+            void   of_json(const string&);
         };
 
         struct Audio_pid {
             string codec;
             string bitrate;
             uint sample_rate = 0;
+
+            string to_json()   const;
+            void   of_json(const string&);
         };
 
         uint pid;
@@ -52,9 +61,11 @@ namespace Ats {
         Meta_pid (uint p, uint t, string c);
 
         static Type get_type (uint);
-        Audio_pid&  get_audio ();
-        Video_pid&  get_video ();
+        const Audio_pid&  get_audio () const;
+        const Video_pid&  get_video () const;
         string      to_string () const;
+        string      to_json()   const;
+        void        of_json(const string&);
 
     private:
         Audio_pid audio;
@@ -72,12 +83,14 @@ namespace Ats {
         ~Meta_channel () {}
 
         Meta_pid*       find_pid (uint pid);
-	const Meta_pid* find_pid (uint pid) const;
+        const Meta_pid* find_pid (uint pid) const;
 
         bool   to_be_analyzed () const;
         void   append_pid (Meta_pid&& p) { pids.push_back(p); }
         uint   pids_num () { return pids.size(); }
         string to_string () const;
+        string to_json()   const;
+        void   of_json(const string&);
     };
     
     struct Metadata {
@@ -105,6 +118,9 @@ namespace Ats {
         bool   is_empty() const { return channels.empty(); }
         bool   to_be_analyzed () const;
         string to_string () const;
+        string to_json() const;
+        void   of_json(const string&);
+
 
         void   for_analyzable (std::function<void(const Meta_channel&)>) const;
         bool   validate_grid (uint, uint) const;

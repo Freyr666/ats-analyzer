@@ -10,6 +10,7 @@
 #include "chatterer.hpp"
 #include "probe.hpp"
 #include "options.hpp"
+#include "settings.hpp"
 #include "graph.hpp"
 
 using namespace std;
