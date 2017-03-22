@@ -15,7 +15,7 @@ Settings::Channel_settings::Error_overlay::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    constexpr char* fmt = "{"
+    constexpr const char* fmt = "{"
         "\"error_color\":\"%s\","
         "\"blink_speed\":%.2f,"
         "\"enabled\":%s"
@@ -34,7 +34,7 @@ Settings::Channel_settings::Channel_name::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    constexpr char* fmt = "{"
+    constexpr const char* fmt = "{"
         "\"position\":\"%s\","
         "\"font_size\":%d,"
         "\"fmt\":\"%s\""
@@ -56,7 +56,7 @@ Settings::Channel_settings::Audio_meter::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    constexpr char* fmt = "{"
+    constexpr const char* fmt = "{"
         "\"position\":\"%s\","
         "\"width\":%d,"
         "\"height\":%d,"
@@ -86,7 +86,7 @@ Settings::Channel_settings::Status_bar::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
-    constexpr char* fmt = "{"
+    constexpr const char* fmt = "{"
         "\"position\":\"%s\","
         "\"aspect\":%s,"
         "\"subtitles\":%s,"
@@ -288,7 +288,6 @@ Settings::to_msgpack() const {
 void
 Settings::of_json(const string& j) {
     bool o_set = false;
-    bool o_destr_set = false;
     
     using json = nlohmann::json;
     auto js = json::parse(j);
@@ -302,13 +301,10 @@ Settings::of_json(const string& j) {
         }
     }
 
-    if (o_set)
-        set.emit(*this);
+    if (o_set) set.emit(*this);
 }
 
 void
 Settings::of_msgpack(const string&) {
-
-    destructive_set(*this);
     set.emit(*this);
 }

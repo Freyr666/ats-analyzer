@@ -2,7 +2,7 @@
 #define SETTINGS_H
 
 #include <string>
-#include <gstremermm.h>
+#include <gstreamermm.h>
 
 #include "chatterer.hpp"
 #include "probe.hpp"
@@ -141,6 +141,9 @@ namespace Ats {
             string address = "239.0.0.1";
             int port = 1234;
             bool enabled = true;
+
+            string to_json() const;
+            void   of_json(const string&);
         };
 
         /* ------- Qoe analysis settings -------- */

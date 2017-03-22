@@ -8,7 +8,8 @@ LDFLAGS += `pkg-config --libs gstreamermm-1.0 glibmm-2.4 gstreamer-1.0 gstreamer
 
 SOURCES = main.cpp probe.cpp address.cpp \
           metadata.cpp parser.cpp options.cpp \
-	  graph.cpp context.cpp control.cpp 
+	        graph.cpp context.cpp control.cpp \
+	        settings.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
 
