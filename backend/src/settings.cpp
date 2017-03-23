@@ -11,23 +11,50 @@ using namespace Ats;
 /* ---------- Channel settings ----------- */
 
 string
+Settings::Channel_settings::Error_overlay::to_string() const {
+    string rval = "Enabled: ";
+    rval += Ats::to_string(enabled);
+    rval += ", Error color: ";
+    rval += std::to_string(error_color);
+    rval += "\n";
+    return rval;
+}
+
+string
 Settings::Channel_settings::Error_overlay::to_json() const {
-    constexpr int size = 1024;
+    constexpr int size = 128;
 
     char buffer[size];
     constexpr const char* fmt = "{"
-        "\"error_color\":%d,"
-        "\"enabled\":%s"
+        "\"enabled\":%s,"
+        "\"error_color\":%d"
         "}";
 
-    int n = snprintf (buffer, size, fmt, error_color, Ats::to_string(enabled).c_str());
+    int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), error_color);
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
 }
 
+void
+Settings::Channel_settings::Error_overlay::of_json(const string& j) {
+
+}
+
+string
+Settings::Channel_settings::Channel_name::to_string() const {
+    string rval = "Enabled: ";
+    rval += Ats::to_string(enabled);
+    rval += ", Font size: ";
+    rval += std::to_string(font_size);
+    rval += ", Format: ";
+    rval += fmt;
+    rval += "\n";
+    return rval;
+}
+
 string
 Settings::Channel_settings::Channel_name::to_json() const {
-    constexpr int size = 1024;
+    constexpr int size = 256;
 
     char buffer[size];
     constexpr const char* fmt = "{"
@@ -41,34 +68,71 @@ Settings::Channel_settings::Channel_name::to_json() const {
     else throw Serializer_failure ();
 }
 
+void
+Settings::Channel_settings::Channel_name::of_json(const string& j) {
+
+}
+
+string
+Settings::Channel_settings::Audio_meter::to_string() const {
+    string rval = "Enabled: ";
+    rval += Ats::to_string(enabled);
+    rval += ", Position: ";
+    rval += (position == Audio_meter_pos::Left ? "left" : "right");
+    rval += "\n";
+    return rval;
+}
+
 string
 Settings::Channel_settings::Audio_meter::to_json() const {
-    constexpr int size = 1024;
+    constexpr int size = 128;
 
     char buffer[size];
     constexpr const char* fmt = "{"
-        "\"position\":\"%s\","
-        "\"width\":%d,"
-        "\"height\":%d,"
-        "\"peak_color\":\"%s\","
-        "\"high_color\":\"%s\","
-        "\"mid_color\":\"%s\","
-        "\"low_color\":\"%s\","
-        "\"background_color\":\"%s\""
+        "\"enabled\":%s,"
+        "\"position\":\"%s\""
         "}";
 
     int n = snprintf (buffer, size, fmt,
+                      Ats::to_string(enabled).c_str(),
                       position == Audio_meter_pos::Left ? "left" :
                       position == Audio_meter_pos::Right ? "right" :
-                      "off",
-                      width, height,
-                      peak_color.c_str(),
-                      high_color.c_str(),
-                      mid_color.c_str(),
-                      low_color.c_str(),
-                      background_color.c_str());
+                      "right");
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
+}
+
+void
+Settings::Channel_settings::Audio_meter::of_json(const string& j) {
+
+}
+
+string
+Settings::Channel_settings::Status_bar::to_string() const {
+    string rval = "Enabled: ";
+    rval += Ats::to_string(enabled);
+    rval += ", Position: ";
+    rval += (position == Status_bar_pos::Top_left ? "top_left" :
+             position == Status_bar_pos::Top_right ? "top_right" :
+             position == Status_bar_pos::Left ? "left" :
+             position == Status_bar_pos::Right ? "right" :
+             position == Status_bar_pos::Bottom_left ? "bottom_left" :
+             position == Status_bar_pos::Bottom_right ? "bottom_right" :
+             "top_left");
+    rval += ", Aspect: ";
+    rval += Ats::to_string(aspect);
+    rval += ", Subtitles: ";
+    rval += Ats::to_string(subtitles);
+    rval += ", Teletext: ";
+    rval += Ats::to_string(teletext);
+    rval += ", Eit: ";
+    rval += Ats::to_string(eit);
+    rval += ", Qos: ";
+    rval += Ats::to_string(qos);
+    rval += ", Scte35: ";
+    rval += Ats::to_string(scte35);
+    rval += "\n";
+    return rval;
 }
 
 string
@@ -77,6 +141,7 @@ Settings::Channel_settings::Status_bar::to_json() const {
 
     char buffer[size];
     constexpr const char* fmt = "{"
+        "\"enabled\":%s,"
         "\"position\":\"%s\","
         "\"aspect\":%s,"
         "\"subtitles\":%s,"
@@ -87,13 +152,14 @@ Settings::Channel_settings::Status_bar::to_json() const {
         "}";
 
     int n = snprintf (buffer, size, fmt,
+                      Ats::to_string(enabled).c_str(),
                       position == Status_bar_pos::Top_left ? "top_left" :
                       position == Status_bar_pos::Top_right ? "top_right" :
                       position == Status_bar_pos::Left ? "left" :
                       position == Status_bar_pos::Right ? "right" :
                       position == Status_bar_pos::Bottom_left ? "bottom_left" :
                       position == Status_bar_pos::Bottom_right ? "bottom_right" :
-                      "off",
+                      "top_left",
                       Ats::to_string(aspect).c_str(),
                       Ats::to_string(subtitles).c_str(),
                       Ats::to_string(teletext).c_str(),
@@ -104,36 +170,153 @@ Settings::Channel_settings::Status_bar::to_json() const {
     else throw Serializer_failure ();
 }
 
+void
+Settings::Channel_settings::Status_bar::of_json(const string& j) {
+
+}
+
+string
+Settings::Channel_settings::to_string() const {
+    string rval = "Show border:\n\t";
+    rval += Ats::to_string(show_border);
+    rval += "\nBorder color:\n\t";
+    rval += std::to_string(border_color);
+    rval += "\nShow aspect border:\n\t";
+    rval += Ats::to_string(show_aspect_border);
+    rval += "\nAspect border color:\n\t";
+    rval += std::to_string(aspect_border_color);
+    rval += "\nError overlay:\n\t";
+    rval += error_overlay.to_string();
+    rval += "Channel name:\n\t";
+    rval += channel_name.to_string();
+    rval += "Audio meter:\n\t";
+    rval += audio_meter.to_string();
+    rval += "Status bar:\n\t";
+    rval += status_bar.to_string();
+    return rval;
+}
+
 string
 Settings::Channel_settings::to_json() const {
     constexpr int size = 1024;
 
     char buffer[size];
     constexpr const char* fmt = "{"
+        "\"show_border\":%s,"
+        "\"border_color\":%d,"
+        "\"show_aspect_border\":%s,"
+        "\"aspect_border_color\":%d,"
         "\"error_overlay\":%s,"
         "\"channel_name\":%s,"
         "\"audio_meter\":%s,"
-        "\"status_bar\":%s,"
-        "\"show_border\":%s,"
-        "\"border_color\":\"%s\","
-        "\"show_aspect_border\":%s,"
-        "\"aspect_border_color\":\"%s\""
+        "\"status_bar\":%s"
         "}";
 
     int n = snprintf (buffer, size, fmt,
+                      Ats::to_string(show_border).c_str(),
+                      border_color,
+                      Ats::to_string(show_aspect_border).c_str(),
+                      aspect_border_color,
                       error_overlay.to_json().c_str(),
                       channel_name.to_json().c_str(),
                       audio_meter.to_json().c_str(),
-                      status_bar.to_json().c_str(),
-                      Ats::to_string(show_border).c_str(),
-                      border_color.c_str(),
-                      Ats::to_string(show_aspect_border).c_str(),
-                      aspect_border_color.c_str());
+                      status_bar.to_json().c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
 }
 
+void
+Settings::Channel_settings::of_json(const string& j) {
+
+}
+
 /* ---------- QoE settings --------------- */
+
+string
+Settings::Qoe_settings::to_string() const {
+    string rval = "Vloss:\n\t";
+    rval += std::to_string(vloss);
+    rval += "\nAloss:\n\t";
+    rval += std::to_string(aloss);
+    rval += "\nBlack cont en:\n\t";
+    rval += Ats::to_string(black_cont_en);
+    rval += "\nBlack cont:\n\t";
+    rval += std::to_string(black_cont);
+    rval += "\nBlack peak en:\n\t";
+    rval += Ats::to_string(black_peak_en);
+    rval += "\nBlack peak:\n\t";
+    rval += std::to_string(black_peak);
+    rval += "\nLuma cont en:\n\t";
+    rval += Ats::to_string(luma_cont_en);
+    rval += "\nLuma cont:\n\t";
+    rval += std::to_string(luma_cont);
+    rval += "\nLuma peak en:\n\t";
+    rval += Ats::to_string(luma_peak_en);
+    rval += "\nLuma peak:\n\t";
+    rval += std::to_string(luma_peak);
+    rval += "\nBlack time:\n\t";
+    rval += std::to_string(black_time);
+    rval += "\nBlack pixel:\n\t";
+    rval += std::to_string(black_pixel);
+    rval += "\nFreeze cont en:\n\t";
+    rval += Ats::to_string(freeze_cont_en);
+    rval += "\nFreeze cont:\n\t";
+    rval += std::to_string(freeze_cont);
+    rval += "\nFreeze peak en:\n\t";
+    rval += Ats::to_string(freeze_peak_en);
+    rval += "\nFreeze peak:\n\t";
+    rval += std::to_string(freeze_peak);
+    rval += "\nDiff cont en:\n\t";
+    rval += Ats::to_string(diff_cont_en);
+    rval += "\nDiff cont:\n\t";
+    rval += std::to_string(diff_cont);
+    rval += "\nDiff peak en:\n\t";
+    rval += Ats::to_string(diff_peak_en);
+    rval += "\nDiff peak:\n\t";
+    rval += std::to_string(diff_peak);
+    rval += "\nFreeze time:\n\t";
+    rval += std::to_string(freeze_time);
+    rval += "\nPixel diff:\n\t";
+    rval += std::to_string(pixel_diff);
+    rval += "\nBlocky cont en:\n\t";
+    rval += Ats::to_string(blocky_cont_en);
+    rval += "\nBlocky cont:\n\t";
+    rval += std::to_string(blocky_cont);
+    rval += "\nBlocky peak en:\n\t";
+    rval += Ats::to_string(blocky_peak_en);
+    rval += "\nBlocky peak:\n\t";
+    rval += std::to_string(blocky_peak);
+    rval += "\nBlocky time:\n\t";
+    rval += std::to_string(blocky_time);
+    rval += "\nMark blocks:\n\t";
+    rval += Ats::to_string(mark_blocks);
+    rval += "\nSilence cont en:\n\t";
+    rval += Ats::to_string(silence_cont_en);
+    rval += "\nSilence cont:\n\t";
+    rval += std::to_string(silence_cont);
+    rval += "\nSilence peak en:\n\t";
+    rval += Ats::to_string(silence_peak_en);
+    rval += "\nSilence peak:\n\t";
+    rval += std::to_string(silence_peak);
+    rval += "\nSilence time:\n\t";
+    rval += std::to_string(silence_time);
+    rval += "\nLoudness cont en:\n\t";
+    rval += Ats::to_string(loudness_cont_en);
+    rval += "\nLoudness cont:\n\t";
+    rval += std::to_string(loudness_cont);
+    rval += "\nLoudness peak en:\n\t";
+    rval += Ats::to_string(loudness_peak_en);
+    rval += "\nLoudness peak:\n\t";
+    rval += std::to_string(loudness_peak);
+    rval += "\nLoudness time:\n\t";
+    rval += std::to_string(loudness_time);
+    rval += "\nAdv diff:\n\t";
+    rval += std::to_string(adv_diff);
+    rval += "\nAdv buf:\n\t";
+    rval += std::to_string(adv_buf);
+    rval += "\n";
+    return rval;
+}
 
 string
 Settings::Qoe_settings::to_json() const {
@@ -180,7 +363,7 @@ Settings::Qoe_settings::to_json() const {
         "\"loudness_peak\":%.2f,"
         "\"loudness_time\":%.2f,"
         "\"adv_diff\":%.2f,"
-        "\"adv_buff\":%d"
+        "\"adv_buf\":%d"
         "}";
 
     int n = snprintf (buffer, size, fmt,
@@ -209,7 +392,24 @@ Settings::Qoe_settings::to_json() const {
     else throw Serializer_failure ();
 }
 
+void
+Settings::Qoe_settings::of_json(const string& j) {
+
+}
+
 /* ---------- Output sink settings --------------- */
+
+string
+Settings::Output_sink::to_string() const {
+    string rval = "Enabled: ";
+    rval += Ats::to_string(enabled);
+    rval += ", Address: ";
+    rval += address;
+    rval += ", Port: ";
+    rval += std::to_string(port);
+    rval += "\n";
+    return rval;
+}
 
 string
 Settings::Output_sink::to_json() const {
@@ -217,14 +417,19 @@ Settings::Output_sink::to_json() const {
 
     char buffer[size];
     constexpr const char* fmt = "{"
+        "\"enabled\":%s,"
         "\"address\":\"%s\","
-        "\"port\":%d,"
-        "\"enabled\":%s"
+        "\"port\":%d"
         "}";
 
-    int n = snprintf (buffer, size, fmt, address.c_str(), port, Ats::to_string(enabled).c_str());
+    int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), address.c_str(), port);
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
+}
+
+void
+Settings::Output_sink::of_json(const string& j) {
+
 }
 
 
@@ -234,12 +439,16 @@ Settings::Output_sink::to_json() const {
 
 string
 Settings::to_string() const {
-
     string rval = "Settings:\n\tQoe settings:\n\t\t";
-    rval += qoe_settings.to_string();
-    rval += "\n\t\tChannel_settings:\n";
-    rval += channel_settings.to_string();
-    rval += "\n\t\tOutput sink settings:\n"
+    string qoe_string = qoe_settings.to_string();
+    rval += Ats::add_indent(qoe_string);
+    rval += "\tChannel_settings:\n\t\t";
+    string channel_string = channel_settings.to_string();
+    rval += Ats::add_indent(channel_string);
+    rval += "\tOutput sink settings:\n\t\t";
+    string output_sink_string = output_sink_settings.to_string();
+    rval += Ats::add_indent(output_sink_string);
+    rval += "\n";
     return rval;
 }
 
@@ -262,11 +471,6 @@ Settings::to_json() const {
     else throw Serializer_failure ();
 }
 
-string
-Settings::to_msgpack() const {
-    return "todo";
-}
-
 void
 Settings::of_json(const string& j) {
     bool o_set = false;
@@ -284,6 +488,11 @@ Settings::of_json(const string& j) {
     }
 
     if (o_set) set.emit(*this);
+}
+
+string
+Settings::to_msgpack() const {
+    return "todo";
 }
 
 void

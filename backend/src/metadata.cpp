@@ -167,7 +167,7 @@ Meta_pid::to_string () const {
     rval += "Codec: ";
     rval += stream_type_name;
     rval += "\n";
-    rval += "Analyzed: ";
+    rval += "To be analyzed: ";
     rval += Ats::to_string(to_be_analyzed);
     rval += "\n";
     rval += "Position: ";
@@ -357,14 +357,15 @@ Metadata::to_string () const {
     string rval = "Stream: ";
     rval += std::to_string(stream);
     rval += "\n";
-    rval += "Channels:";
+    string channels_str = "\tChannels:";
     for (auto it = channels.begin(); it != channels.end(); ++it) {
-            rval += "\n";
+            channels_str += "\n";
             if ( it == channels.begin())
-                rval += "-------------------------------------------\n";
-            rval += it->to_string();
-            rval += "\n-------------------------------------------";
+                channels_str += "-------------------------------------------\n";
+            channels_str += it->to_string();
+            channels_str += "\n-------------------------------------------";
     }
+    rval += Ats::add_indent(channels_str, 1);
     return rval;
 }
 

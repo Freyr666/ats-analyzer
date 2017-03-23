@@ -1,4 +1,5 @@
 #include "options.hpp"
+#include "settings.hpp"
 #include "json.hpp"
 
 #include <cstdio>
@@ -59,7 +60,6 @@ Options::to_string() const {
     rval += "\tBackground color:\n\t\t";
     rval += std::to_string(background_color);
     rval += "\n\n";
-
     return rval;
 }
 

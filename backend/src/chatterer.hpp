@@ -3,18 +3,22 @@
 
 #include <glibmm.h>
 #include <string>
+#include <iostream>
 
 namespace Ats {
 
     inline std::string to_string (bool b) { return b ? "true" : "false"; }
 
-    inline void add_indent (std::string& s, int indent = 2) {
-        for (auto it = s.begin(); it != s.end(); ++it) {
-            if ( *it == '\n' && it < (s.end() - 1)) {
-                s.insert(it+1, indent, '\t');
-                it += indent;
-            }
+    inline std::string add_indent (std::string& s, int indent = 2) {
+        size_t start_pos = 0;
+        const std::string from = "\n";
+        const std::string to = from + std::string(indent, '\t');
+        while(((start_pos = s.find(from, start_pos)) != std::string::npos) &&
+              (start_pos != (s.length() - 1))) {
+            s.replace(start_pos, from.length(), to);
+            start_pos += to.length();
         }
+        return s;
     }
 
     class Chatterer {
