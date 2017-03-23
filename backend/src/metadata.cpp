@@ -361,8 +361,8 @@ Metadata::to_string () const {
     for (auto it = channels.begin(); it != channels.end(); ++it) {
             rval += "\n";
             if ( it == channels.begin())
-
-            rval += c.to_string();
+                rval += "-------------------------------------------\n";
+            rval += it->to_string();
             rval += "\n-------------------------------------------";
     }
     return rval;

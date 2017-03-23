@@ -234,20 +234,12 @@ Settings::Output_sink::to_json() const {
 
 string
 Settings::to_string() const {
-    // string rval = "\tOptions:\n\tStreams:\n";
-    // for_each(data.begin(),data.end(),[&rval](const Metadata& m){
-    //         rval += "\n";
-    //         rval += m.to_string();
-    //         rval += "\n";
-    //     });
-    // rval += "\tOther options:\n";
-    // rval += "Dummy: ";
-    // rval += std::to_string(resolution.first);
-    // rval += "\n";
 
-    string rval = "Settings testing:\n";
-    rval += this->to_json();
-    rval += "\n";
+    string rval = "Settings:\n\tQoe settings:\n\t\t";
+    rval += qoe_settings.to_string();
+    rval += "\n\t\tChannel_settings:\n";
+    rval += channel_settings.to_string();
+    rval += "\n\t\tOutput sink settings:\n"
     return rval;
 }
 

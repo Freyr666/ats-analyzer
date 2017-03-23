@@ -2,6 +2,7 @@
 #include "json.hpp"
 
 #include <cstdio>
+#include <string>
 #include <algorithm>
 #include <iostream>
 
@@ -42,11 +43,14 @@ Options::set_data(const Metadata& m) {
 
 string
 Options::to_string() const {
-    string rval = "Options:\n\tStreams:\n\t\t";
-    for_each(data.begin(),data.end(),[&rval](const Metadata& m){
-            rval += m.to_string();
-            rval += "\n";
+    string streams = "";
+    for_each(data.begin(),data.end(),[&streams](const Metadata& m){
+            streams += m.to_string();
+            streams += "\n";
         });
+    Ats::add_indent(streams);
+    string rval = "Options:\n\tStreams:\n\t\t";
+    rval += streams;
     rval += "\tResolution:\n\t\t";
     rval += std::to_string(resolution.first);
     rval += "x";

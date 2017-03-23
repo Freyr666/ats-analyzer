@@ -8,6 +8,15 @@ namespace Ats {
 
     inline std::string to_string (bool b) { return b ? "true" : "false"; }
 
+    inline void add_indent (std::string& s, int indent = 2) {
+        for (auto it = s.begin(); it != s.end(); ++it) {
+            if ( *it == '\n' && it < (s.end() - 1)) {
+                s.insert(it+1, indent, '\t');
+                it += indent;
+            }
+        }
+    }
+
     class Chatterer {
     public:
         class Serializer_failure : std::exception {};
