@@ -17,8 +17,7 @@ namespace Ats {
         struct Channel_settings {
 
             struct Error_overlay {
-                string error_color = "";
-                float blink_speed = 1; // in Hz
+                int error_color = 0;
                 bool enabled = true;
 
                 string to_json() const;
@@ -26,9 +25,7 @@ namespace Ats {
             };
 
             struct Channel_name {
-                enum class Channel_name_pos {Off, Left, Right, Center};
-
-                Channel_name_pos position = Channel_name_pos::Center;
+                bool enabled = true;
                 int font_size = 14; //maybe should be relative to normal size
                 string fmt = "$INPUT_TYPE, $INPUT_NAME, $CH_NAME";
 

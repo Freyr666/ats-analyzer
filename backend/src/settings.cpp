@@ -16,15 +16,11 @@ Settings::Channel_settings::Error_overlay::to_json() const {
 
     char buffer[size];
     constexpr const char* fmt = "{"
-        "\"error_color\":\"%s\","
-        "\"blink_speed\":%.2f,"
+        "\"error_color\":%d,"
         "\"enabled\":%s"
         "}";
 
-    int n = snprintf (buffer, size, fmt,
-                      error_color.c_str(),
-                      blink_speed,
-                      Ats::to_string(enabled).c_str());
+    int n = snprintf (buffer, size, fmt, error_color, Ats::to_string(enabled).c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
 }
@@ -35,18 +31,12 @@ Settings::Channel_settings::Channel_name::to_json() const {
 
     char buffer[size];
     constexpr const char* fmt = "{"
-        "\"position\":\"%s\","
+        "\"enabled\":%s,"
         "\"font_size\":%d,"
         "\"fmt\":\"%s\""
         "}";
 
-    int n = snprintf (buffer, size, fmt,
-                      position == Channel_name_pos::Left ? "left" :
-                      position == Channel_name_pos::Right ? "right" :
-                      position == Channel_name_pos::Center ? "center" :
-                      "off",
-                      font_size,
-                      this->fmt.c_str());
+    int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), font_size, this->fmt.c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
 }

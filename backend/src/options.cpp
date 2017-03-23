@@ -42,20 +42,20 @@ Options::set_data(const Metadata& m) {
 
 string
 Options::to_string() const {
-    // string rval = "\tOptions:\n\tStreams:\n";
-    // for_each(data.begin(),data.end(),[&rval](const Metadata& m){
-    //         rval += "\n";
-    //         rval += m.to_string();
-    //         rval += "\n";
-    //     });
-    // rval += "\tOther options:\n";
-    // rval += "Dummy: ";
-    // rval += std::to_string(resolution.first);
-    // rval += "\n";
-
-    string rval = "Options testing:\n";
-    rval += this->to_json();
+    string rval = "Options:\n\tStreams:\n\t\t";
+    for_each(data.begin(),data.end(),[&rval](const Metadata& m){
+            rval += m.to_string();
+            rval += "\n";
+        });
+    rval += "\tResolution:\n\t\t";
+    rval += std::to_string(resolution.first);
+    rval += "x";
+    rval += std::to_string(resolution.second);
     rval += "\n";
+    rval += "\tBackground color:\n\t\t";
+    rval += std::to_string(background_color);
+    rval += "\n\n";
+
     return rval;
 }
 
@@ -67,7 +67,7 @@ Options::to_json() const {
     constexpr const char* fmt = "{"
         "\"prog_list\":[%s],"
         "\"resolution\":{\"width\":%d,\"height\":%d},"
-        "\"background_color\":%s"
+        "\"background_color\":%d"
         "}";
 
     string s = "";
@@ -78,7 +78,7 @@ Options::to_json() const {
     }
     int n = snprintf (buffer, size, fmt, s.c_str(),
                       resolution.first, resolution.second,
-                      background_color.c_str());
+                      background_color);
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
 }

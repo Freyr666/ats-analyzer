@@ -26,6 +26,19 @@ Position::is_overlap (const Position& a) {
 }
 
 string
+Position::to_string () const {
+    string rval = "X: ";
+    rval += std::to_string(x);
+    rval += " Y: ";
+    rval += std::to_string(y);
+    rval += " Width: ";
+    rval += std::to_string(width);
+    rval += " Height: ";
+    rval += std::to_string(height);
+    return rval;
+}
+
+string
 Position::to_json () const {
     constexpr int size = 1024;
 
@@ -147,10 +160,18 @@ string
 Meta_pid::to_string () const {
     string rval = "Pid: ";
     rval += std::to_string(pid);
-    rval += " Type: ";
+    rval += "\n";
+    rval += "Type: ";
     rval += std::to_string(stream_type);
-    rval += " Codec: ";
+    rval += "\n";
+    rval += "Codec: ";
     rval += stream_type_name;
+    rval += "\n";
+    rval += "Analyzed: ";
+    rval += Ats::to_string(to_be_analyzed);
+    rval += "\n";
+    rval += "Position: ";
+    rval += position.to_string();
     return rval;
 }
 
@@ -211,18 +232,23 @@ Meta_channel::find_pid (uint pid) const {
 
 string
 Meta_channel::to_string () const {
-    string rval = "Channel: ";
+    string rval = "PMT PID: ";
     rval += std::to_string(number);
-    rval += " Service name: ";
+    rval += "\n";
+    rval += "Service name: ";
     rval += service_name;
-    rval += " Provider name: ";
+    rval += "\n";
+    rval += "Provider name: ";
     rval += provider_name;
-    rval += " Pids: ";
-    for_each (pids.begin(), pids.end(), [&rval](const Meta_pid& p) {
-	    rval += "(";
-	    rval += p.to_string();
-	    rval += ");";
-	});
+    rval += "\n";
+    rval += "Pids:";
+    for (auto it=pids.begin(); it!=pids.end(); ++it) {
+        rval += "\n";
+        if ( it == pids.begin() )
+            rval += "***\n";
+        rval += it->to_string();
+        rval += "\n***";
+    }
     return rval;
 }
 
@@ -330,12 +356,15 @@ string
 Metadata::to_string () const {
     string rval = "Stream: ";
     rval += std::to_string(stream);
-    rval += " Channels: ";
-    for_each (channels.begin(), channels.end(), [&rval](const Meta_channel& c) {
-            rval += "[";
+    rval += "\n";
+    rval += "Channels:";
+    for (auto it = channels.begin(); it != channels.end(); ++it) {
+            rval += "\n";
+            if ( it == channels.begin())
+
             rval += c.to_string();
-            rval += "];";
-        });
+            rval += "\n-------------------------------------------";
+    }
     return rval;
 }
 
