@@ -8,6 +8,12 @@
 using namespace std;
 using namespace Ats;
 
+Initial::Initial(int argc, char** argv) {
+    uris.push_back("udp://224.1.2.2:1234");
+    multicast_address = "udp://224.1.2.3:1234";
+    msg_type = Msg_type::Debug;
+}
+
 /* ---------- Channel settings ----------- */
 
 string
@@ -239,6 +245,13 @@ Settings::Output_sink::to_json() const {
 
 
 /* ---------- Settings -------------------- */
+
+void
+Settings::init(Initial& i) {
+    if(i.multicast_address) {
+	return;
+    }
+}
 
 // Chatter implementation
 

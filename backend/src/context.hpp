@@ -22,19 +22,19 @@ namespace Ats {
     public:
 	struct Size_error : std::exception {};
 	
-    private:
-	Msg_type      control_type;
-	
+    private:	
 	Graph         graph;
 	vector< unique_ptr<Probe> > probes;
-	Options       opts;
 	Control       control;
+	Options       options;
+	Settings      settings;
 	
 	RefPtr<MainLoop> main_loop;
   	
     public:
-	Context(uint size);
-	Context() : Context(1) {}
+	Context(Initial);
+	Context(const Context&) = delete;
+	Context(Context&&) = delete;
 	virtual ~Context() {}
 
 	void run() { main_loop->run(); }

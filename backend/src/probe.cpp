@@ -1,5 +1,4 @@
 #include "probe.hpp"
-#include "address.hpp"
 #include "parser.hpp"
 
 #include <cstdio>
@@ -11,10 +10,7 @@
 
 using namespace Ats;
 
-Probe::Probe(int s) : metadata(s) {
-    stream = s;
-
-    Address a = get_address(s);
+Probe::Probe(int s, string uri) : stream(s), uri(uri), metadata(s) {
 
     auto src   = Gst::ElementFactory::create_element("udpsrc");
     auto parse = Gst::ElementFactory::create_element("tsparse");
@@ -26,8 +22,7 @@ Probe::Probe(int s) : metadata(s) {
 
     src->link(parse)->link(sink);
 
-    src->set_property("address", a.addr);
-    src->set_property("port", a.port);
+    src->set_property("uri", uri);
     src->set_property("timeout", 5000000000);
 
     bus    = pipe->get_bus();

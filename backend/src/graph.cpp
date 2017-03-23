@@ -22,7 +22,7 @@ to_state(string& s) {
 }
 
 void
-Graph::apply(const Options& o) {
+Graph::set(const Options& o) {
     if (o.is_empty()) return;
     
     reset();
@@ -71,6 +71,16 @@ Graph::reset() {
         set_state(Gst::STATE_NULL);
         pipe.reset();
     }
+}
+
+void
+Graph::apply_options(const Options&) {
+
+}
+
+void
+Graph::apply_settings(const Settings&) {
+
 }
 
 void
@@ -233,8 +243,13 @@ Graph::create_branch(const uint channel,
 
 void
 Graph::connect(Options& o) {
-    o.destructive_set.connect(sigc::mem_fun(this, &Graph::apply));
-    o.set.connect(sigc::mem_fun(this, &Graph::apply));
+    o.destructive_set.connect(sigc::mem_fun(this, &Graph::set));
+    o.set.connect(sigc::mem_fun(this, &Graph::apply_options));
+}
+
+void
+Graph::connect(Settings& s) {
+    s.set.connect(sigc::mem_fun(this, &Graph::apply_settings));
 }
 
 // Chatterer

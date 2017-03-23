@@ -17,11 +17,12 @@ namespace Ats {
 	class No_pipe : std::exception {};
 	
 	int                   stream;
+	string                uri;
 	Metadata              metadata;
 
 	sigc::signal<void,const Metadata&> updated;
 	
-	Probe(int stream);
+	Probe(int stream, string uri);
 	Probe(const Probe&) = delete;
 	Probe(Probe&&) = delete;
 

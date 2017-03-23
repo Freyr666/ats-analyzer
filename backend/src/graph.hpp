@@ -9,6 +9,7 @@
 #include "chatterer.hpp"
 #include "metadata.hpp"
 #include "options.hpp"
+#include "settings.hpp"
 
 using namespace std;
 using namespace Glib;
@@ -23,13 +24,16 @@ namespace Ats {
 	Graph(Graph&&) = delete;
 	virtual ~Graph() {}
 	
-	void       apply(const Options&);
+	void       set(const Options&);
 	void       reset();
+	void       apply_options(const Options&);
+	void       apply_settings(const Settings&);
 	void       set_state(Gst::State);
 	Gst::State get_state();
 
 	void   connect(Options& o);
-
+	void   connect(Settings& o);
+	
 	// Chatterer
 	string to_string() const;
 	string to_json() const;
@@ -40,6 +44,7 @@ namespace Ats {
     private:
 	RefPtr<Gst::Pipeline> pipe;
 	RefPtr<Gst::Bus>      bus;
+	string                address = "udp://224.1.2.3:1234";
 	
 	static RefPtr<Gst::Bin> create_root(const Metadata&);
 	static RefPtr<Gst::Bin> create_branch(const uint,
