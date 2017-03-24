@@ -21,6 +21,7 @@ Context::Context(Initial init) {
 
     settings.init(init);
     graph.apply_settings(settings);
+    if (init.msg_type) control.set_msg_type(*init.msg_type);
 
     control.connect (settings);
     control.connect (options);

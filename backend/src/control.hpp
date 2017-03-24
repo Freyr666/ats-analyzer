@@ -33,6 +33,7 @@ namespace Ats {
         sigc::signal<void,const string&> received_json;
         sigc::signal<void,const string&> received_msgpack;
 
+	void set_msg_type(Msg_type t) { msg_type = t; }
         void recv ();
         void send (const Chatterer&);
         void error(const std::string&);
