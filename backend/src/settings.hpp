@@ -8,12 +8,15 @@
 #include "msgtype.hpp"
 #include "chatterer.hpp"
 #include "probe.hpp"
+#include "errexpn.hpp"
 
 using namespace std;
 
 namespace Ats {
 
     struct Initial {
+	struct Wrong_option : public Error_expn { Wrong_option(string s) : Error_expn(s) {}};
+	
 	vector<string>            uris;
 	boost::optional<string>   multicast_address;
 	boost::optional<Msg_type> msg_type;
