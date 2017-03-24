@@ -1,28 +1,28 @@
 #include "settings.hpp"
 #include "json.hpp"
+#include "validate.hpp"
 
 #include <cstdio>
 #include <algorithm>
 #include <iostream>
-#include <getopt.h>
 
 using namespace std;
 using namespace Ats;
 
 Initial::Initial(int argc, char** argv) {
-    
+    /*
     constexpr const struct option longOpts[] = {
-    { "no-index", no_argument, NULL, 'I' },
-    { "language", required_argument, NULL, 'l' },
-    { "output", required_argument, NULL, 'o' },
-    { "verbose", no_argument, NULL, 'v' },
-    { "randomize", no_argument, NULL, 0 },
-    { "help", no_argument, NULL, 'h' },
-    { NULL, no_argument, NULL, 0 }
-};
+    { "output",  required_argument, NULL, 'o' },
+    { "msgtype", required_argument, NULL, 't' },
+    { "help",    no_argument,       NULL, 'h' },
+    { NULL,      no_argument,       NULL, 0 }};
+    */
     if (argc < 2) throw Wrong_option("Too few arguments");
-
-    
+    /*
+    for (uint i = 1 ; i < argc; i++) {
+	if (argc[i][0] != '-') 
+    }
+    */
     uris.push_back("udp://224.1.2.2:1234");
     multicast_address = "udp://224.1.2.3:1234";
     msg_type = Msg_type::Debug;
