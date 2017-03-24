@@ -160,17 +160,13 @@ string
 Meta_pid::to_string () const {
     string rval = "Pid: ";
     rval += std::to_string(pid);
-    rval += "\n";
-    rval += "Type: ";
+    rval += "\nType: ";
     rval += std::to_string(stream_type);
-    rval += "\n";
-    rval += "Codec: ";
+    rval += "\nCodec: ";
     rval += stream_type_name;
-    rval += "\n";
-    rval += "To be analyzed: ";
+    rval += "\nTo be analyzed: ";
     rval += Ats::to_string(to_be_analyzed);
-    rval += "\n";
-    rval += "Position: ";
+    rval += "\nPosition: ";
     rval += position.to_string();
     return rval;
 }
@@ -234,14 +230,11 @@ string
 Meta_channel::to_string () const {
     string rval = "PMT PID: ";
     rval += std::to_string(number);
-    rval += "\n";
-    rval += "Service name: ";
+    rval += "\nService name: ";
     rval += service_name;
-    rval += "\n";
-    rval += "Provider name: ";
+    rval += "\nProvider name: ";
     rval += provider_name;
-    rval += "\n";
-    rval += "Pids:";
+    rval += "\nPids:";
     for (auto it=pids.begin(); it!=pids.end(); ++it) {
         rval += "\n";
         if ( it == pids.begin() )

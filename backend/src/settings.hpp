@@ -22,7 +22,6 @@ namespace Ats {
 
                 string to_string() const;
                 string to_json() const;
-                void   of_json(const string&);
             };
 
             struct Channel_name {
@@ -32,7 +31,6 @@ namespace Ats {
 
                 string to_string() const;
                 string to_json() const;
-                void   of_json(const string&);
             };
 
             struct Audio_meter {
@@ -43,7 +41,6 @@ namespace Ats {
 
                 string to_string() const;
                 string to_json() const;
-                void   of_json(const string&);
             };
 
             struct Status_bar {
@@ -62,7 +59,6 @@ namespace Ats {
 
                 string to_string() const;
                 string to_json() const;
-                void   of_json(const string&);
             };
 
             bool show_border = false;
@@ -76,7 +72,6 @@ namespace Ats {
 
             string to_string() const;
             string to_json() const;
-            void   of_json(const string&);
         };
 
         struct Qoe_settings {
@@ -131,7 +126,6 @@ namespace Ats {
 
             string to_string() const;
             string to_json() const;
-            void   of_json(const string&);
         };
 
         struct Output_sink {
@@ -141,7 +135,6 @@ namespace Ats {
 
             string to_string() const;
             string to_json() const;
-            void   of_json(const string&);
         };
 
         /* ------- Qoe analysis settings -------- */

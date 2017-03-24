@@ -35,11 +35,6 @@ Settings::Channel_settings::Error_overlay::to_json() const {
     else throw Serializer_failure ();
 }
 
-void
-Settings::Channel_settings::Error_overlay::of_json(const string& j) {
-
-}
-
 string
 Settings::Channel_settings::Channel_name::to_string() const {
     string rval = "Enabled: ";
@@ -66,11 +61,6 @@ Settings::Channel_settings::Channel_name::to_json() const {
     int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), font_size, this->fmt.c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
-}
-
-void
-Settings::Channel_settings::Channel_name::of_json(const string& j) {
-
 }
 
 string
@@ -100,11 +90,6 @@ Settings::Channel_settings::Audio_meter::to_json() const {
                       "right");
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
-}
-
-void
-Settings::Channel_settings::Audio_meter::of_json(const string& j) {
-
 }
 
 string
@@ -170,11 +155,6 @@ Settings::Channel_settings::Status_bar::to_json() const {
     else throw Serializer_failure ();
 }
 
-void
-Settings::Channel_settings::Status_bar::of_json(const string& j) {
-
-}
-
 string
 Settings::Channel_settings::to_string() const {
     string rval = "Show border:\n\t";
@@ -223,11 +203,6 @@ Settings::Channel_settings::to_json() const {
                       status_bar.to_json().c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
-}
-
-void
-Settings::Channel_settings::of_json(const string& j) {
-
 }
 
 /* ---------- QoE settings --------------- */
@@ -392,11 +367,6 @@ Settings::Qoe_settings::to_json() const {
     else throw Serializer_failure ();
 }
 
-void
-Settings::Qoe_settings::of_json(const string& j) {
-
-}
-
 /* ---------- Output sink settings --------------- */
 
 string
@@ -426,12 +396,6 @@ Settings::Output_sink::to_json() const {
     if ( (n>=0) && (n<size) ) return string(buffer);
     else throw Serializer_failure ();
 }
-
-void
-Settings::Output_sink::of_json(const string& j) {
-
-}
-
 
 /* ---------- Settings -------------------- */
 
@@ -482,8 +446,376 @@ Settings::of_json(const string& j) {
     if (! js.is_object()) return;
 
     for (json::iterator el = js.begin(); el != js.end(); ++el) {
-        if (el.key() == "option" && el.value().is_string()) {
-            o_set = true; // not so serious option
+        if (el.key() == "qoe_settings" && el.value().is_object()) {
+            auto j = el.value();
+            for (json::iterator it = j.begin(); it != j.end(); ++it) {
+                const std::string k = it.key();
+                auto v = it.value();
+
+                if (k == "vloss") {
+                    if (!v.is_number()) return; // FIXME and in other returns too
+                    qoe_settings.vloss = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "aloss") {
+                    if (!v.is_number()) return;
+                    qoe_settings.aloss = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "black_cont_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.black_cont_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "black_cont") {
+                    if (!v.is_number()) return;
+                    qoe_settings.black_cont = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "black_peak_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.black_peak_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "black_peak") {
+                    if (!v.is_number()) return;
+                    qoe_settings.black_peak = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "luma_cont_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.luma_cont_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "luma_cont") {
+                    if (!v.is_number()) return;
+                    qoe_settings.luma_cont = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "luma_peak_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.luma_peak_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "luma_peak") {
+                    if (!v.is_number()) return;
+                    qoe_settings.luma_peak = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "black_time") {
+                    if (!v.is_number()) return;
+                    qoe_settings.black_time = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "black_pixel") {
+                    if (!v.is_number()) return;
+                    qoe_settings.black_pixel = v.get<int>();
+                    o_set = true;
+                }
+                else if (k == "freeze_cont_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.freeze_cont_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "freeze_cont") {
+                    if (!v.is_number()) return;
+                    qoe_settings.freeze_cont = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "freeze_peak_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.freeze_peak_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "freeze_peak") {
+                    if (!v.is_number()) return;
+                    qoe_settings.freeze_peak = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "diff_cont_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.diff_cont_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "diff_cont") {
+                    if (!v.is_number()) return;
+                    qoe_settings.diff_cont = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "diff_peak_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.diff_peak_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "diff_peak") {
+                    if (!v.is_number()) return;
+                    qoe_settings.diff_peak = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "freeze_time") {
+                    if (!v.is_number()) return;
+                    qoe_settings.freeze_time = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "pixel_diff") {
+                    if (!v.is_number()) return;
+                    qoe_settings.pixel_diff = v.get<int>();
+                    o_set = true;
+                }
+                else if (k == "blocky_cont_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.blocky_cont_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "blocky_cont") {
+                    if (!v.is_number()) return;
+                    qoe_settings.blocky_cont = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "blocky_peak_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.blocky_peak_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "blocky_peak") {
+                    if (!v.is_number()) return;
+                    qoe_settings.blocky_peak = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "blocky_time") {
+                    if (!v.is_number()) return;
+                    qoe_settings.blocky_time = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "mark_blocks") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.mark_blocks = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "silence_cont_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.silence_cont_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "silence_cont") {
+                    if (!v.is_number()) return;
+                    qoe_settings.silence_cont = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "silence_peak_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.silence_peak_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "silence_peak") {
+                    if (!v.is_number()) return;
+                    qoe_settings.silence_peak = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "silence_time") {
+                    if (!v.is_number()) return;
+                    qoe_settings.silence_time = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "loudness_cont_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.loudness_cont_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "loudness_cont") {
+                    if (!v.is_number()) return;
+                    qoe_settings.loudness_cont = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "loudness_peak_en") {
+                    if (!v.is_boolean()) return;
+                    qoe_settings.loudness_peak_en = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "loudness_peak") {
+                    if (!v.is_number()) return;
+                    qoe_settings.loudness_peak = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "loudness_time") {
+                    if (!v.is_number()) return;
+                    qoe_settings.loudness_time = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "adv_diff") {
+                    if (!v.is_number()) return;
+                    qoe_settings.adv_diff = v.get<float>();
+                    o_set = true;
+                }
+                else if (k == "adv_buf") {
+                    if (!v.is_number()) return;
+                    qoe_settings.adv_buf = v.get<int>();
+                    o_set = true;
+                }
+            }
+        }
+        else if (el.key() == "channel_settings" && el.value().is_object()) {
+            auto j = el.value();
+            for (json::iterator it = j.begin(); it != j.end(); ++it) {
+                const std::string k = it.key();
+                auto v = it.value();
+
+                if (k == "error_overlay") {
+                    for (json::iterator eo_it = v.begin(); eo_it != v.end(); ++eo_it) {
+                        const std::string eo_k = eo_it.key();
+                        auto eo_v = eo_it.value();
+                        if (eo_k == "enabled") {
+                            if (!eo_v.is_boolean()) return;
+                            channel_settings.error_overlay.enabled = eo_v.get<bool>();
+                            o_set = true;
+                        }
+                        else if (eo_k == "error_color") {
+                            if (!eo_v.is_number()) return;
+                            channel_settings.error_overlay.error_color = eo_v.get<int>();
+                            o_set = true;
+                        }
+                    }
+                }
+                else if (k == "channel_name") {
+                    for (json::iterator cn_it = v.begin(); cn_it != v.end(); ++cn_it) {
+                        const std::string cn_k = cn_it.key();
+                        auto cn_v = cn_it.value();
+                        if (cn_k == "enabled") {
+                            if (!cn_v.is_boolean()) return;
+                            channel_settings.channel_name.enabled = cn_v.get<bool>();
+                            o_set = true;
+                        }
+                        else if (cn_k == "font_size") {
+                            if (!cn_v.is_number()) return;
+                            channel_settings.channel_name.font_size = cn_v.get<int>();
+                            o_set = true;
+                        }
+                        else if (cn_k == "fmt") {
+                            if (!cn_v.is_string()) return;
+                            channel_settings.channel_name.fmt = cn_v.get<std::string>();
+                            o_set = true;
+                        }
+                    }
+                }
+                else if (k == "audio_meter") {
+                    for (json::iterator am_it = v.begin(); am_it != v.end(); ++am_it) {
+                        const std::string am_k = am_it.key();
+                        auto am_v = am_it.value();
+                        if (am_k == "enabled") {
+                            if (!am_v.is_boolean()) return;
+                            channel_settings.audio_meter.enabled = am_v.get<bool>();
+                            o_set = true;
+                        }
+                        else if (am_k == "position") {
+                            if (!am_v.is_string()) return;
+                            std::string pos = am_v.get<std::string>();
+                            using Audio_meter_pos = Channel_settings::Audio_meter::Audio_meter_pos;
+                            channel_settings.audio_meter.position = \
+                                (pos == "left") ? Audio_meter_pos::Left :
+                                (pos == "right") ? Audio_meter_pos::Right :
+                                Audio_meter_pos::Right;
+                            o_set = true;
+                        }
+                    }
+                }
+                else if (k == "status_bar") {
+                    for (json::iterator sb_it = v.begin(); sb_it != v.end(); ++sb_it) {
+                        const std::string sb_k = sb_it.key();
+                        auto sb_v = sb_it.value();
+                        if (sb_k == "enabled") {
+                            if (!sb_v.is_boolean()) return;
+                            channel_settings.status_bar.enabled = sb_v.get<bool>();
+                            o_set = true;
+                        }
+                        else if (sb_k == "position") {
+                            if (!sb_v.is_string()) return;
+                            std::string pos = sb_v.get<std::string>();
+                            using Status_bar_pos = Channel_settings::Status_bar::Status_bar_pos;
+                            channel_settings.status_bar.position = \
+                                (pos == "top_left") ? Status_bar_pos::Top_left :
+                                (pos == "top_right") ? Status_bar_pos::Top_right :
+                                (pos == "left") ? Status_bar_pos::Left :
+                                (pos == "right") ? Status_bar_pos::Right :
+                                (pos == "bottom_left") ? Status_bar_pos::Bottom_left :
+                                (pos == "bottom_right") ? Status_bar_pos::Bottom_right :
+                                Status_bar_pos::Top_left;
+                            o_set = true;
+                        }
+                        else if (sb_k == "aspect") {
+                            if (!sb_v.is_boolean()) return;
+                            channel_settings.status_bar.aspect = sb_v.get<bool>();
+                            o_set = true;
+                        }
+                        else if (sb_k == "subtitles") {
+                            if (!sb_v.is_boolean()) return;
+                            channel_settings.status_bar.subtitles = sb_v.get<bool>();
+                            o_set = true;
+                        }
+                        else if (sb_k == "teletext") {
+                            if (!sb_v.is_boolean()) return;
+                            channel_settings.status_bar.teletext = sb_v.get<bool>();
+                            o_set = true;
+                        }
+                        else if (sb_k == "eit") {
+                            if (!sb_v.is_boolean()) return;
+                            channel_settings.status_bar.eit = sb_v.get<bool>();
+                            o_set = true;
+                        }
+                        else if (sb_k == "qos") {
+                            if (!sb_v.is_boolean()) return;
+                            channel_settings.status_bar.qos = sb_v.get<bool>();
+                            o_set = true;
+                        }
+                        else if (sb_k == "scte35") {
+                            if (!sb_v.is_boolean()) return;
+                            channel_settings.status_bar.scte35 = sb_v.get<bool>();
+                            o_set = true;
+                        }
+                    }
+                }
+                else if (k == "show_border") {
+                    if (!v.is_boolean()) return;
+                    channel_settings.show_border = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "border_color") {
+                    if (!v.is_number()) return;
+                    channel_settings.border_color = v.get<int>();
+                    o_set = true;
+                }
+                else if (k == "show_aspect_border") {
+                    if (!v.is_boolean()) return;
+                    channel_settings.show_aspect_border = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "aspect_border_color") {
+                    if (!v.is_number()) return;
+                    channel_settings.aspect_border_color = v.get<int>();
+                    o_set = true;
+                }
+            }
+        }
+        else if (el.key() == "output_sink_settings" && el.value().is_object()) {
+            auto j = el.value();
+            for (json::iterator it = j.begin(); it != j.end(); ++it) {
+                const std::string k = it.key();
+                auto v = it.value();
+                if (k == "enabled") {
+                    if (!v.is_boolean()) return;
+                    output_sink_settings.enabled = v.get<bool>();
+                    o_set = true;
+                }
+                else if (k == "address") {
+                    if (!v.is_string()) return;
+                    output_sink_settings.address = v.get<std::string>();
+                    o_set = true;
+                }
+                else if (k == "port") {
+                    if (!v.is_number()) return;
+                    output_sink_settings.port = v.get<int>();
+                    o_set = true;
+                }
+            }
         }
     }
 

@@ -3,7 +3,6 @@
 
 #include <glibmm.h>
 #include <string>
-#include <iostream>
 
 namespace Ats {
 
@@ -24,6 +23,7 @@ namespace Ats {
     class Chatterer {
     public:
         class Serializer_failure : std::exception {};
+        class Deserializer_failure : std::exception {};
 
         sigc::signal<void,const Chatterer&> send;
         sigc::signal<void,const std::string&> send_err;

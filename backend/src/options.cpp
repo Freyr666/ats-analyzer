@@ -87,11 +87,6 @@ Options::to_json() const {
     else throw Serializer_failure ();
 }
 
-string
-Options::to_msgpack() const {
-    return "todo";
-}
-
 void
 Options::of_json(const string& j) {
     bool o_set = false;
@@ -104,17 +99,139 @@ Options::of_json(const string& j) {
     if (! js.is_object()) return;
 
     for (json::iterator el = js.begin(); el != js.end(); ++el) {
-        if (el.key() == "option" && el.value().is_string()) {
-            o_set = true; // not so serious option
-        } else if (el.key() == "other option") {
-            o_destr_set = true; // serious option
-        } 
+        const std::string k = el.key();
+        auto v = el.value();
+        if (k == "prog_list") {
+            if (!v.is_array()) throw;
+            for (json::iterator s_it = v.begin(); s_it != v.end(); ++s_it) {
+                auto j_stream = s_it.value();
+                if (!j_stream.is_object()) throw;
+                if (!j_stream["stream"].is_number()) throw;
+                if (!j_stream["channels"].is_array()) throw;
+                
+                int stream_id = j_stream["stream"].get<int>();
+                auto matching_stream = find_if(data.begin(),
+                                               data.end(),
+                                               [&stream_id](const Metadata& m) {
+                                                   return m.stream == stream_id;
+                                               });
+
+                // modify existing stream
+                if (matching_stream != data.end()) {
+                    auto j_channels = j_stream["channels"];
+                    for (json::iterator c_it = j_channels.begin(); c_it != j_channels.end(); ++c_it) {
+                        auto j_channel = c_it.value();
+                        if (!j_channel.is_object()) throw;
+                        if (!j_channel["number"].is_number()) throw;
+                        if (!j_channel["pids"].is_array() ||
+                            !j_channel["pids"].is_null()) throw;
+
+                        int number = j_channel["number"].get<int>();
+                        auto matching_channel = find_if(matching_stream->channels.begin(),
+                                                        matching_stream->channels.end(),
+                                                        [&number](const Meta_channel& c) {
+                                                            return c.number == number;
+                                                        });
+
+                        if (matching_channel != matching_stream->channels.end()) {
+                            if (j_channel["service_name"].is_string())
+                                matching_channel->service_name = j_channel["service_name"].get<std::string>();
+                            if (j_channel["provider_name"].is_string())
+                                matching_channel->provider_name = j_channel["provider_name"].get<std::string>();
+                            auto j_pids = j_channel["pids"];
+                            for (json::iterator p_it = j_pids.begin(); p_it != j_pids.end(); ++p_it) {
+                                auto j_pid = p_it.value();
+                                if (!j_pid["pid"].is_number()) throw;
+                                if (!j_pid.is_object()) throw;
+
+                                int pid = j_pid["pid"].get<int>();
+                                auto matching_pid = find_if(matching_channel->pids.begin(),
+                                                            matching_channel->pids.end(),
+                                                            [&pid](const Meta_pid& p) {
+                                                                return p.pid == pid;
+                                                            });
+                                if (matching_pid != matching_channel->pids.end()) {
+
+                                    for (json::iterator it = j_pid.begin(); it != j_pid.end(); ++it) {
+                                        if (!it.is_object()) throw;
+                                        const string k = it.key();
+                                        auto v = it.value();
+
+                                        if (k == "to_be_analyzed") {
+                                            if (!v.is_boolean()) throw;
+                                            matching_pid->to_be_analyzed = v.get<bool>();
+                                            o_destr_set = true;
+                                        }
+                                        if (k == "type") {
+                                            if (!v.is_string()) throw;
+                                            string type_str = v.get<std::string>();
+                                            Meta_pid::Type type =
+                                                (type_str == "video") ? Meta_pid::Type::Video :
+                                                (type_str == "audio") ? Meta_pid::Type::Audio :
+                                                (type_str == "subtitles") ? Meta_pid::Type::Subtitles :
+                                                (type_str == "teletext") ? Meta_pid::Type::Teletext :
+                                                (type_str == "empty") ? Meta_pid::Type::Empty :
+                                                throw;
+                                            if (type != matching_pid->type) throw;
+                                        }
+                                        if (k == "stream_type") {
+                                            if (!v.is_number()) throw;
+                                            if (matching_pid->stream_type != v.get<std::string>())
+                                                throw;
+                                        }
+                                        if (k == "stream_type_name") {
+                                            if (!v.is_string()) throw;
+                                            if (matching_pid->stream_type_name != v.get<std::string>())
+                                                throw;
+                                        }
+                                        if (k == "position") {
+                                            if (!v.is_object()) throw;
+                                            if (v["x"].is_number()) {
+                                                
+                                            }
+                                        }
+                                    }
+                                }
+                                else throw;
+                            }
+                        }
+                        else throw;
+                     }
+                 }
+                 else throw;
+             }
+        }
+        else if (k == "resolution") {
+            if (!v.is_object()) return;
+            for (json::iterator it = v.begin(); it != v.end(); ++it) {
+                const std::string rk = it.key();
+                auto rv = it.value();
+                if (rk == "width") {
+                    if (!rv.is_number()) return;
+                    resolution.first = rv.get<int>();
+                    o_destr_set = true;
+                }
+                else if (rk == "height") {
+                    if (!rv.is_number()) return;
+                    resolution.second = rv.get<int>();
+                    o_destr_set = true;
+                }
+            }
+        }
+        else if (k == "background_color") {
+            if (!v.is_number()) return;
+            background_color = v.get<int>();
+            o_set = true;
+        }
     }
 
-    if (o_set)
-        set.emit(*this);
-    if (o_destr_set)
-        destructive_set(*this);
+    if (o_set) set.emit(*this);
+    if (o_destr_set) destructive_set(*this);
+}
+
+string
+Options::to_msgpack() const {
+    return "todo";
 }
 
 void
