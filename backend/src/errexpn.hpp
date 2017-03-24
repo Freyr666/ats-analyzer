@@ -3,17 +3,20 @@
 
 #include <string>
 #include <exception>
+#include <boost/optional.hpp>
 
 using namespace std;
 
 namespace Ats {
-
+    
     class Error_expn : exception {
-	    string _err;
-	public:
-	    Error_expn(string s) : _err(s) {}
-	    string message() const { return _err; }
-	};
+	boost::optional<string> _err;
+    public:
+	Error_expn() {}
+	Error_expn(string s) : _err(s) {}
+	string message() const { return _err ? *_err : ""; }
+	operator bool() const { return true; }
+    };
 
 }
 

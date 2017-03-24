@@ -15,13 +15,17 @@ using namespace std;
 namespace Ats {
 
     struct Initial {
-	struct Wrong_option : public Error_expn { Wrong_option(string s) : Error_expn(s) {}};
+	struct Wrong_option : public Error_expn {
+	    Wrong_option() : Error_expn() {}
+	    Wrong_option(string s) : Error_expn(s) {}
+	};
 	
 	vector<string>            uris;
 	boost::optional<string>   multicast_address;
 	boost::optional<Msg_type> msg_type;
 
 	Initial(int argc, char** argv);
+	static string usage (string prog_name);
     };
 
     class Settings : public Chatterer {
