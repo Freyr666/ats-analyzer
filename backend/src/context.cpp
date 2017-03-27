@@ -69,9 +69,9 @@ string
 Context::to_json() const {
     string rval = "{\"graph\":";
     rval += graph.to_json();
-    rval += "},{\"options\":";
+    rval += ",\"options\":";
     rval += options.to_json();
-    rval += "},{\"settings\":";
+    rval += ",\"settings\":";
     rval += settings.to_json();
     rval += "}";
     return rval;

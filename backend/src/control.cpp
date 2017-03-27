@@ -42,6 +42,7 @@ Control::send (const Chatterer& c) {
         s = c.to_msgpack(); break;
     }
     out->write(s);
+    out->write("\n");
     out->flush();
 }
 

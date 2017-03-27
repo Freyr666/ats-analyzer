@@ -158,12 +158,7 @@ Options::of_json(const string& j) {
                     if (matching_channel == nullptr)
                         throw Df(string("Channel ") + std::to_string(number) + \
                                  " does not exist in stream " + std::to_string(stream_id));
-
-                    if (j_channel["service_name"].is_string())
-                        matching_channel->service_name = j_channel["service_name"].get<std::string>();
-                    if (j_channel["provider_name"].is_string())
-                        matching_channel->provider_name = j_channel["provider_name"].get<std::string>();
-                    auto j_pids = j_channel["pids"];
+                  auto j_pids = j_channel["pids"];
                     for (json::iterator p_it = j_pids.begin(); p_it != j_pids.end(); ++p_it) {
                         auto j_pid = p_it.value();
                         if (!j_pid.is_object())
@@ -189,32 +184,6 @@ Options::of_json(const string& j) {
                                     throw Df(jk + div + "Meta_pid" + div + k + Df::expn_bool);
                                 matching_pid->to_be_analyzed = v.get<bool>();
                                 o_destr_set = true;
-                            }
-                            if (k == "type") {
-                                if (!v.is_string())
-                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_string);
-                                string type_str = v.get<std::string>();
-                                Meta_pid::Type type =
-                                    (type_str == "video") ? Meta_pid::Type::Video :
-                                    (type_str == "audio") ? Meta_pid::Type::Audio :
-                                    (type_str == "subtitles") ? Meta_pid::Type::Subtitles :
-                                    (type_str == "teletext") ? Meta_pid::Type::Teletext :
-                                    (type_str == "empty") ? Meta_pid::Type::Empty :
-                                    throw Df(type_str + " is not correct Meta_pid type");
-                                if (type != matching_pid->type)
-                                    throw Df(string("Meta_pid types do not match"));
-                            }
-                            if (k == "stream_type") {
-                                if (!v.is_number())
-                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_number);
-                                if (matching_pid->stream_type != v.get<int>())
-                                    throw Df(string("Meta_pid stream types do not match"));
-                            }
-                            if (k == "stream_type_name") {
-                                if (!v.is_string())
-                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_string);
-                                if (matching_pid->stream_type_name != v.get<std::string>())
-                                    throw Df(string("Meta_pid stream type names do not match"));
                             }
                             if (k == "position") {
                                 if (!v.is_object())
