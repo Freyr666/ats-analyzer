@@ -3,6 +3,7 @@
 
 #include <glibmm.h>
 #include <string>
+#include "errexpn.hpp"
 
 namespace Ats {
 
@@ -22,9 +23,23 @@ namespace Ats {
 
     class Chatterer {
     public:
-        class Serializer_failure : std::exception {};
-        class Deserializer_failure : std::exception {};
-
+        struct Serializer_failure : public Error_expn {
+            static constexpr const char* expn_overflow = "serializer buffer overflowed: ";
+            Serializer_failure() : Error_expn() {}
+            Serializer_failure(string s) : Error_expn(s) {}
+        };
+        struct Deserializer_failure : public Error_expn {
+            static constexpr const char* expn_bool = " must be a boolean";
+            static constexpr const char* expn_number = " must be a number";
+            static constexpr const char* expn_string = " must be a string";
+            static constexpr const char* expn_object = " must be an object";
+            static constexpr const char* expn_array = " must be an array";
+            static constexpr const char* expn_null = " must be null";
+            
+            Deserializer_failure() : Error_expn() {}
+            Deserializer_failure(string s) : Error_expn(s) {}
+        };
+        
         sigc::signal<void,const Chatterer&> send;
         sigc::signal<void,const std::string&> send_err;
         sigc::signal<void,const std::string&> send_log;

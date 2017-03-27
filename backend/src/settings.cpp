@@ -85,6 +85,7 @@ Settings::Channel_settings::Error_overlay::to_string() const {
 
 string
 Settings::Channel_settings::Error_overlay::to_json() const {
+    using Sf = Chatterer::Serializer_failure;
     constexpr int size = 128;
 
     char buffer[size];
@@ -95,7 +96,7 @@ Settings::Channel_settings::Error_overlay::to_json() const {
 
     int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), error_color);
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Serializer_failure ();
+    else throw Sf (string("Channel_settings::Error_overlay: ") + Sf::expn_overflow + std::to_string(size));
 }
 
 string
@@ -112,6 +113,7 @@ Settings::Channel_settings::Channel_name::to_string() const {
 
 string
 Settings::Channel_settings::Channel_name::to_json() const {
+    using Sf = Chatterer::Serializer_failure;
     constexpr int size = 256;
 
     char buffer[size];
@@ -123,7 +125,7 @@ Settings::Channel_settings::Channel_name::to_json() const {
 
     int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), font_size, this->fmt.c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Serializer_failure ();
+    else throw Sf (string("Channel_settings::Channel_name: ") + Sf::expn_overflow + std::to_string(size));
 }
 
 string
@@ -138,6 +140,7 @@ Settings::Channel_settings::Audio_meter::to_string() const {
 
 string
 Settings::Channel_settings::Audio_meter::to_json() const {
+    using Sf = Chatterer::Serializer_failure;
     constexpr int size = 128;
 
     char buffer[size];
@@ -152,7 +155,7 @@ Settings::Channel_settings::Audio_meter::to_json() const {
                       position == Audio_meter_pos::Right ? "right" :
                       "right");
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Serializer_failure ();
+    else throw Sf (string("Channel_settings::Audio_meter: ") + Sf::expn_overflow + std::to_string(size));
 }
 
 string
@@ -185,6 +188,7 @@ Settings::Channel_settings::Status_bar::to_string() const {
 
 string
 Settings::Channel_settings::Status_bar::to_json() const {
+    using Sf = Chatterer::Serializer_failure;
     constexpr int size = 1024;
 
     char buffer[size];
@@ -215,7 +219,7 @@ Settings::Channel_settings::Status_bar::to_json() const {
                       Ats::to_string(qos).c_str(),
                       Ats::to_string(scte35).c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Serializer_failure ();
+    else throw Sf (string("Channel_settings::Status_bar ") + Sf::expn_overflow + std::to_string(size));
 }
 
 string
@@ -241,6 +245,7 @@ Settings::Channel_settings::to_string() const {
 
 string
 Settings::Channel_settings::to_json() const {
+    using Sf = Chatterer::Serializer_failure;
     constexpr int size = 1024;
 
     char buffer[size];
@@ -265,7 +270,7 @@ Settings::Channel_settings::to_json() const {
                       audio_meter.to_json().c_str(),
                       status_bar.to_json().c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Serializer_failure ();
+    else throw Sf (string("Channel_settings: ") + Sf::expn_overflow + std::to_string(size));
 }
 
 /* ---------- QoE settings --------------- */
@@ -358,6 +363,7 @@ Settings::Qoe_settings::to_string() const {
 
 string
 Settings::Qoe_settings::to_json() const {
+    using Sf = Chatterer::Serializer_failure;
     constexpr int size = 1024;
 
     char buffer[size];
@@ -427,7 +433,7 @@ Settings::Qoe_settings::to_json() const {
                       loudness_time,
                       adv_diff, adv_buf);
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Serializer_failure ();
+    else throw Sf (string("Qoe_settings: ") + Sf::expn_overflow + std::to_string(size));
 }
 
 /* ---------- Output sink settings --------------- */
@@ -446,6 +452,7 @@ Settings::Output_sink::to_string() const {
 
 string
 Settings::Output_sink::to_json() const {
+    using Sf = Chatterer::Serializer_failure;
     constexpr int size = 256;
 
     char buffer[size];
@@ -457,7 +464,7 @@ Settings::Output_sink::to_json() const {
 
     int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), address.c_str(), port);
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Serializer_failure ();
+    else throw Sf (string("Output_sink: ") + Sf::expn_overflow + std::to_string(size));
 }
 
 /* ---------- Settings -------------------- */
@@ -488,6 +495,7 @@ Settings::to_string() const {
 
 string
 Settings::to_json() const {
+    using Sf = Chatterer::Serializer_failure;
     constexpr int size = 1024 * 8;
 
     char buffer[size];
@@ -502,282 +510,301 @@ Settings::to_json() const {
                       channel_settings.to_json().c_str(),
                       output_sink_settings.to_json().c_str());
     if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Serializer_failure ();
+    else throw Sf (string("Settings: ") + Sf::expn_overflow + std::to_string(size));
 }
 
 void
 Settings::of_json(const string& j) {
-    bool o_set = false;
-    
+    using Df = Chatterer::Deserializer_failure;
     using json = nlohmann::json;
+    
+    constexpr const char* div = "::";
+    bool o_set = false;
+
     auto js = json::parse(j);
 
-    // TODO throw Wrong_json
-    if (! js.is_object()) return;
+    if (!js.is_object()) throw Df(string("Settings") + Df::expn_object);
 
     for (json::iterator el = js.begin(); el != js.end(); ++el) {
-        if (el.key() == "qoe_settings" && el.value().is_object()) {
-            auto j = el.value();
-            for (json::iterator it = j.begin(); it != j.end(); ++it) {
+        const string jk = el.key();
+        auto jv = el.value();
+        
+        if (jk == "qoe_settings") {
+            if (!jv.is_object()) throw Df(jk + Df::expn_object);
+            
+            for (json::iterator it = jv.begin(); it != jv.end(); ++it) {
                 const std::string k = it.key();
                 auto v = it.value();
 
                 if (k == "vloss") {
-                    if (!v.is_number()) return; // FIXME and in other returns too
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.vloss = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "aloss") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.aloss = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "black_cont_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.black_cont_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "black_cont") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.black_cont = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "black_peak_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.black_peak_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "black_peak") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.black_peak = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "luma_cont_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.luma_cont_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "luma_cont") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.luma_cont = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "luma_peak_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.luma_peak_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "luma_peak") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.luma_peak = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "black_time") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.black_time = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "black_pixel") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.black_pixel = v.get<int>();
                     o_set = true;
                 }
                 else if (k == "freeze_cont_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.freeze_cont_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "freeze_cont") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.freeze_cont = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "freeze_peak_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.freeze_peak_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "freeze_peak") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.freeze_peak = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "diff_cont_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.diff_cont_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "diff_cont") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.diff_cont = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "diff_peak_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.diff_peak_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "diff_peak") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.diff_peak = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "freeze_time") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.freeze_time = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "pixel_diff") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.pixel_diff = v.get<int>();
                     o_set = true;
                 }
                 else if (k == "blocky_cont_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.blocky_cont_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "blocky_cont") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.blocky_cont = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "blocky_peak_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.blocky_peak_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "blocky_peak") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.blocky_peak = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "blocky_time") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.blocky_time = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "mark_blocks") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.mark_blocks = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "silence_cont_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.silence_cont_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "silence_cont") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.silence_cont = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "silence_peak_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.silence_peak_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "silence_peak") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.silence_peak = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "silence_time") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.silence_time = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "loudness_cont_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.loudness_cont_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "loudness_cont") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.loudness_cont = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "loudness_peak_en") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     qoe_settings.loudness_peak_en = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "loudness_peak") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.loudness_peak = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "loudness_time") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.loudness_time = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "adv_diff") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.adv_diff = v.get<float>();
                     o_set = true;
                 }
                 else if (k == "adv_buf") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     qoe_settings.adv_buf = v.get<int>();
                     o_set = true;
                 }
             }
         }
-        else if (el.key() == "channel_settings" && el.value().is_object()) {
-            auto j = el.value();
-            for (json::iterator it = j.begin(); it != j.end(); ++it) {
+        else if (jk == "channel_settings") {
+            if (!jv.is_object()) throw Df(jk + Df::expn_object);
+            for (json::iterator it = jv.begin(); it != jv.end(); ++it) {
                 const std::string k = it.key();
                 auto v = it.value();
 
                 if (k == "error_overlay") {
+                    if (!v.is_object()) throw Df(jk + div + k + Df::expn_object);
                     for (json::iterator eo_it = v.begin(); eo_it != v.end(); ++eo_it) {
                         const std::string eo_k = eo_it.key();
                         auto eo_v = eo_it.value();
+
                         if (eo_k == "enabled") {
-                            if (!eo_v.is_boolean()) return;
+                            if (!eo_v.is_boolean())
+                                throw Df(jk + div + k + div + eo_k + Df::expn_bool);
                             channel_settings.error_overlay.enabled = eo_v.get<bool>();
                             o_set = true;
                         }
                         else if (eo_k == "error_color") {
-                            if (!eo_v.is_number()) return;
+                            if (!eo_v.is_number())
+                                throw Df(jk + div + k + div + eo_k + Df::expn_number);
                             channel_settings.error_overlay.error_color = eo_v.get<int>();
                             o_set = true;
                         }
                     }
                 }
                 else if (k == "channel_name") {
+                    if (!v.is_object()) throw Df(jk + div + k + Df::expn_object);
                     for (json::iterator cn_it = v.begin(); cn_it != v.end(); ++cn_it) {
                         const std::string cn_k = cn_it.key();
                         auto cn_v = cn_it.value();
+
                         if (cn_k == "enabled") {
-                            if (!cn_v.is_boolean()) return;
+                            if (!cn_v.is_boolean())
+                                throw Df(jk + div + k + div + cn_k + Df::expn_bool);
                             channel_settings.channel_name.enabled = cn_v.get<bool>();
                             o_set = true;
                         }
                         else if (cn_k == "font_size") {
-                            if (!cn_v.is_number()) return;
+                            if (!cn_v.is_number())
+                                throw Df(jk + div + k + div + cn_k + Df::expn_number);
                             channel_settings.channel_name.font_size = cn_v.get<int>();
                             o_set = true;
                         }
                         else if (cn_k == "fmt") {
-                            if (!cn_v.is_string()) return;
+                            if (!cn_v.is_string())
+                                throw Df(jk + div + k + div + cn_k + Df::expn_string);
                             channel_settings.channel_name.fmt = cn_v.get<std::string>();
                             o_set = true;
                         }
                     }
                 }
                 else if (k == "audio_meter") {
+                    if (!v.is_object()) throw Df(jk + div + k + Df::expn_object);
                     for (json::iterator am_it = v.begin(); am_it != v.end(); ++am_it) {
                         const std::string am_k = am_it.key();
                         auto am_v = am_it.value();
+
                         if (am_k == "enabled") {
-                            if (!am_v.is_boolean()) return;
+                            if (!am_v.is_boolean())
+                                throw Df(jk + div + k + div + am_k + Df::expn_bool);
                             channel_settings.audio_meter.enabled = am_v.get<bool>();
                             o_set = true;
                         }
                         else if (am_k == "position") {
-                            if (!am_v.is_string()) return;
+                            if (!am_v.is_string())
+                                throw Df(jk + div + k + div + am_k + Df::expn_string);
                             std::string pos = am_v.get<std::string>();
                             using Audio_meter_pos = Channel_settings::Audio_meter::Audio_meter_pos;
                             channel_settings.audio_meter.position = \
@@ -789,16 +816,20 @@ Settings::of_json(const string& j) {
                     }
                 }
                 else if (k == "status_bar") {
+                    if (!v.is_object()) throw Df(jk + div + k + Df::expn_object);
                     for (json::iterator sb_it = v.begin(); sb_it != v.end(); ++sb_it) {
                         const std::string sb_k = sb_it.key();
                         auto sb_v = sb_it.value();
+
                         if (sb_k == "enabled") {
-                            if (!sb_v.is_boolean()) return;
+                            if (!sb_v.is_boolean())
+                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
                             channel_settings.status_bar.enabled = sb_v.get<bool>();
                             o_set = true;
                         }
                         else if (sb_k == "position") {
-                            if (!sb_v.is_string()) return;
+                            if (!sb_v.is_string())
+                                throw Df(jk + div + k + div + sb_k + Df::expn_string);
                             std::string pos = sb_v.get<std::string>();
                             using Status_bar_pos = Channel_settings::Status_bar::Status_bar_pos;
                             channel_settings.status_bar.position = \
@@ -812,76 +843,83 @@ Settings::of_json(const string& j) {
                             o_set = true;
                         }
                         else if (sb_k == "aspect") {
-                            if (!sb_v.is_boolean()) return;
+                            if (!sb_v.is_boolean())
+                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
                             channel_settings.status_bar.aspect = sb_v.get<bool>();
                             o_set = true;
                         }
                         else if (sb_k == "subtitles") {
-                            if (!sb_v.is_boolean()) return;
+                            if (!sb_v.is_boolean())
+                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
                             channel_settings.status_bar.subtitles = sb_v.get<bool>();
                             o_set = true;
                         }
                         else if (sb_k == "teletext") {
-                            if (!sb_v.is_boolean()) return;
+                            if (!sb_v.is_boolean())
+                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
                             channel_settings.status_bar.teletext = sb_v.get<bool>();
                             o_set = true;
                         }
                         else if (sb_k == "eit") {
-                            if (!sb_v.is_boolean()) return;
+                            if (!sb_v.is_boolean())
+                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
                             channel_settings.status_bar.eit = sb_v.get<bool>();
                             o_set = true;
                         }
                         else if (sb_k == "qos") {
-                            if (!sb_v.is_boolean()) return;
+                            if (!sb_v.is_boolean())
+                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
                             channel_settings.status_bar.qos = sb_v.get<bool>();
                             o_set = true;
                         }
                         else if (sb_k == "scte35") {
-                            if (!sb_v.is_boolean()) return;
+                            if (!sb_v.is_boolean())
+                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
                             channel_settings.status_bar.scte35 = sb_v.get<bool>();
                             o_set = true;
                         }
                     }
                 }
                 else if (k == "show_border") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     channel_settings.show_border = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "border_color") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     channel_settings.border_color = v.get<int>();
                     o_set = true;
                 }
                 else if (k == "show_aspect_border") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     channel_settings.show_aspect_border = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "aspect_border_color") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     channel_settings.aspect_border_color = v.get<int>();
                     o_set = true;
                 }
             }
         }
-        else if (el.key() == "output_sink_settings" && el.value().is_object()) {
-            auto j = el.value();
-            for (json::iterator it = j.begin(); it != j.end(); ++it) {
+        else if (jk == "output_sink_settings") {
+            if (!jv.is_object()) throw Df(jk + Df::expn_object);
+            for (json::iterator it = jv.begin(); it != jv.end(); ++it) {
                 const std::string k = it.key();
                 auto v = it.value();
+ 
                 if (k == "enabled") {
-                    if (!v.is_boolean()) return;
+                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
                     output_sink_settings.enabled = v.get<bool>();
                     o_set = true;
                 }
                 else if (k == "address") {
-                    if (!v.is_string()) return;
+                    if (!v.is_string()) throw Df(jk + div + k + Df::expn_string);
                     output_sink_settings.address = v.get<std::string>();
                     o_set = true;
                 }
                 else if (k == "port") {
-                    if (!v.is_number()) return;
+                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
                     output_sink_settings.port = v.get<int>();
                     o_set = true;
                 }
