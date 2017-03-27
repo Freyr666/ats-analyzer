@@ -29,6 +29,7 @@ namespace Ats {
 
         sigc::signal<void,const Options&>   set;
         sigc::signal<void,const Options&>   destructive_set;
+	sigc::signal<void>                  updated;
     
         Options() {}
         virtual ~Options() {}

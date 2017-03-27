@@ -39,7 +39,7 @@ namespace Ats {
 
 	void run() { main_loop->run(); }
 
-	// Chatterer
+	// Chatterer	
 	string to_string() const;	
 	string to_json()   const;
 	void   of_json(const string&);

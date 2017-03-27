@@ -171,6 +171,8 @@ namespace Ats {
 	void   init(Initial&);
 
         // Chatter implementation
+	string to_json_body() const;
+	
         string to_string() const;	
         string to_json()   const;
         void   of_json(const string&);

@@ -28,6 +28,8 @@ Context::Context(Initial init) {
     control.connect (graph);
     control.connect (*this);
 
+    options.updated.connect(sigc::mem_fun(this, &Context::talk));
+    
     control.received_json.connect(sigc::mem_fun(this, &Context::of_json));
     control.received_msgpack.connect(sigc::mem_fun(this, &Context::of_msgpack));
     
@@ -57,12 +59,22 @@ Context::Context(Initial init) {
 
 string
 Context::to_string() const {
-    return "todo";
+    string rval = graph.to_string();
+    rval += options.to_string();
+    rval += settings.to_string();
+    return rval;
 }
 
 string
 Context::to_json() const {
-    return "todo";
+    string rval = "{\"graph\":";
+    rval += graph.to_json();
+    rval += "},{\"options\":";
+    rval += options.to_json();
+    rval += "},{\"settings\":";
+    rval += settings.to_json();
+    rval += "}";
+    return rval;
 }
 
 string
@@ -87,6 +99,7 @@ Context::of_json(const string& j) {
 	} 
     }
     
+    talk();
 }
 
 void
