@@ -8,13 +8,11 @@
 #include "options.hpp"
 #include "graph.hpp"
 #include "chatterer.hpp"
+#include "msgtype.hpp"
 
 using namespace std;
 
 namespace Ats {
-
-    // Msg format types. Debug = of_json/to_string
-    enum class Msg_type {Json, Msgpack, Debug};
 
     class Control{
 
@@ -35,6 +33,7 @@ namespace Ats {
         sigc::signal<void,const string&> received_json;
         sigc::signal<void,const string&> received_msgpack;
 
+	void set_msg_type(Msg_type t) { msg_type = t; }
         void recv ();
         void send (const Chatterer&);
         void error(const std::string&);

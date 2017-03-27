@@ -3,7 +3,7 @@ Pre-pre-alpha goals:
 - [x] Forbid move and copy constructors for any non-copyable objects [15ee6b4]
 - [x] Extend udpsrc buffer size [171ecff]
 - [x] Switch to decodebin element for decoding [3cb0858]
-- [ ] Implement command-line options parser
+- [x] Implement command-line options parser [87f4bea]
 - [x] Reimplement Metadata [6fb6470]
 - [x] Implement Control type [6fb6470]
 - [x] Implement Options type [6fb6470]

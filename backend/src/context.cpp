@@ -4,7 +4,9 @@
 using namespace Glib;
 using namespace Ats;
 
-Context::Context(uint size) {
+Context::Context(Initial init) {
+    uint size = init.uris.size();
+    
     if (size < 1) throw Context::Size_error();
 
     main_loop = Glib::MainLoop::create();
@@ -12,26 +14,33 @@ Context::Context(uint size) {
     probes.reserve(size);
     
     for (uint i = 0; i < size; i++) {
-        probes.push_back(unique_ptr<Probe>(new Probe(i)));
-        opts.connect(*probes[i]);
+        probes.push_back(unique_ptr<Probe>(new Probe(i,init.uris[i])));
+        options.connect(*probes[i]);
         probes[i]->set_state(Gst::STATE_PLAYING);
     }
 
-    control.connect (opts);
+    settings.init(init);
+    graph.apply_settings(settings);
+    if (init.msg_type) control.set_msg_type(*init.msg_type);
+
+    control.connect (settings);
+    control.connect (options);
     control.connect (graph);
     control.connect (*this);
 
     control.received_json.connect(sigc::mem_fun(this, &Context::of_json));
     control.received_msgpack.connect(sigc::mem_fun(this, &Context::of_msgpack));
     
-    // graph.connect(opts);
-    
-    Glib::signal_timeout().connect([this](){
-            graph.apply(opts);
-            return false;
-        },
-        2000);
+    graph.connect(options);
+    graph.connect(settings);
+
     /*
+      Glib::signal_timeout().connect([this](){
+      graph.apply(options);
+      return false;
+      },
+      2000);
+    
       Glib::signal_timeout().connect([&g, &opts](){
 	    g.reset();
 	    return false;
@@ -43,6 +52,7 @@ Context::Context(uint size) {
       },
       20000);
     */
+
 }
 
 string
@@ -64,12 +74,12 @@ void
 Context::of_json(const string& j) {
     using json = nlohmann::json;
     auto js = json::parse(j);
-    // TODO throw Wrong_json
+    // TODO throw Wrong_json maybe?
     if (! js.is_object()) return;
 
     for (json::iterator el = js.begin(); el != js.end(); ++el) {
 	if (el.key() == "options" && el.value().is_object()) {
-	    opts.of_json(el.value().dump());
+	    options.of_json(el.value().dump());
 	} else if (el.key() == "graph" && el.value().is_object()) {
 	    graph.of_json(el.value().dump());
 	} 

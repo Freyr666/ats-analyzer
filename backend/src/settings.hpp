@@ -3,13 +3,30 @@
 
 #include <string>
 #include <gstreamermm.h>
+#include <boost/optional.hpp>
 
+#include "msgtype.hpp"
 #include "chatterer.hpp"
 #include "probe.hpp"
+#include "errexpn.hpp"
 
 using namespace std;
 
 namespace Ats {
+
+    struct Initial {
+	struct Wrong_option : public Error_expn {
+	    Wrong_option() : Error_expn() {}
+	    Wrong_option(string s) : Error_expn(s) {}
+	};
+	
+	vector<string>            uris;
+	boost::optional<string>   multicast_address;
+	boost::optional<Msg_type> msg_type;
+
+	Initial(int argc, char** argv);
+	static string usage (string prog_name);
+    };
 
     class Settings : public Chatterer {
 
@@ -150,6 +167,8 @@ namespace Ats {
     
         Settings() {}
         virtual ~Settings() {}
+
+	void   init(Initial&);
 
         // Chatter implementation
         string to_string() const;	
