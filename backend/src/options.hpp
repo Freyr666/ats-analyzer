@@ -35,6 +35,8 @@ namespace Ats {
 
         bool   is_empty () const;
         void   set_data(const Metadata&);
+        Metadata*           find_stream (uint stream);
+        const Metadata*     find_stream (uint stream) const;
 
         // Chatter implementation
         string to_string() const;	

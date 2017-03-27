@@ -39,6 +39,22 @@ Options::set_data(const Metadata& m) {
     talk();
 }
 
+Metadata*
+Options::find_stream (uint stream) {
+    for (Metadata& m : data) {
+        if (m.stream == stream) return &m;
+    }
+    return nullptr;
+}
+
+const Metadata*
+Options::find_stream (uint stream) const {
+    for (const Metadata& m : data) {
+        if (m.stream == stream) return &m;
+    }
+    return nullptr;
+}
+
 // Chatter implementation
 
 string
@@ -117,150 +133,131 @@ Options::of_json(const string& j) {
                     throw Df(jk + div + "Metadata" + div + "channels" + Df::expn_object);
 
                 int stream_id = j_stream["stream"].get<int>();
-                auto matching_stream = find_if(data.begin(),
-                                               data.end(),
-                                               [&stream_id](const Metadata& m) {
-                                                   return m.stream == stream_id;
-                                               });
+                auto matching_stream = find_stream(stream_id);
 
-                // modify existing stream
-                if (matching_stream != data.end()) {
-                    auto j_channels = j_stream["channels"];
-                    for (json::iterator c_it = j_channels.begin(); c_it != j_channels.end(); ++c_it) {
-                        auto j_channel = c_it.value();
-                        if (!j_channel.is_object())
-                            throw Df(jk + div + "Meta_channel" + Df::expn_object);
-                        if (!j_channel["number"].is_number())
-                            throw Df(jk + div + "Meta_channel" + div + "number" + Df::expn_object);
-                        if (!j_channel["pids"].is_array() ||
-                            !j_channel["pids"].is_null())
-                            throw Df(jk + div + "Meta_channel" + div + "number" + \
-                                     Df::expn_object + " or" + Df::expn_null);
+                /* if such stream was not found */
+                if (matching_stream == nullptr)
+                    throw Df(string("Stream ") + std::to_string(stream_id) + " does not exist");
 
-                        int number = j_channel["number"].get<int>();
-                        auto matching_channel = find_if(matching_stream->channels.begin(),
-                                                        matching_stream->channels.end(),
-                                                        [&number](const Meta_channel& c) {
-                                                            return c.number == number;
-                                                        });
+                auto j_channels = j_stream["channels"];
+                for (json::iterator c_it = j_channels.begin(); c_it != j_channels.end(); ++c_it) {
+                    auto j_channel = c_it.value();
+                    if (!j_channel.is_object())
+                        throw Df(jk + div + "Meta_channel" + Df::expn_object);
+                    if (!j_channel["number"].is_number())
+                        throw Df(jk + div + "Meta_channel" + div + "number" + Df::expn_object);
+                    if (!j_channel["pids"].is_array() ||
+                        !j_channel["pids"].is_null())
+                        throw Df(jk + div + "Meta_channel" + div + "number" + \
+                                 Df::expn_object + " or" + Df::expn_null);
 
-                        if (matching_channel != matching_stream->channels.end()) {
-                            if (j_channel["service_name"].is_string())
-                                matching_channel->service_name = j_channel["service_name"].get<std::string>();
-                            if (j_channel["provider_name"].is_string())
-                                matching_channel->provider_name = j_channel["provider_name"].get<std::string>();
-                            auto j_pids = j_channel["pids"];
-                            for (json::iterator p_it = j_pids.begin(); p_it != j_pids.end(); ++p_it) {
-                                auto j_pid = p_it.value();
-                                if (!j_pid.is_object())
-                                    throw Df(jk + div + "Meta_pid" + Df::expn_object);
-                                if (!j_pid["pid"].is_number())
-                                    throw Df(jk + div + "Meta_pid" + div + "pid" + Df::expn_number);
+                    int number = j_channel["number"].get<int>();
+                    auto matching_channel = matching_stream->find_channel(number);
 
-                                int pid = j_pid["pid"].get<int>();
-                                auto matching_pid = find_if(matching_channel->pids.begin(),
-                                                            matching_channel->pids.end(),
-                                                            [&pid](const Meta_pid& p) {
-                                                                return p.pid == pid;
-                                                            });
-                                if (matching_pid != matching_channel->pids.end()) {
+                    /* if such channel was not found */
+                    if (matching_channel == nullptr)
+                        throw Df(string("Channel ") + std::to_string(number) + \
+                                 " does not exist in stream " + std::to_string(stream_id));
 
-                                    for (json::iterator it = j_pid.begin(); it != j_pid.end(); ++it) {
-                                        const string k = it.key();
-                                        auto v = it.value();
+                    if (j_channel["service_name"].is_string())
+                        matching_channel->service_name = j_channel["service_name"].get<std::string>();
+                    if (j_channel["provider_name"].is_string())
+                        matching_channel->provider_name = j_channel["provider_name"].get<std::string>();
+                    auto j_pids = j_channel["pids"];
+                    for (json::iterator p_it = j_pids.begin(); p_it != j_pids.end(); ++p_it) {
+                        auto j_pid = p_it.value();
+                        if (!j_pid.is_object())
+                            throw Df(jk + div + "Meta_pid" + Df::expn_object);
+                        if (!j_pid["pid"].is_number())
+                            throw Df(jk + div + "Meta_pid" + div + "pid" + Df::expn_number);
 
-                                        if (k == "to_be_analyzed") {
-                                            if (!v.is_boolean())
-                                                throw Df(jk + div + "Meta_pid" + div + k + \
-                                                         Df::expn_bool);
-                                            matching_pid->to_be_analyzed = v.get<bool>();
-                                            o_destr_set = true;
-                                        }
-                                        if (k == "type") {
-                                            if (!v.is_string())
-                                                throw Df(jk + div + "Meta_pid" + div + k + \
-                                                         Df::expn_string);
-                                            string type_str = v.get<std::string>();
-                                            Meta_pid::Type type =
-                                                (type_str == "video") ? Meta_pid::Type::Video :
-                                                (type_str == "audio") ? Meta_pid::Type::Audio :
-                                                (type_str == "subtitles") ? Meta_pid::Type::Subtitles :
-                                                (type_str == "teletext") ? Meta_pid::Type::Teletext :
-                                                (type_str == "empty") ? Meta_pid::Type::Empty :
-                                                throw Df(type_str + " is not correct Meta_pid type");
-                                            if (type != matching_pid->type)
-                                                throw Df(string("Meta_pid types do not match"));
-                                        }
-                                        if (k == "stream_type") {
-                                            if (!v.is_number())
-                                                throw Df(jk + div + "Meta_pid" + div + k + \
-                                                         Df::expn_number);
-                                            if (matching_pid->stream_type != v.get<int>())
-                                                throw Df(string("Meta_pid stream types do not match"));
-                                        }
-                                        if (k == "stream_type_name") {
-                                            if (!v.is_string())
-                                                throw Df(jk + div + "Meta_pid" + div + k + \
-                                                         Df::expn_string);
-                                            if (matching_pid->stream_type_name != v.get<std::string>())
-                                                throw Df(string("Meta_pid stream type names do not match"));
-                                        }
-                                        if (k == "position") {
-                                            if (!v.is_object())
-                                                throw Df(jk + div + "Meta_pid" + div + k + \
-                                                         Df::expn_object);
+                        int pid = j_pid["pid"].get<int>();
+                        auto matching_pid = matching_stream->find_pid(number, pid);
 
-                                            for (json::iterator pos_it = v.begin();
-                                                 pos_it != v.end();
-                                                 ++pos_it) {
+                        /* if such pid was not found */
+                        if (matching_pid == nullptr)
+                            throw Df(string("PID ") + std::to_string(pid) + \
+                                     " does not exist in stream " + std::to_string(stream_id) + \
+                                     ", channel " + std::to_string(number));
 
-                                                const string pos_k = pos_it.key();
-                                                auto pos_v = pos_it.value();
+                        for (json::iterator it = j_pid.begin(); it != j_pid.end(); ++it) {
+                            const string k = it.key();
+                            auto v = it.value();
 
-                                                if (pos_k == "x") {
-                                                    if (!pos_v.is_number())
-                                                        throw Df(jk + div + "Meta_pid" + div + k + \
-                                                                 + div + pos_k + Df::expn_number);
-                                                    matching_pid->position.x = pos_v.get<int>();
-                                                    o_set = true;
-                                                }
-                                                else if (pos_k == "y") {
-                                                    if (!pos_v.is_number())
-                                                        throw Df(jk + div + "Meta_pid" + div + k + \
-                                                                 + div + pos_k + Df::expn_number);
-                                                    matching_pid->position.y = pos_v.get<int>();
-                                                    o_set = true;
-                                                }
-                                                else if (pos_k == "width") {
-                                                    if (!pos_v.is_number())
-                                                        throw Df(jk + div + "Meta_pid" + div + k + \
-                                                                 + div + pos_k + Df::expn_number);
-                                                    matching_pid->position.width = pos_v.get<int>();
-                                                    o_set = true;
-                                                }
-                                                else if (pos_k == "height") {
-                                                    if (!pos_v.is_number())
-                                                        throw Df(jk + div + "Meta_pid" + div + k + \
-                                                                 + div + pos_k + Df::expn_number);
-                                                    matching_pid->position.height = pos_v.get<int>();
-                                                    o_set = true;
-                                                }
-                                            }
-                                        }
+                            if (k == "to_be_analyzed") {
+                                if (!v.is_boolean())
+                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_bool);
+                                matching_pid->to_be_analyzed = v.get<bool>();
+                                o_destr_set = true;
+                            }
+                            if (k == "type") {
+                                if (!v.is_string())
+                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_string);
+                                string type_str = v.get<std::string>();
+                                Meta_pid::Type type =
+                                    (type_str == "video") ? Meta_pid::Type::Video :
+                                    (type_str == "audio") ? Meta_pid::Type::Audio :
+                                    (type_str == "subtitles") ? Meta_pid::Type::Subtitles :
+                                    (type_str == "teletext") ? Meta_pid::Type::Teletext :
+                                    (type_str == "empty") ? Meta_pid::Type::Empty :
+                                    throw Df(type_str + " is not correct Meta_pid type");
+                                if (type != matching_pid->type)
+                                    throw Df(string("Meta_pid types do not match"));
+                            }
+                            if (k == "stream_type") {
+                                if (!v.is_number())
+                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_number);
+                                if (matching_pid->stream_type != v.get<int>())
+                                    throw Df(string("Meta_pid stream types do not match"));
+                            }
+                            if (k == "stream_type_name") {
+                                if (!v.is_string())
+                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_string);
+                                if (matching_pid->stream_type_name != v.get<std::string>())
+                                    throw Df(string("Meta_pid stream type names do not match"));
+                            }
+                            if (k == "position") {
+                                if (!v.is_object())
+                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_object);
+
+                                for (json::iterator pos_it = v.begin(); pos_it != v.end(); ++pos_it) {
+
+                                    const string pos_k = pos_it.key();
+                                    auto pos_v = pos_it.value();
+
+                                    if (pos_k == "x") {
+                                        if (!pos_v.is_number())
+                                            throw Df(jk + div + "Meta_pid" + div + k + \
+                                                     + div + pos_k + Df::expn_number);
+                                        matching_pid->position.x = pos_v.get<int>();
+                                        o_set = true;
+                                    }
+                                    else if (pos_k == "y") {
+                                        if (!pos_v.is_number())
+                                            throw Df(jk + div + "Meta_pid" + div + k + \
+                                                     + div + pos_k + Df::expn_number);
+                                        matching_pid->position.y = pos_v.get<int>();
+                                        o_set = true;
+                                    }
+                                    else if (pos_k == "width") {
+                                        if (!pos_v.is_number())
+                                            throw Df(jk + div + "Meta_pid" + div + k + \
+                                                     + div + pos_k + Df::expn_number);
+                                        matching_pid->position.width = pos_v.get<int>();
+                                        o_set = true;
+                                    }
+                                    else if (pos_k == "height") {
+                                        if (!pos_v.is_number())
+                                            throw Df(jk + div + "Meta_pid" + div + k + \
+                                                     + div + pos_k + Df::expn_number);
+                                        matching_pid->position.height = pos_v.get<int>();
+                                        o_set = true;
                                     }
                                 }
-                                else throw Df(string("PID ") + std::to_string(pid) + \
-                                              " does not exist in stream " + \
-                                              std::to_string(stream_id) + \
-                                              ", channel " + std::to_string(number));
                             }
                         }
-                        else throw Df(string("Channel ") + std::to_string(number) + \
-                                      " does not exist in stream " + \
-                                      std::to_string(stream_id));
                     }
                 }
-                else throw Df(string("Stream ") + std::to_string(stream_id) + " does not exist");
             }
         }
         else if (jk == "resolution") {
@@ -288,8 +285,8 @@ Options::of_json(const string& j) {
         }
     }
 
-    if (o_set) set.emit(*this);
     if (o_destr_set) destructive_set(*this);
+    else if (o_set) set.emit(*this);
 }
 
 string
