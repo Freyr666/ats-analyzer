@@ -80,6 +80,8 @@ Context::of_json(const string& j) {
     for (json::iterator el = js.begin(); el != js.end(); ++el) {
 	if (el.key() == "options" && el.value().is_object()) {
 	    options.of_json(el.value().dump());
+	} else if (el.key() == "settings" && el.value().is_object()) {
+	    settings.of_json(el.value().dump());
 	} else if (el.key() == "graph" && el.value().is_object()) {
 	    graph.of_json(el.value().dump());
 	} 
