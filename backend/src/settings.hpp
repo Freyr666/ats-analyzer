@@ -15,17 +15,17 @@ using namespace std;
 namespace Ats {
 
     struct Initial {
-	struct Wrong_option : public Error_expn {
-	    Wrong_option() : Error_expn() {}
-	    Wrong_option(string s) : Error_expn(s) {}
-	};
+        struct Wrong_option : public Error_expn {
+            Wrong_option() : Error_expn() {}
+            Wrong_option(string s) : Error_expn(s) {}
+        };
 	
-	vector<string>            uris;
-	boost::optional<string>   multicast_address;
-	boost::optional<Msg_type> msg_type;
+        vector<string>            uris;
+        boost::optional<string>   multicast_address;
+        boost::optional<Msg_type> msg_type;
 
-	Initial(int argc, char** argv);
-	static string usage (string prog_name);
+        Initial(int argc, char** argv);
+        static string usage (string prog_name);
     };
 
     class Settings : public Chatterer {
@@ -34,48 +34,39 @@ namespace Ats {
         struct Channel_settings {
 
             struct Error_overlay {
-                string error_color = "";
-                float blink_speed = 1; // in Hz
+                int error_color = 0;
                 bool enabled = true;
 
+                string to_string() const;
                 string to_json() const;
-                void   of_json(const string&);
             };
 
             struct Channel_name {
-                enum class Channel_name_pos {Off, Left, Right, Center};
-
-                Channel_name_pos position = Channel_name_pos::Center;
+                bool enabled = true;
                 int font_size = 14; //maybe should be relative to normal size
                 string fmt = "$INPUT_TYPE, $INPUT_NAME, $CH_NAME";
 
+                string to_string() const;
                 string to_json() const;
-                void   of_json(const string&);
             };
 
             struct Audio_meter {
-                enum class Audio_meter_pos {Off, Left, Right};
+                enum class Audio_meter_pos {Left, Right};
 
+                bool enabled = true;
                 Audio_meter_pos position = Audio_meter_pos::Right;
-                int width = 8; // tbd. Units? Pixels?
-                int height = 100; // tbd. In percents?
 
-                string peak_color = "";
-                string high_color = "";
-                string mid_color = "";
-                string low_color = "";
-                string background_color = "";
-
+                string to_string() const;
                 string to_json() const;
-                void   of_json(const string&);
             };
 
             struct Status_bar {
-                enum class Status_bar_pos {Off, Top_left, Top_right,
+                enum class Status_bar_pos {Top_left, Top_right,
                                            Left, Right,
                                            Bottom_left, Bottom_right};
 
                 Status_bar_pos position = Status_bar_pos::Top_left;
+                bool enabled = true;
                 bool aspect = true;
                 bool subtitles = true;
                 bool teletext = true;
@@ -83,21 +74,21 @@ namespace Ats {
                 bool qos = true;
                 bool scte35 = true;
 
+                string to_string() const;
                 string to_json() const;
-                void   of_json(const string&);
             };
 
             bool show_border = false;
-            string border_color = "";
+            int border_color = 0;
             bool show_aspect_border = false;
-            string aspect_border_color = "";
+            int aspect_border_color = 0;
             Error_overlay error_overlay;
             Channel_name channel_name;
             Audio_meter audio_meter;
             Status_bar status_bar;
 
+            string to_string() const;
             string to_json() const;
-            void   of_json(const string&);
         };
 
         struct Qoe_settings {
@@ -150,8 +141,8 @@ namespace Ats {
             float adv_diff = 1.5;
             int adv_buf = 2 * 60 * 60;
 
+            string to_string() const;
             string to_json() const;
-            void   of_json(const string&);
         };
 
         struct Output_sink {
@@ -159,8 +150,8 @@ namespace Ats {
             int port = 1234;
             bool enabled = true;
 
+            string to_string() const;
             string to_json() const;
-            void   of_json(const string&);
         };
 
         /* ------- Qoe analysis settings -------- */

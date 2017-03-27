@@ -25,7 +25,7 @@ namespace Ats {
 
         /* ------- Mosaic settings -------------- */
         pair<int,int> resolution = make_pair(1920, 1080);
-        string background_color = "";
+        int background_color = 0;
 
         sigc::signal<void,const Options&>   set;
         sigc::signal<void,const Options&>   destructive_set;
@@ -35,6 +35,8 @@ namespace Ats {
 
         bool   is_empty () const;
         void   set_data(const Metadata&);
+        Metadata*           find_stream (uint stream);
+        const Metadata*     find_stream (uint stream) const;
 
         // Chatter implementation
         string to_string() const;	

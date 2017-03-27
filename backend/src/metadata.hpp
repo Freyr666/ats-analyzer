@@ -22,6 +22,7 @@ namespace Ats {
         bool operator== (const Position&);
         bool operator!= (const Position&);
         bool is_overlap (const Position&);
+        string to_string () const;
         string to_json()   const;
         void   of_json(const string&);
     };
