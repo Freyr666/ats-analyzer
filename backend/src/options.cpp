@@ -153,7 +153,6 @@ Options::of_json(const string& j) {
                                 if (matching_pid != matching_channel->pids.end()) {
 
                                     for (json::iterator it = j_pid.begin(); it != j_pid.end(); ++it) {
-                                        if (!it.is_object()) throw;
                                         const string k = it.key();
                                         auto v = it.value();
 
@@ -176,7 +175,7 @@ Options::of_json(const string& j) {
                                         }
                                         if (k == "stream_type") {
                                             if (!v.is_number()) throw;
-                                            if (matching_pid->stream_type != v.get<std::string>())
+                                            if (matching_pid->stream_type != v.get<int>())
                                                 throw;
                                         }
                                         if (k == "stream_type_name") {
@@ -186,8 +185,34 @@ Options::of_json(const string& j) {
                                         }
                                         if (k == "position") {
                                             if (!v.is_object()) throw;
-                                            if (v["x"].is_number()) {
-                                                
+
+                                            for (json::iterator pos_it = v.begin();
+                                                 pos_it != v.end();
+                                                 ++pos_it) {
+
+                                                const string pos_k = pos_it.key();
+                                                auto pos_v = pos_it.value();
+
+                                                if (pos_k == "x") {
+                                                    if (!pos_v.is_number()) throw;
+                                                    matching_pid->position.x = pos_v.get<int>();
+                                                    o_set = true;
+                                                }
+                                                else if (pos_k == "y") {
+                                                    if (!pos_v.is_number()) throw;
+                                                    matching_pid->position.y = pos_v.get<int>();
+                                                    o_set = true;
+                                                }
+                                                else if (pos_k == "width") {
+                                                    if (!pos_v.is_number()) throw;
+                                                    matching_pid->position.width = pos_v.get<int>();
+                                                    o_set = true;
+                                                }
+                                                else if (pos_k == "height") {
+                                                    if (!pos_v.is_number()) throw;
+                                                    matching_pid->position.height = pos_v.get<int>();
+                                                    o_set = true;
+                                                }
                                             }
                                         }
                                     }
