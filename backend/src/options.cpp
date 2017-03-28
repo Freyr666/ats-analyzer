@@ -16,7 +16,7 @@ Options::is_empty () const {
     if (data.empty()) return true;
 
     auto v = find_if (data.begin(), data.end(), [](const Metadata& m){
-            return ! m.to_be_analyzed();
+            return m.to_be_analyzed();
         });
     return v == data.end();
 }
@@ -146,7 +146,7 @@ Options::of_json(const string& j) {
                         throw Df(jk + div + "Meta_channel" + Df::expn_object);
                     if (!j_channel["number"].is_number())
                         throw Df(jk + div + "Meta_channel" + div + "number" + Df::expn_object);
-                    if (!j_channel["pids"].is_array() ||
+                    if (!j_channel["pids"].is_array() &&
                         !j_channel["pids"].is_null())
                         throw Df(jk + div + "Meta_channel" + div + "number" + \
                                  Df::expn_object + " or" + Df::expn_null);
