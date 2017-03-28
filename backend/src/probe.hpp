@@ -17,7 +17,6 @@ namespace Ats {
 	class No_pipe : std::exception {};
 	
 	int                   stream;
-	string                uri;
 	Metadata              metadata;
 
 	sigc::signal<void,const Metadata&> updated;

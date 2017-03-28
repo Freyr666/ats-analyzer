@@ -96,10 +96,11 @@ namespace Ats {
     
     struct Metadata {
         uint                 stream;
+	string               uri;
         vector<Meta_channel> channels;
 
-        Metadata (uint s) : stream(s) {}
-        Metadata () : Metadata(0) {}
+        Metadata (string u, uint s) : stream(s), uri(u) {}
+        Metadata () : Metadata("udp://224.1.2.2:1234", 0) {}
         //Metadata (Metadata&& m) : stream(m.stream),channels(std::move(m.channels)) {}
         //Metadata (const Metadata& m) : stream(m.stream),channels(m.channels) {}
         //~Metadata () {}
@@ -120,7 +121,6 @@ namespace Ats {
         bool   to_be_analyzed () const;
         string to_string () const;
         string to_json() const;
-        void   of_json(const string&);
 
 
         void   for_analyzable (std::function<void(const Meta_channel&)>) const;

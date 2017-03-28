@@ -11,6 +11,7 @@ Pre-pre-alpha goals:
 - [ ] Implement Graph type
 - - [ ] frame size validation support
 - - [ ] mosaic compositing
+- - [ ] graph apply functions
 
 Pre-alpha goals:
 
@@ -19,7 +20,7 @@ Pre-alpha goals:
 
 Beta goals:
 
-- [ ] Switch from json.hpp to yacc-based handwritten parser
+- [ ] Switch from json.hpp to yacc-based parser
 - [ ] Implement custom msg drawing support
 - [ ] Man pages
 - [ ] Inplement drawing element

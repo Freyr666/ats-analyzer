@@ -384,11 +384,6 @@ Metadata::to_json () const {
     else throw Sf (string("Metadata: ") + Sf::expn_overflow  + std::to_string(size));
 }
 
-void
-Metadata::of_json (const string& s) {
-    
-}
-
 bool
 Metadata::to_be_analyzed () const {
     if (channels.empty()) return false;

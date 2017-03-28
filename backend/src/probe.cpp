@@ -10,7 +10,7 @@
 
 using namespace Ats;
 
-Probe::Probe(int s, string uri) : stream(s), uri(uri), metadata(s) {
+Probe::Probe(int s, string uri) : stream(s), metadata(uri, s) {
 
     auto src   = Gst::ElementFactory::create_element("udpsrc");
     auto parse = Gst::ElementFactory::create_element("tsparse");

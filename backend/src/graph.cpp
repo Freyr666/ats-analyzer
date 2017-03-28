@@ -104,16 +104,13 @@ Graph::get_state() {
 RefPtr<Gst::Bin>
 Graph::create_root(const Metadata& m) {
     if (! m.to_be_analyzed()) return RefPtr<Gst::Bin>(nullptr);
-    
-    Address a = get_address(m.stream);
 
     auto bin   = Gst::Bin::create();
     auto src   = Gst::ElementFactory::create_element("udpsrc");
     auto parse = Gst::ElementFactory::create_element("tsparse");
     auto tee   = Gst::Tee::create();
 
-    src->set_property("address", a.addr);
-    src->set_property("port", a.port);
+    src->set_property("uri", m.uri);
     src->set_property("buffer-size", 2147483647);
 
     bin->add(src)->add(parse)->add(tee);
