@@ -73,7 +73,7 @@ Graph::set(const Options& o) {
 
                             p->link(mixer_pad);
 
-			    cerr << "Caps: " << p->get_peer()->get_current_caps()->get_structure(0).get_name() << "\n";
+			    //cerr << "Caps: " << p->get_peer()->get_current_caps()->get_structure(0).get_name() << "\n";
 
 			    mixer_pad->set_property("height", pid_info->position.height);
 			    mixer_pad->set_property("width", pid_info->position.width);
@@ -246,11 +246,11 @@ Graph::create_branch(const uint channel,
 
             if (type == "video") {		
                 auto _deint  = Gst::ElementFactory::create_element("deinterlace");
-		auto anal    = Gst::ElementFactory::create_element("videoconvert");
-		//auto _upload = Gst::ElementFactory::create_element("glupload");
-		//auto _color  = Gst::ElementFactory::create_element("glcolorconvert");
-		//auto scale   = Gst::ElementFactory::create_element("videoscale");
+		auto anal    = Gst::ElementFactory::create_element("videoanalysis");
+		//auto _caps   = Gst::ElementFactory::create_element("capsfilter");
 
+		//_caps->set_property("caps", Gst::Caps::create_from_string("video/x-raw,pixel-aspect-ratio=1/1"));
+		
 		n.type = type;
 		n.analysis = anal;
 		
@@ -261,6 +261,7 @@ Graph::create_branch(const uint channel,
 		
                 bin->add(_deint)->add(anal);
 		_deint->link(anal);
+		
 		_deint->sync_state_with_parent();
 		anal->sync_state_with_parent();
 		
