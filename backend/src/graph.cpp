@@ -247,9 +247,10 @@ Graph::create_branch(const uint channel,
             if (type == "video") {		
                 auto _deint  = Gst::ElementFactory::create_element("deinterlace");
 		auto anal    = Gst::ElementFactory::create_element("videoanalysis");
-		//auto _caps   = Gst::ElementFactory::create_element("capsfilter");
+		auto _scale  = Gst::ElementFactory::create_element("videoscale");
+		auto _caps   = Gst::ElementFactory::create_element("capsfilter");
 
-		//_caps->set_property("caps", Gst::Caps::create_from_string("video/x-raw,pixel-aspect-ratio=1/1"));
+		_caps->set_property("caps", Gst::Caps::create_from_string("video/x-raw,pixel-aspect-ratio=1/1"));
 		
 		n.type = type;
 		n.analysis = anal;
@@ -257,13 +258,15 @@ Graph::create_branch(const uint channel,
 		this->elms.add(channel,pid,n);
 		
                 auto _sink = _deint->get_static_pad("sink");
-		src_pad = anal->get_static_pad("src");
+		src_pad = _caps->get_static_pad("src");
 		
-                bin->add(_deint)->add(anal);
-		_deint->link(anal);
+                bin->add(_deint)->add(anal)->add(_scale)->add(_caps);
+		_deint->link(anal)->link(_scale)->link(_caps);
 		
 		_deint->sync_state_with_parent();
 		anal->sync_state_with_parent();
+		_scale->sync_state_with_parent();
+		_caps->sync_state_with_parent();
 		
                 p->link(_sink);
             } else if (type == "audio") {
