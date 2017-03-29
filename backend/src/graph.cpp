@@ -32,8 +32,17 @@ Graph::set(const Options& o) {
     auto mixer  = Gst::ElementFactory::create_element("glvideomixer");
     auto output = Gst::ElementFactory::create_element("glimagesink");
 
-    pipe->add(mixer)->add(output);
+    bg = Gst::ElementFactory::create_element("gltestsrc");
+    
+    pipe->add(bg)->add(mixer)->add(output);
     mixer->link(output);
+
+    bg_pad = mixer->get_request_pad("sink_%u");
+    bg_pad->set_property("width", 1920);
+    bg_pad->set_property("height", 1080);
+
+    auto in_pad = bg->get_static_pad("src");
+    in_pad->link(bg_pad);
     
     for_each(o.data.begin(),o.data.end(),[this, mixer](const Metadata& m){
             auto root = create_root(m);
@@ -42,17 +51,36 @@ Graph::set(const Options& o) {
                 pipe->add(root);
                 root->sync_state_with_parent();
 		
-                root->signal_pad_added().connect([this, mixer](const RefPtr<Gst::Pad>& p) {
+                root->signal_pad_added().connect([this, mixer, m](const RefPtr<Gst::Pad>& p) {
 			
                         auto pname = p->get_name();
-                        //cout << "Caps: " << pname << "\n";
+                        
                         vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
                         auto type    = name_toks[1];
 			
                         if (type == "video") {
+			    auto channel = strtoul(name_toks[3].c_str(), NULL, 10);
+			    auto pid     = strtoul(name_toks[4].c_str(), NULL, 10);
+
+			    auto pid_info = m.find_pid(channel, pid);
+			    // settings
+			    cerr << pid_info->position.to_string() << "\n";
+			    
                             auto mixer_pad = mixer->get_request_pad("sink_%u");
+
+			    auto n = elms.get(channel, pid);
+			    n->connected = mixer_pad;
+
                             p->link(mixer_pad);
+
+			    cerr << "Caps: " << p->get_peer()->get_current_caps()->get_structure(0).get_name() << "\n";
+
+			    mixer_pad->set_property("height", pid_info->position.height);
+			    mixer_pad->set_property("width", pid_info->position.width);
+			    mixer_pad->set_property("xpos", pid_info->position.x);
+			    mixer_pad->set_property("ypos", pid_info->position.y);
                         }
+			
                     });
             }
         });
@@ -66,6 +94,7 @@ Graph::set(const Options& o) {
 
 void
 Graph::reset() {
+    elms.reset();
     if (bus)   bus.reset();
     if (pipe)  {
         set_state(Gst::STATE_NULL);
@@ -117,7 +146,7 @@ Graph::create_root(const Metadata& m) {
 
     src->link(parse)->link(tee);
 
-    m.for_analyzable ([&m,&bin,tee](const Meta_channel& c) {
+    m.for_analyzable ([this,&m,&bin,tee](const Meta_channel& c) {
             uint num = c.number;
 	    
             string demux_name = "demux_";
@@ -141,7 +170,7 @@ Graph::create_root(const Metadata& m) {
 
             srcpad->link(sinkpad);
 	    
-            demux->signal_pad_added().connect([&m, bin, num](const RefPtr<Gst::Pad>& p) {	    
+            demux->signal_pad_added().connect([this,&m, bin, num](const RefPtr<Gst::Pad>& p) {	    
                     auto pname = p->get_name();
                     auto pcaps = p->get_current_caps()->get_structure(0).get_name();
         
@@ -190,7 +219,9 @@ RefPtr<Gst::Bin>
 Graph::create_branch(const uint channel,
                      const uint pid,
                      const Metadata& m) {
+
     RefPtr<Gst::Pad> src_pad;
+    
     auto pidinfo = m.find_pid(channel, pid);
 
     if (pidinfo == nullptr) return RefPtr<Gst::Bin>(nullptr);
@@ -205,20 +236,35 @@ Graph::create_branch(const uint channel,
     bin->add(queue)->add(decoder);
     queue->link(decoder);
 
-    decoder->signal_pad_added().connect([bin](const RefPtr<Gst::Pad>& p) {
+    decoder->signal_pad_added().connect([this,bin,channel,pid](const RefPtr<Gst::Pad>& p) {
             RefPtr<Gst::Pad> src_pad;
+	    Graph::Node n;
 	    
             auto pcaps = p->get_current_caps()->get_structure(0).get_name();
             vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
             auto& type    = caps_toks[0];
 
             if (type == "video") {		
-                auto deint = Gst::ElementFactory::create_element("deinterlace");
-                auto deint_sink = deint->get_static_pad("sink");
-                src_pad = deint->get_static_pad("src");
-                bin->add(deint);
-                deint->sync_state_with_parent();
-                p->link(deint_sink);
+                auto _deint  = Gst::ElementFactory::create_element("deinterlace");
+		auto anal    = Gst::ElementFactory::create_element("videoconvert");
+		//auto _upload = Gst::ElementFactory::create_element("glupload");
+		//auto _color  = Gst::ElementFactory::create_element("glcolorconvert");
+		//auto scale   = Gst::ElementFactory::create_element("videoscale");
+
+		n.type = type;
+		n.analysis = anal;
+		
+		this->elms.add(channel,pid,n);
+		
+                auto _sink = _deint->get_static_pad("sink");
+		src_pad = anal->get_static_pad("src");
+		
+                bin->add(_deint)->add(anal);
+		_deint->link(anal);
+		_deint->sync_state_with_parent();
+		anal->sync_state_with_parent();
+		
+                p->link(_sink);
             } else if (type == "audio") {
                 src_pad = p;
             } else {
@@ -286,4 +332,30 @@ Graph::of_json(const string& j) {
 void
 Graph::of_msgpack(const string&) {
     
+}
+
+
+/*
+ * Node and Tree
+ */
+
+void
+Graph::Tree::reset () {
+    _tree.clear();
+}
+
+void
+Graph::Tree::add (int chan, int pid, Graph::Node n) {
+    auto key = make_pair(chan,pid);
+    _tree.insert(make_pair(key,n));
+}
+
+Graph::Node*
+Graph::Tree::get (int chan, int pid) {
+    auto key = make_pair(chan,pid);
+    auto it = _tree.find(key);
+    if (it != _tree.end())
+	return &(it->second);
+    else
+	return nullptr;
 }

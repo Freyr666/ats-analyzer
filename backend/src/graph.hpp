@@ -5,6 +5,7 @@
 #include <gstreamermm.h>
 #include <glibmm.h>
 #include <functional>
+#include <map>
 
 #include "chatterer.hpp"
 #include "metadata.hpp"
@@ -42,14 +43,29 @@ namespace Ats {
 	void   of_msgpack(const string&);
 	
     private:
+	struct Node {
+	    string               type;
+	    RefPtr<Gst::Element> analysis;
+	    RefPtr<Gst::Pad>     connected;
+	};
+	class Tree {
+	    map<pair<int,int>,Node> _tree;
+	public:
+	    void  reset();
+	    void  add(int, int, Node);
+	    Node* get(int, int);
+	};
+	
+	Tree                  elms;
+	RefPtr<Gst::Element>  bg;
+	RefPtr<Gst::Pad>      bg_pad;
 	RefPtr<Gst::Pipeline> pipe;
 	RefPtr<Gst::Bus>      bus;
-	string                address = "udp://224.1.2.3:1234";
 	
-	static RefPtr<Gst::Bin> create_root(const Metadata&);
-	static RefPtr<Gst::Bin> create_branch(const uint,
-					      const uint,
-					      const Metadata&);
+	RefPtr<Gst::Bin> create_root(const Metadata&);
+	RefPtr<Gst::Bin> create_branch(const uint,
+				       const uint,
+				       const Metadata&);
     };
 
 };

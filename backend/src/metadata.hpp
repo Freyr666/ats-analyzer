@@ -122,7 +122,6 @@ namespace Ats {
         string to_string () const;
         string to_json() const;
 
-
         void   for_analyzable (std::function<void(const Meta_channel&)>) const;
         bool   validate_grid (uint, uint) const;
     };
