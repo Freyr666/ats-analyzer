@@ -29,8 +29,13 @@ namespace Ats {
 	void       reset();
 	void       apply_options(const Options&);
 	void       apply_settings(const Settings&);
+	
 	void       set_state(Gst::State);
 	Gst::State get_state();
+
+	void   set_resolution(const pair<int,int>);
+	void   set_position(int, int, int, const Position&);
+	void   set_settings(const Settings&);
 
 	void   connect(Options& o);
 	void   connect(Settings& o);
@@ -49,22 +54,25 @@ namespace Ats {
 	    RefPtr<Gst::Pad>     connected;
 	};
 	class Tree {
-	    map<pair<int,int>,Node> _tree;
+	    map<tuple<int,int,int>,Node> _tree;
 	public:
+	    bool  empty() {return _tree.empty();}
 	    void  reset();
-	    void  add(int, int, Node);
-	    Node* get(int, int);
+	    void  add(int,int, int, Node);
+	    Node* get(int, int, int);
 	};
 	
 	Tree                  elms;
 	RefPtr<Gst::Element>  bg;
 	RefPtr<Gst::Pad>      bg_pad;
+	
 	RefPtr<Gst::Pipeline> pipe;
 	RefPtr<Gst::Bus>      bus;
 	
 	RefPtr<Gst::Bin> create_root(const Metadata&);
-	RefPtr<Gst::Bin> create_branch(const uint,
-				       const uint,
+	RefPtr<Gst::Bin> create_branch(const int,
+				       const int,
+				       const int,
 				       const Metadata&);
     };
 
