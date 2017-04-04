@@ -6,6 +6,7 @@
 #include <glibmm.h>
 #include <functional>
 #include <map>
+#include <boost/variant.hpp>
 
 #include "chatterer.hpp"
 #include "metadata.hpp"
@@ -39,6 +40,8 @@ namespace Ats {
 
 	void   connect(Options& o);
 	void   connect(Settings& o);
+
+	sigc::signal<void,const int,const int,const int,Meta_pid::Pid_type>   set_pid;
 	
 	// Chatterer
 	string to_string() const;
@@ -74,6 +77,9 @@ namespace Ats {
 				       const int,
 				       const int,
 				       const Metadata&);
+
+	bool             on_bus_message(const Glib::RefPtr<Gst::Bus>&,
+					const Glib::RefPtr<Gst::Message>&);
     };
 
 };

@@ -6,6 +6,7 @@
 #include <exception>
 #include <gstreamermm.h>
 #include <glibmm.h>
+#include <boost/variant.hpp>
 
 #include "chatterer.hpp"
 
@@ -31,6 +32,8 @@ namespace Ats {
         class Wrong_type : std::exception {};
         enum class Type {Video, Audio, Subtitles, Teletext, Empty};
 
+	struct Empty_pid {};
+	
         struct Video_pid {
             string codec;
             uint width = 0;
@@ -42,7 +45,6 @@ namespace Ats {
             string to_json()   const;
             void   of_json(const string&);
         };
-
         struct Audio_pid {
             string codec;
             string bitrate;
@@ -51,6 +53,7 @@ namespace Ats {
             string to_json()   const;
             void   of_json(const string&);
         };
+	using Pid_type = boost::variant<Audio_pid, Video_pid, Empty_pid>;
 
         uint pid;
         bool to_be_analyzed;
@@ -64,13 +67,15 @@ namespace Ats {
         static Type get_type (uint);
         const Audio_pid&  get_audio () const;
         const Video_pid&  get_video () const;
+	void        set (Video_pid v) { data = v; }
+	void        set (Audio_pid a) { data = a; }
+	void        set (Pid_type p)  { data = p; }
         string      to_string () const;
-        string      to_json()   const;
-        void        of_json(const string&);
+        string      to_json ()   const;
+        void        of_json (const string&);
 
     private:
-        Audio_pid audio;
-        Video_pid video;
+        Pid_type data = Empty_pid();
     };
 
     struct Meta_channel {

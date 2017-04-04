@@ -6,10 +6,9 @@ CFLAGS += `pkg-config --cflags gstreamermm-1.0 glibmm-2.4 gstreamer-1.0 gstreame
 LDFLAGS = 
 LDFLAGS += `pkg-config --libs gstreamermm-1.0 glibmm-2.4 gstreamer-1.0 gstreamer-video-1.0 gstreamer-mpegts-1.0`
 
-SOURCES = main.cpp probe.cpp address.cpp \
+SOURCES = main.cpp probe.cpp settings.cpp\
           metadata.cpp parser.cpp options.cpp \
-	        graph.cpp context.cpp control.cpp \
-	        settings.cpp 
+	  graph.cpp context.cpp control.cpp 
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

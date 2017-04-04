@@ -1,5 +1,7 @@
 #include "options.hpp"
 #include "json.hpp"
+#include "graph.hpp"
+#include "probe.hpp"
 
 #include <cstdio>
 #include <string>
@@ -39,6 +41,17 @@ Options::set_data(const Metadata& m) {
     updated.emit();
 }
 
+void
+Options::set_pid(const int stream,
+		 const int chan,
+		 const int pid,
+		 Meta_pid::Pid_type v) {
+    auto s = find_stream(stream);
+    auto p = s->find_pid(chan, pid);
+    p->set(v);
+    updated.emit(); // TODO add validation
+}
+
 Metadata*
 Options::find_stream (uint stream) {
     for (Metadata& m : data) {
@@ -53,6 +66,18 @@ Options::find_stream (uint stream) const {
         if (m.stream == stream) return &m;
     }
     return nullptr;
+}
+
+// Connections
+
+void
+Options::connect(Probe& p) { p.updated.connect(
+	sigc::mem_fun(this, &Options::set_data));
+}
+
+void
+Options::connect(Graph& g) { g.set_pid.connect(
+	sigc::mem_fun(this, &Options::set_pid));
 }
 
 // Chatter implementation

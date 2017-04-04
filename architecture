@@ -22,3 +22,6 @@
 \-------------------------------------------/
 
  Description: TBD
+
+ connect to the notify::caps signal (there's probably something wrapping that in glibmm)
+ and then you can use the GstVideoInfo API to extract raw video info (and the corresponding for audio)

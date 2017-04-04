@@ -7,6 +7,9 @@ Pre-pre-alpha goals:
 - [x] Reimplement Metadata [6fb6470]
 - [x] Implement Control type [6fb6470]
 - [x] Implement Options type [6fb6470]
+- [ ] Remove address.cpp
+- [ ] Cleanup int/uint mess
+- [ ] Add predefinitions
 - [ ] Add JSON support
 - [ ] Implement Graph type
 - - [ ] frame size validation support

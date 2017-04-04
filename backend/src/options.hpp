@@ -7,12 +7,14 @@
 
 #include "chatterer.hpp"
 #include "metadata.hpp"
-#include "probe.hpp"
 
 using namespace std;
 using namespace Glib;
 
 namespace Ats {
+
+    class Graph;
+    class Probe;
 
     class Options : public Chatterer {
 
@@ -36,6 +38,7 @@ namespace Ats {
 
         bool   is_empty () const;
         void   set_data(const Metadata&);
+	void   set_pid(const int, const int, const int, Meta_pid::Pid_type);
         Metadata*           find_stream (uint stream);
         const Metadata*     find_stream (uint stream) const;
 
@@ -48,9 +51,8 @@ namespace Ats {
 
         void operator=(const Metadata& m) { set_data(m); }
 
-        void   connect(Probe& p) { p.updated.connect(
-                sigc::mem_fun(this, &Options::set_data));
-        }
+        void   connect(Probe&);
+	void   connect(Graph&);
     };
 };
 

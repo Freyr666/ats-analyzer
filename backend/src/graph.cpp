@@ -1,11 +1,10 @@
-#include <iostream>
 #include <cstdlib> //strtoul
 #include <vector>
 #include <gstreamermm/tee.h>
 #include <gst/gst.h>
+#include <gst/video/video.h>
 
 #include "graph.hpp"
-#include "address.hpp"
 #include "json.hpp"
 
 using namespace std;
@@ -82,6 +81,8 @@ Graph::set(const Options& o) {
         });
 
     bus = pipe->get_bus();
+
+    bus->add_watch(sigc::mem_fun(this, &Graph::on_bus_message));
    
     pipe->set_state(Gst::STATE_PLAYING);
 
@@ -270,14 +271,42 @@ Graph::create_branch(const int stream,
     queue->link(decoder);
 
     decoder->signal_pad_added().connect([this,bin,stream,channel,pid](const RefPtr<Gst::Pad>& p) {
-            RefPtr<Gst::Pad> src_pad;
+	    RefPtr<Gst::Pad> src_pad;
 	    Graph::Node n;
+
+	    auto set_video = [this,&p,stream,channel,pid](){
+		Meta_pid::Video_pid v;
+
+		auto vi = gst_video_info_new();
+		auto pcaps = p->get_current_caps();
+		if (! gst_video_info_from_caps(vi, pcaps->gobj())) {
+		    gst_video_info_free(vi);
+		    return;
+		}
+			
+		v.codec = "h264";
+		v.width = vi->width;
+		v.height = vi->height;
+		v.aspect_ratio = {vi->par_n,vi->par_d};
+		v.frame_rate = (float)vi->fps_n/vi->fps_d;
+
+		gst_video_info_free(vi);
+
+		Meta_pid::Pid_type rval = v;
+
+		set_pid.emit(stream,channel,pid,rval);
+	    };
 	    
             auto pcaps = p->get_current_caps()->get_structure(0).get_name();
             vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
             auto& type    = caps_toks[0];
+	    
 
-            if (type == "video") {		
+            if (type == "video") {
+		// Video callback
+		p->connect_property_changed("caps", set_video);
+		set_video();
+		
                 auto _deint  = Gst::ElementFactory::create_element("deinterlace");
 		auto anal    = Gst::ElementFactory::create_element("videoanalysis");
 		auto _scale  = Gst::ElementFactory::create_element("videoscale");
@@ -319,6 +348,12 @@ Graph::create_branch(const int stream,
     bin->add_pad(sink_ghost);
 
     return bin;
+}
+
+bool
+Graph::on_bus_message(const Glib::RefPtr<Gst::Bus>& bus,
+                      const Glib::RefPtr<Gst::Message>& msg) {
+    return    false; // switch to true
 }
 
 void

@@ -1,5 +1,6 @@
 -DDEBUG
 -pthread
+-std=c++1z
 -I/usr/include/gstreamermm-1.0
 -I/usr/lib64/gstreamermm-1.0/include
 -I/usr/include/giomm-2.4

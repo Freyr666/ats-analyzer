@@ -1,10 +1,10 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
-#include <exception>
-#include <vector>
 #include <glibmm.h>
 #include <gstreamermm.h>
+#include <exception>
+#include <vector>
 
 #include "control.hpp"
 #include "chatterer.hpp"

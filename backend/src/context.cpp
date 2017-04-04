@@ -27,14 +27,16 @@ Context::Context(Initial init) {
     control.connect (options);
     control.connect (graph);
     control.connect (*this);
-
-    options.updated.connect(sigc::mem_fun(this, &Context::talk));
+    
+    options.connect(graph);
     
     control.received_json.connect(sigc::mem_fun(this, &Context::of_json));
     control.received_msgpack.connect(sigc::mem_fun(this, &Context::of_msgpack));
     
     graph.connect(options);
     graph.connect(settings);
+    
+    options.updated.connect(sigc::mem_fun(this, &Context::talk));
 
     /*
       Glib::signal_timeout().connect([this](){

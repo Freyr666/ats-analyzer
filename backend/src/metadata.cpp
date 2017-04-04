@@ -91,6 +91,9 @@ Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
                                                  stream_type(t), stream_type_name(tn) {
     type = get_type (t);
     if (type == Type::Empty) throw Wrong_type ();
+
+    if (type == Type::Video) data = Video_pid ();
+    if (type == Type::Audio) data = Audio_pid ();
 }
 
 string
@@ -144,13 +147,13 @@ Meta_pid::Audio_pid::of_json(const string& s) {
 
 const Meta_pid::Audio_pid&
 Meta_pid::get_audio () const {
-    if(type == Meta_pid::Type::Audio) return audio;
+    if(type == Meta_pid::Type::Audio) return boost::get<Audio_pid>( this->data );
     else throw Wrong_type();
 }
 
 const Meta_pid::Video_pid&
 Meta_pid::get_video () const {
-    if(type == Meta_pid::Type::Video) return video;
+    if(type == Meta_pid::Type::Video) return boost::get<Video_pid>( this->data );
     else throw Wrong_type();
 }
 
