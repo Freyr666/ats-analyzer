@@ -18,42 +18,42 @@ Initial::Initial(int argc, char** argv) {
     if (argc < 2) throw Wrong_option("Too few arguments");
     
     for (int i = 1; i < argc; i++) {
-	if (argv[i][0] != '-') {
-	    string uri = argv[i];
-	    if (! validate_uri(uri)) throw Wrong_option("Bad uri: " + uri);
-	    uris.push_back(uri);
-	} else {
-	    switch (argv[i][1]) {
-	    case 'h': {
-		throw Wrong_option();
-		break;
-	    }
-	    case 'o': {
-		if (i == (argc - 1)) throw Wrong_option("-o requires argument");
-		string uri = argv[++i];
-		if (! validate_uri(uri)) throw Wrong_option("Bad output uri: " + uri);
-		multicast_address = uri;
-		break;
-	    }
-	    case 'm': {
-		if (i == (argc - 1)) throw Wrong_option("-m requires argument");
-		string msgt = argv[++i];
-		if (msgt == "debug") {
-		    msg_type = Msg_type::Debug;
-		} else if (msgt == "json") {
-		    msg_type = Msg_type::Json;
-		} else if (msgt == "msgpack") {
-		    msg_type = Msg_type::Msgpack;
-		} else {
-		    throw Wrong_option("Bad message type: " + msgt);
-		}
-		break;
-	    }
-	    default:
-		throw Wrong_option("Unknown option: " + string(argv[i]));
-		break;
-	    }
-	}
+        if (argv[i][0] != '-') {
+            string uri = argv[i];
+            if (! validate_uri(uri)) throw Wrong_option("Bad uri: " + uri);
+            uris.push_back(uri);
+        } else {
+            switch (argv[i][1]) {
+            case 'h': {
+                throw Wrong_option();
+                break;
+            }
+            case 'o': {
+                if (i == (argc - 1)) throw Wrong_option("-o requires argument");
+                string uri = argv[++i];
+                if (! validate_uri(uri)) throw Wrong_option("Bad output uri: " + uri);
+                multicast_address = uri;
+                break;
+            }
+            case 'm': {
+                if (i == (argc - 1)) throw Wrong_option("-m requires argument");
+                string msgt = argv[++i];
+                if (msgt == "debug") {
+                    msg_type = Msg_type::Debug;
+                } else if (msgt == "json") {
+                    msg_type = Msg_type::Json;
+                } else if (msgt == "msgpack") {
+                    msg_type = Msg_type::Msgpack;
+                } else {
+                    throw Wrong_option("Bad message type: " + msgt);
+                }
+                break;
+            }
+            default:
+                throw Wrong_option("Unknown option: " + string(argv[i]));
+                break;
+            }
+        }
     }
 }
 
@@ -62,12 +62,12 @@ Initial::usage (string prog_name) {
     string rval = "Usage:\n";
     rval += prog_name;
     rval += " [-opt arg] uri1 [uri2 uri3]\n"
-	"Options:\n"
-	"\t-o\toutput uri\n"
-	"\t-m\tipc message type [json | msgpack | debug]\n"
-	"\t-h\thelp\n"
-	"Additional:\n"
-	"\turi format: udp://[ip] or udp://[ip]:[port]\n";
+        "Options:\n"
+        "\t-o\toutput uri\n"
+        "\t-m\tipc message type [json | msgpack | debug]\n"
+        "\t-h\thelp\n"
+        "Additional:\n"
+        "\turi format: udp://[ip] or udp://[ip]:[port]\n";
     return rval;
 }
 
@@ -86,12 +86,12 @@ Settings::Channel_settings::Error_overlay::to_string() const {
 string
 Settings::Channel_settings::Error_overlay::to_json() const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 128;
+    constexpr size_t size = 128;
 
     char buffer[size];
     constexpr const char* fmt = "{"
         "\"enabled\":%s,"
-        "\"error_color\":%d"
+        "\"error_color\":%u"
         "}";
 
     int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), error_color);
@@ -114,7 +114,7 @@ Settings::Channel_settings::Channel_name::to_string() const {
 string
 Settings::Channel_settings::Channel_name::to_json() const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 256;
+    constexpr size_t size = 256;
 
     char buffer[size];
     constexpr const char* fmt = "{"
@@ -141,7 +141,7 @@ Settings::Channel_settings::Audio_meter::to_string() const {
 string
 Settings::Channel_settings::Audio_meter::to_json() const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 128;
+    constexpr size_t size = 128;
 
     char buffer[size];
     constexpr const char* fmt = "{"
@@ -189,7 +189,7 @@ Settings::Channel_settings::Status_bar::to_string() const {
 string
 Settings::Channel_settings::Status_bar::to_json() const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 1024;
+    constexpr size_t size = 1024;
 
     char buffer[size];
     constexpr const char* fmt = "{"
@@ -246,14 +246,14 @@ Settings::Channel_settings::to_string() const {
 string
 Settings::Channel_settings::to_json() const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 1024;
+    constexpr size_t size = 1024;
 
     char buffer[size];
     constexpr const char* fmt = "{"
         "\"show_border\":%s,"
-        "\"border_color\":%d,"
+        "\"border_color\":%u,"
         "\"show_aspect_border\":%s,"
-        "\"aspect_border_color\":%d,"
+        "\"aspect_border_color\":%u,"
         "\"error_overlay\":%s,"
         "\"channel_name\":%s,"
         "\"audio_meter\":%s,"
@@ -364,7 +364,7 @@ Settings::Qoe_settings::to_string() const {
 string
 Settings::Qoe_settings::to_json() const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 1024;
+    constexpr size_t size = 1024;
 
     char buffer[size];
     constexpr const char* fmt = "{"
@@ -379,7 +379,7 @@ Settings::Qoe_settings::to_json() const {
         "\"luma_peak_en\":%s,"
         "\"luma_peak\":%.2f,"
         "\"black_time\":%.2f,"
-        "\"black_pixel\":%d,"
+        "\"black_pixel\":%u,"
         "\"freeze_cont_en\":%s,"
         "\"freeze_cont\":%.2f,"
         "\"freeze_peak_en\":%s,"
@@ -389,7 +389,7 @@ Settings::Qoe_settings::to_json() const {
         "\"diff_peak_en\":%s,"
         "\"diff_peak\":%.2f,"
         "\"freeze_time\":%.2f,"
-        "\"pixel_diff\":%d,"
+        "\"pixel_diff\":%u,"
         "\"blocky_cont_en\":%s,"
         "\"blocky_cont\":%.2f,"
         "\"blocky_peak_en\":%s,"
@@ -407,7 +407,7 @@ Settings::Qoe_settings::to_json() const {
         "\"loudness_peak\":%.2f,"
         "\"loudness_time\":%.2f,"
         "\"adv_diff\":%.2f,"
-        "\"adv_buf\":%d"
+        "\"adv_buf\":%u"
         "}";
 
     int n = snprintf (buffer, size, fmt,
@@ -453,13 +453,13 @@ Settings::Output_sink::to_string() const {
 string
 Settings::Output_sink::to_json() const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 256;
+    constexpr size_t size = 256;
 
     char buffer[size];
     constexpr const char* fmt = "{"
         "\"enabled\":%s,"
         "\"address\":\"%s\","
-        "\"port\":%d"
+        "\"port\":%u"
         "}";
 
     int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), address.c_str(), port);
@@ -496,7 +496,7 @@ Settings::to_string() const {
 string
 Settings::to_json() const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 1024 * 8;
+    constexpr size_t size = 1024 * 8;
 
     char buffer[size];
     constexpr const char* fmt = "{"
@@ -593,7 +593,7 @@ Settings::of_json(const string& j) {
                 }
                 else if (k == "black_pixel") {
                     if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.black_pixel = v.get<int>();
+                    qoe_settings.black_pixel = v.get<uint>();
                     o_set = true;
                 }
                 else if (k == "freeze_cont_en") {
@@ -643,7 +643,7 @@ Settings::of_json(const string& j) {
                 }
                 else if (k == "pixel_diff") {
                     if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.pixel_diff = v.get<int>();
+                    qoe_settings.pixel_diff = v.get<uint>();
                     o_set = true;
                 }
                 else if (k == "blocky_cont_en") {
@@ -733,7 +733,7 @@ Settings::of_json(const string& j) {
                 }
                 else if (k == "adv_buf") {
                     if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.adv_buf = v.get<int>();
+                    qoe_settings.adv_buf = v.get<uint>();
                     o_set = true;
                 }
             }
@@ -759,7 +759,7 @@ Settings::of_json(const string& j) {
                         else if (eo_k == "error_color") {
                             if (!eo_v.is_number())
                                 throw Df(jk + div + k + div + eo_k + Df::expn_number);
-                            channel_settings.error_overlay.error_color = eo_v.get<int>();
+                            channel_settings.error_overlay.error_color = eo_v.get<uint>();
                             o_set = true;
                         }
                     }
@@ -887,7 +887,7 @@ Settings::of_json(const string& j) {
                 }
                 else if (k == "border_color") {
                     if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    channel_settings.border_color = v.get<int>();
+                    channel_settings.border_color = v.get<uint>();
                     o_set = true;
                 }
                 else if (k == "show_aspect_border") {
@@ -897,7 +897,7 @@ Settings::of_json(const string& j) {
                 }
                 else if (k == "aspect_border_color") {
                     if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    channel_settings.aspect_border_color = v.get<int>();
+                    channel_settings.aspect_border_color = v.get<uint>();
                     o_set = true;
                 }
             }
@@ -920,7 +920,7 @@ Settings::of_json(const string& j) {
                 }
                 else if (k == "port") {
                     if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    output_sink_settings.port = v.get<int>();
+                    output_sink_settings.port = v.get<uint>();
                     o_set = true;
                 }
             }

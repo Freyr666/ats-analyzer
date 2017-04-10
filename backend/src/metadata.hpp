@@ -15,10 +15,10 @@ using namespace std;
 namespace Ats {
 
     struct Position {
-        int x = 0;
-        int y = 0;
-        int width = 0;
-        int height = 0;
+        uint x = 0;
+        uint y = 0;
+        uint width = 0;
+        uint height = 0;
 
         bool operator== (const Position&);
         bool operator!= (const Position&);
@@ -32,8 +32,8 @@ namespace Ats {
         class Wrong_type : std::exception {};
         enum class Type {Video, Audio, Subtitles, Teletext, Empty};
 
-	struct Empty_pid {};
-	
+        struct Empty_pid {};
+
         struct Video_pid {
             string codec;
             uint width = 0;
@@ -53,7 +53,7 @@ namespace Ats {
             string to_json()   const;
             void   of_json(const string&);
         };
-	using Pid_type = boost::variant<Audio_pid, Video_pid, Empty_pid>;
+        using Pid_type = boost::variant<Audio_pid, Video_pid, Empty_pid>;
 
         uint pid;
         bool to_be_analyzed;
@@ -67,9 +67,9 @@ namespace Ats {
         static Type get_type (uint);
         const Audio_pid&  get_audio () const;
         const Video_pid&  get_video () const;
-	void        set (Video_pid v) { data = v; }
-	void        set (Audio_pid a) { data = a; }
-	void        set (Pid_type p)  { data = p; }
+        void        set (Video_pid v) { data = v; }
+        void        set (Audio_pid a) { data = a; }
+        void        set (Pid_type p)  { data = p; }
         string      to_string () const;
         string      to_json ()   const;
         void        of_json (const string&);
@@ -101,7 +101,7 @@ namespace Ats {
     
     struct Metadata {
         uint                 stream;
-	string               uri;
+        string               uri;
         vector<Meta_channel> channels;
 
         Metadata (string u, uint s) : stream(s), uri(u) {}

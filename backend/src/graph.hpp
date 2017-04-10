@@ -34,14 +34,14 @@ namespace Ats {
 	void       set_state(Gst::State);
 	Gst::State get_state();
 
-	void   set_resolution(const pair<int,int>);
-	void   set_position(int, int, int, const Position&);
+	void   set_resolution(const pair<uint,uint>);
+	void   set_position(uint, uint, uint, const Position&);
 	void   set_settings(const Settings&);
 
 	void   connect(Options& o);
 	void   connect(Settings& o);
 
-	sigc::signal<void,const int,const int,const int,Meta_pid::Pid_type>   set_pid;
+	sigc::signal<void,const uint,const uint,const uint,Meta_pid::Pid_type>   set_pid;
 	
 	// Chatterer
 	string to_string() const;
@@ -57,12 +57,12 @@ namespace Ats {
 	    RefPtr<Gst::Pad>     connected;
 	};
 	class Tree {
-	    map<tuple<int,int,int>,Node> _tree;
+	    map<tuple<uint,uint,uint>,Node> _tree;
 	public:
 	    bool  empty() {return _tree.empty();}
 	    void  reset();
-	    void  add(int,int, int, Node);
-	    Node* get(int, int, int);
+	    void  add(uint, uint, uint, Node);
+	    Node* get(uint, uint, uint);
 	};
 	
 	Tree                  elms;
@@ -73,10 +73,10 @@ namespace Ats {
 	RefPtr<Gst::Bus>      bus;
 	
 	RefPtr<Gst::Bin> create_root(const Metadata&);
-	RefPtr<Gst::Bin> create_branch(const int,
-				       const int,
-				       const int,
-				       const Metadata&);
+	RefPtr<Gst::Bin> create_branch(const uint,
+                                 const uint,
+                                 const uint,
+                                 const Metadata&);
 
 	bool             on_bus_message(const Glib::RefPtr<Gst::Bus>&,
 					const Glib::RefPtr<Gst::Message>&);

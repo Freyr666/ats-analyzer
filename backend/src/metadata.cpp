@@ -40,14 +40,14 @@ Position::to_string () const {
 
 string
 Position::to_json () const {
-    constexpr int size = 1024;
+    constexpr size_t size = 1024;
 
     char buffer[size];
     constexpr const char* fmt = "{"
-        "\"x\":%d,"
-        "\"y\":%d,"
-        "\"width\":%d,"
-        "\"height\":%d"
+        "\"x\":%u,"
+        "\"y\":%u,"
+        "\"width\":%u,"
+        "\"height\":%u"
         "}";
 
     int n = snprintf (buffer, size, fmt, x, y, width, height);
@@ -99,14 +99,14 @@ Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
 string
 Meta_pid::Video_pid::to_json () const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 1024;
+    constexpr size_t size = 1024;
 
     char buffer[size];
     constexpr const char* fmt = "{"
         "\"codec\":\"%s\","
-        "\"width\":%d,"
-        "\"height\":%d,"
-        "\"aspect_ratio\":{\"x\":%d,\"y\":%d},"
+        "\"width\":%u,"
+        "\"height\":%u,"
+        "\"aspect_ratio\":{\"x\":%u,\"y\":%u},"
         "\"interlaced\":\"%s\","
         "\"frame_rate\":%.2f"
         "}";
@@ -126,13 +126,13 @@ Meta_pid::Video_pid::of_json(const string& s) {
 string
 Meta_pid::Audio_pid::to_json () const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 512;
+    constexpr size_t size = 512;
 
     char buffer[size];
     constexpr const char* fmt = "{"
         "\"codec\":\"%s\","
         "\"bitrate\":\"%s\","
-        "\"sample_rate\":%d"
+        "\"sample_rate\":%u"
         "}";
 
     int n = snprintf (buffer, size, fmt, codec.c_str(), bitrate.c_str(), sample_rate);
@@ -175,14 +175,14 @@ Meta_pid::to_string () const {
 string
 Meta_pid::to_json () const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 5 * 1024;
+    constexpr size_t size = 5 * 1024;
 
     char buffer[size];
     constexpr const char* fmt = "{"
-        "\"pid\":%d,"
+        "\"pid\":%u,"
         "\"to_be_analyzed\":%s,"
         "\"type\":\"%s\","
-        "\"stream_type\":%d,"
+        "\"stream_type\":%u,"
         "\"stream_type_name\":\"%s\","
         "\"description\":%s,"
         "\"position\":%s"
@@ -252,19 +252,19 @@ Meta_channel::to_be_analyzed () const {
     if (pids.empty()) return false;
     
     auto result = find_if (pids.begin(), pids.end(), [](const Meta_pid& p){
-	    return p.to_be_analyzed;
-	});
+            return p.to_be_analyzed;
+        });
     return result != pids.end();
 }
 
 string
 Meta_channel::to_json () const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 20 * (5 * 1024);
+    constexpr size_t size = 20 * (5 * 1024);
 
     char buffer[size];
     constexpr const char* fmt = "{"
-        "\"number\":%d,"
+        "\"number\":%u,"
         "\"service_name\":\"%s\","
         "\"provider_name\":\"%s\","
         "\"pids\":[%s]"
@@ -368,11 +368,11 @@ Metadata::to_string () const {
 string
 Metadata::to_json () const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 50 * (20 * 5 * 1024);
+    constexpr size_t size = 50 * (20 * 5 * 1024);
 
     char buffer[size];
     constexpr const char* fmt = "{"
-        "\"stream\":%d,"
+        "\"stream\":%u,"
         "\"channels\":[%s]"
         "}";
 
@@ -439,8 +439,8 @@ Metadata::validate_grid (uint width, uint height) const {
                 });
 
             /* decide if there is a problem in a grid */
-            if (((cur_pid.position.width > width) || (cur_pid.position.x < 0)) ||
-                ((cur_pid.position.height > height) || (cur_pid.position.y < 0)) ||
+            if ((cur_pid.position.width > width) ||
+                (cur_pid.position.height > height) ||
                 (rval_inner != (*channel).pids.end()) ||
                 (rval_outer != channels.end())) {
                 failure = true;
