@@ -26,19 +26,19 @@ namespace Ats {
         vector<Metadata> data;
 
         /* ------- Mosaic settings -------------- */
-        pair<int,int> resolution = make_pair(1920, 1080);
-        int background_color = 0;
+        pair<uint,uint> resolution = make_pair(1920, 1080);
+        uint background_color = 0;
 
         sigc::signal<void,const Options&>   set;
         sigc::signal<void,const Options&>   destructive_set;
-	sigc::signal<void>                  updated;
+        sigc::signal<void>                  updated;
     
         Options() {}
         virtual ~Options() {}
 
         bool   is_empty () const;
         void   set_data(const Metadata&);
-	void   set_pid(const int, const int, const int, Meta_pid::Pid_type);
+        void   set_pid(const uint, const uint, const uint, Meta_pid::Pid_type);
         Metadata*           find_stream (uint stream);
         const Metadata*     find_stream (uint stream) const;
 
@@ -52,7 +52,7 @@ namespace Ats {
         void operator=(const Metadata& m) { set_data(m); }
 
         void   connect(Probe&);
-	void   connect(Graph&);
+        void   connect(Graph&);
     };
 };
 

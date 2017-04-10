@@ -86,19 +86,20 @@ Context::to_msgpack() const {
 
 void
 Context::of_json(const string& j) {
+    using Df = Deserializer_failure;
     using json = nlohmann::json;
     auto js = json::parse(j);
-    // TODO throw Wrong_json maybe?
-    if (! js.is_object()) return;
+    if (! js.is_object())
+        throw Df (std::string("Top-level JSON") + Df::expn_object);
 
     for (json::iterator el = js.begin(); el != js.end(); ++el) {
-	if (el.key() == "options" && el.value().is_object()) {
-	    options.of_json(el.value().dump());
-	} else if (el.key() == "settings" && el.value().is_object()) {
-	    settings.of_json(el.value().dump());
-	} else if (el.key() == "graph" && el.value().is_object()) {
-	    graph.of_json(el.value().dump());
-	} 
+        if (el.key() == "options" && el.value().is_object()) {
+            options.of_json(el.value().dump());
+        } else if (el.key() == "settings" && el.value().is_object()) {
+            settings.of_json(el.value().dump());
+        } else if (el.key() == "graph" && el.value().is_object()) {
+            graph.of_json(el.value().dump());
+        }
     }
     
     talk();

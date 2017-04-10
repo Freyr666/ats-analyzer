@@ -6,7 +6,7 @@
 #include <exception>
 
 #include "options.hpp"
-#include "graph.hpp"
+// #include "graph.hpp"
 #include "chatterer.hpp"
 #include "msgtype.hpp"
 

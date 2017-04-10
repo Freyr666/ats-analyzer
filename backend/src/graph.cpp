@@ -6,6 +6,8 @@
 
 #include "graph.hpp"
 #include "json.hpp"
+#include "options.hpp"
+#include "settings.hpp"
 
 using namespace std;
 using namespace Ats;
@@ -141,20 +143,20 @@ Graph::get_state() {
 }
 
 void
-Graph::set_resolution(const pair<int,int> r) {
+Graph::set_resolution(const pair<uint,uint> r) {
     bg_pad->set_property("width", r.first);
     bg_pad->set_property("height", r.second);
 }
 
 void
-Graph::set_position(int stream, int chan, int pid, const Position& p) {
+Graph::set_position(uint stream, uint chan, uint pid, const Position& p) {
     auto n = elms.get(stream, chan, pid);
 
     if (n && n->connected) {
-	n->connected->set_property("height", p.height);
+        n->connected->set_property("height", p.height);
         n->connected->set_property("width", p.width);
-	n->connected->set_property("xpos", p.x);
-	n->connected->set_property("ypos", p.y);
+        n->connected->set_property("xpos", p.x);
+        n->connected->set_property("ypos", p.y);
     }
 }
 
@@ -249,9 +251,9 @@ Graph::create_root(const Metadata& m) {
 }
 
 RefPtr<Gst::Bin>
-Graph::create_branch(const int stream,
-		     const int channel,
-                     const int pid,
+Graph::create_branch(const uint stream,
+                     const uint channel,
+                     const uint pid,
                      const Metadata& m) {
 
     RefPtr<Gst::Pad> src_pad;
@@ -386,11 +388,12 @@ Graph::to_msgpack() const {
 
 void
 Graph::of_json(const string& j) {
+    using Df = Deserializer_failure;
     using json = nlohmann::json;
     auto js = json::parse(j);
  
-    // TODO throw Wrong_json
-    if (! js.is_object()) return;
+    if (! js.is_object())
+        throw Df (std::string("Graph JSON ") + Df::expn_object );
 
     for (json::iterator el = js.begin(); el != js.end(); ++el) {
  	if (el.key() == "state") {
@@ -417,13 +420,13 @@ Graph::Tree::reset () {
 }
 
 void
-Graph::Tree::add (int stream, int chan, int pid, Graph::Node n) {
+Graph::Tree::add (uint stream, uint chan, uint pid, Graph::Node n) {
     auto key = make_tuple (stream,chan,pid);
     _tree.insert(make_pair(key,n));
 }
 
 Graph::Node*
-Graph::Tree::get (int stream, int chan, int pid) {
+Graph::Tree::get (uint stream, uint chan, uint pid) {
     auto key = make_tuple (stream,chan,pid);
     auto it = _tree.find (key);
     if (it != _tree.end ())

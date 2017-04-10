@@ -7,7 +7,6 @@
 
 #include "msgtype.hpp"
 #include "chatterer.hpp"
-#include "probe.hpp"
 #include "errexpn.hpp"
 
 using namespace std;
@@ -34,7 +33,7 @@ namespace Ats {
         struct Channel_settings {
 
             struct Error_overlay {
-                int error_color = 0;
+                uint error_color = 0;
                 bool enabled = true;
 
                 string to_string() const;
@@ -79,9 +78,9 @@ namespace Ats {
             };
 
             bool show_border = false;
-            int border_color = 0;
+            uint border_color = 0;
             bool show_aspect_border = false;
-            int aspect_border_color = 0;
+            uint aspect_border_color = 0;
             Error_overlay error_overlay;
             Channel_name channel_name;
             Audio_meter audio_meter;
@@ -106,7 +105,7 @@ namespace Ats {
             bool luma_peak_en = false;
             float luma_peak = 16.;
             float black_time = 10.;
-            int black_pixel = 16;
+            uint black_pixel = 16;
             /* freeze */
             bool freeze_cont_en = true;
             float freeze_cont = 90.;
@@ -117,7 +116,7 @@ namespace Ats {
             bool diff_peak_en = false;
             float diff_peak = .02;
             float freeze_time = 10.;
-            int pixel_diff = 0;
+            uint pixel_diff = 0;
             /* blockiness */
             bool blocky_cont_en = true;
             float blocky_cont = 4.;
@@ -139,7 +138,7 @@ namespace Ats {
             float loudness_time = 2.;
             /* adv loudness */
             float adv_diff = 1.5;
-            int adv_buf = 2 * 60 * 60;
+            uint adv_buf = 2 * 60 * 60;
 
             string to_string() const;
             string to_json() const;
@@ -147,7 +146,7 @@ namespace Ats {
 
         struct Output_sink {
             string address = "239.0.0.1";
-            int port = 1234;
+            uint port = 1234;
             bool enabled = true;
 
             string to_string() const;
@@ -168,10 +167,10 @@ namespace Ats {
         Settings() {}
         virtual ~Settings() {}
 
-	void   init(Initial&);
+        void   init(Initial&);
 
         // Chatter implementation
-	string to_json_body() const;
+        string to_json_body() const;
 	
         string to_string() const;	
         string to_json()   const;

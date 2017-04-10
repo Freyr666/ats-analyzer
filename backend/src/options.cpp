@@ -42,10 +42,10 @@ Options::set_data(const Metadata& m) {
 }
 
 void
-Options::set_pid(const int stream,
-		 const int chan,
-		 const int pid,
-		 Meta_pid::Pid_type v) {
+Options::set_pid(const uint stream,
+                 const uint chan,
+                 const uint pid,
+                 Meta_pid::Pid_type v) {
     auto s = find_stream(stream);
     auto p = s->find_pid(chan, pid);
     p->set(v);
@@ -106,13 +106,13 @@ Options::to_string() const {
 string
 Options::to_json() const {
     using Sf = Chatterer::Serializer_failure;
-    constexpr int size = 1024 * 8;
+    constexpr size_t size = 1024 * 8;
 
     char buffer[size];
     constexpr const char* fmt = "{"
         "\"prog_list\":[%s],"
-        "\"resolution\":{\"width\":%d,\"height\":%d},"
-        "\"background_color\":%d"
+        "\"resolution\":{\"width\":%u,\"height\":%u},"
+        "\"background_color\":%u"
         "}";
 
     string s = "";
@@ -157,7 +157,7 @@ Options::of_json(const string& j) {
                 if (!j_stream["channels"].is_array())
                     throw Df(jk + div + "Metadata" + div + "channels" + Df::expn_object);
 
-                int stream_id = j_stream["stream"].get<int>();
+                uint stream_id = j_stream["stream"].get<uint>();
                 auto matching_stream = find_stream(stream_id);
 
                 /* if such stream was not found */
@@ -176,7 +176,7 @@ Options::of_json(const string& j) {
                         throw Df(jk + div + "Meta_channel" + div + "number" + \
                                  Df::expn_object + " or" + Df::expn_null);
 
-                    int number = j_channel["number"].get<int>();
+                    uint number = j_channel["number"].get<uint>();
                     auto matching_channel = matching_stream->find_channel(number);
 
                     /* if such channel was not found */
@@ -191,7 +191,7 @@ Options::of_json(const string& j) {
                         if (!j_pid["pid"].is_number())
                             throw Df(jk + div + "Meta_pid" + div + "pid" + Df::expn_number);
 
-                        int pid = j_pid["pid"].get<int>();
+                        uint pid = j_pid["pid"].get<uint>();
                         auto matching_pid = matching_stream->find_pid(number, pid);
 
                         /* if such pid was not found */
@@ -223,28 +223,28 @@ Options::of_json(const string& j) {
                                         if (!pos_v.is_number())
                                             throw Df(jk + div + "Meta_pid" + div + k + \
                                                      + div + pos_k + Df::expn_number);
-                                        matching_pid->position.x = pos_v.get<int>();
+                                        matching_pid->position.x = pos_v.get<uint>();
                                         o_set = true;
                                     }
                                     else if (pos_k == "y") {
                                         if (!pos_v.is_number())
                                             throw Df(jk + div + "Meta_pid" + div + k + \
                                                      + div + pos_k + Df::expn_number);
-                                        matching_pid->position.y = pos_v.get<int>();
+                                        matching_pid->position.y = pos_v.get<uint>();
                                         o_set = true;
                                     }
                                     else if (pos_k == "width") {
                                         if (!pos_v.is_number())
                                             throw Df(jk + div + "Meta_pid" + div + k + \
                                                      + div + pos_k + Df::expn_number);
-                                        matching_pid->position.width = pos_v.get<int>();
+                                        matching_pid->position.width = pos_v.get<uint>();
                                         o_set = true;
                                     }
                                     else if (pos_k == "height") {
                                         if (!pos_v.is_number())
                                             throw Df(jk + div + "Meta_pid" + div + k + \
                                                      + div + pos_k + Df::expn_number);
-                                        matching_pid->position.height = pos_v.get<int>();
+                                        matching_pid->position.height = pos_v.get<uint>();
                                         o_set = true;
                                     }
                                 }
@@ -262,19 +262,19 @@ Options::of_json(const string& j) {
 
                 if (k == "width") {
                     if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    resolution.first = v.get<int>();
+                    resolution.first = v.get<uint>();
                     o_destr_set = true;
                 }
                 else if (k == "height") {
                     if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    resolution.second = v.get<int>();
+                    resolution.second = v.get<uint>();
                     o_destr_set = true;
                 }
             }
         }
         else if (jk == "background_color") {
             if (!jv.is_number()) throw Df(jk + Df::expn_number);
-            background_color = jv.get<int>();
+            background_color = jv.get<uint>();
             o_set = true;
         }
     }
