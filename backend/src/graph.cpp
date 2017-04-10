@@ -6,6 +6,8 @@
 
 #include "graph.hpp"
 #include "json.hpp"
+#include "options.hpp"
+#include "settings.hpp"
 
 using namespace std;
 using namespace Ats;

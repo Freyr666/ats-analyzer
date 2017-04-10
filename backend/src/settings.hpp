@@ -7,7 +7,6 @@
 
 #include "msgtype.hpp"
 #include "chatterer.hpp"
-#include "probe.hpp"
 #include "errexpn.hpp"
 
 using namespace std;
