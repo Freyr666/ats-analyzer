@@ -1,0 +1,32 @@
+* Pre-pre-alpha goals [8/12]:
+
+- [X] Forbid move and copy constructors for any non-copyable objects [15ee6b4]
+- [X] Extend udpsrc buffer size [171ecff]
+- [X] Switch to decodebin element for decoding [3cb0858]
+- [X] Implement command-line options parser [87f4bea]
+- [X] Reimplement Metadata [6fb6470]
+- [X] Implement Control type [6fb6470]
+- [X] Implement Options type [6fb6470]
+- [X] Remove address.cpp [48463b8]
+- [ ] Cleanup int/uint mess
+- [ ] Add predefinitions
+- [ ] Add JSON support
+- [ ] Implement Graph type
+  - [ ] frame size validation support
+  - [ ] mosaic compositing
+  - [ ] graph apply functions
+  - [ ] rtp sink
+
+* Pre-alpha goals [0/2]:
+
+- [ ] Add msgpack support
+- [ ] Add analysing elements
+
+* Beta goals [0/4]:
+
+- [ ] Switch from json.hpp to yacc-based parser
+- [ ] Implement custom msg drawing support
+- [ ] Man pages
+- [ ] Inplement drawing element
+
+* Release goals [/]:
