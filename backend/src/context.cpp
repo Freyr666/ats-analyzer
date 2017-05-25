@@ -50,69 +50,63 @@ Context::forward_talk(const Chatterer& c) {
     
     switch (msg_type) {
     case Msg_type::Debug:
-	rval = c.to_string(); break;
-    case Msg_type::Json: 
-        rval = c.to_json(); break;
+	rval = c.name + " : ";
+	rval += c.to_string();
+	break;
+    case Msg_type::Json:
+	rval = "{" + c.name;
+	rval += ":";
+        rval += c.to_json();
+	rval += "}";
+	break;
     case Msg_type::Msgpack:
-        rval = c.to_msgpack(); break;
+        rval = c.name + c.to_msgpack();
+	break;
     }
     send.emit(rval);
 }
 void
-Context::forward_error(const std::string&) {
-    
-}
-void
-Context::dispatch(const std::string&) {}
+Context::forward_error(const std::string& s) {
+    std::string rval;
 
-/*
-string
-Context::to_string() const {
-    string rval = graph.to_string();
-    rval += options.to_string();
-    rval += settings.to_string();
-    return rval;
-}
-
-string
-Context::to_json() const {
-    string rval = "{\"graph\":";
-    rval += graph.to_json();
-    rval += ",\"options\":";
-    rval += options.to_json();
-    rval += ",\"settings\":";
-    rval += settings.to_json();
-    rval += "}";
-    return rval;
-}
-
-string
-Context::to_msgpack() const {
-    return "todo";
-}
-
-void
-Context::of_json(const string& j) {
-    using json = nlohmann::json;
-    auto js = json::parse(j);
-    if (! js.is_object())
-        throw Df (std::string("Top-level JSON") + Df::expn_object);
-
-    for (json::iterator el = js.begin(); el != js.end(); ++el) {
-        if (el.key() == "options" && el.value().is_object()) {
-            options.of_json(el.value().dump());
-        } else if (el.key() == "settings" && el.value().is_object()) {
-            settings.of_json(el.value().dump());
-        } else if (el.key() == "graph" && el.value().is_object()) {
-            graph.of_json(el.value().dump());
-        }
+    switch (msg_type) {
+    case Msg_type::Debug:
+	rval = "Error: " + s;
+	break;
+    case Msg_type::Json: 
+        rval = "{error: " + s;
+	rval += "}";
+	break;
+    case Msg_type::Msgpack:
+        rval = s;
+	break;
     }
+    send_err.emit(rval);
+}
+void
+Context::dispatch(const std::string& s) {
+    using json = nlohmann::json;
+    using Df = Chatterer::Deserializer_failure;
+    json js;
     
-    talk();
+    switch (msg_type) {
+    case Msg_type::Debug:
+    case Msg_type::Json:
+	js = json::parse(s);
+	if (! js.is_object())
+	    throw Df (std::string("Top-level JSON") + Df::expn_object);
+	for (json::iterator el = js.begin(); el != js.end(); ++el) {
+	    if (el.key() == "options" && el.value().is_object()) {
+		options.of_json(el.value());
+	    } else if (el.key() == "settings" && el.value().is_object()) {
+		settings.of_json(el.value());
+	    } else if (el.key() == "graph" && el.value().is_object()) {
+		graph.of_json(el.value());
+	    }
+	}
+	break;
+    case Msg_type::Msgpack:
+	break;
+    }
 }
 
-void
-Context::of_msgpack(const string&) {
-    // TODO
-}
-*/
