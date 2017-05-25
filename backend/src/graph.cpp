@@ -387,10 +387,9 @@ Graph::to_msgpack() const {
 }
 
 void
-Graph::of_json(const string& j) {
+Graph::of_json(json& js) {
     using Df = Deserializer_failure;
     using json = nlohmann::json;
-    auto js = json::parse(j);
  
     if (! js.is_object())
         throw Df (std::string("Graph JSON ") + Df::expn_object );

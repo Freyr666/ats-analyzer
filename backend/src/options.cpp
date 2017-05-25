@@ -39,6 +39,7 @@ Options::set_data(const Metadata& m) {
         }
     }
     updated.emit();
+    send.emit(*this);
 }
 
 void
@@ -50,6 +51,7 @@ Options::set_pid(const uint stream,
     auto p = s->find_pid(chan, pid);
     p->set(v);
     updated.emit(); // TODO add validation
+    send.emit(*this);
 }
 
 Metadata*
@@ -129,7 +131,7 @@ Options::to_json() const {
 }
 
 void
-Options::of_json(const string& j) {
+Options::of_json(json& js) {
     using Df = Chatterer::Deserializer_failure;
     using json = nlohmann::json;
 
@@ -137,8 +139,6 @@ Options::of_json(const string& j) {
     bool o_set = false;
     bool o_destr_set = false;
     
-    auto js = json::parse(j);
-
     if (! js.is_object()) throw Df(string("Options") + Df::expn_object);
 
     for (json::iterator el = js.begin(); el != js.end(); ++el) {

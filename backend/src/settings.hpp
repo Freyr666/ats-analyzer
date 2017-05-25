@@ -27,7 +27,7 @@ namespace Ats {
         static string usage (string prog_name);
     };
 
-    class Settings : public Chatterer {
+    class Settings : public Chatterer, public Logger {
 
     public:
         struct Channel_settings {
@@ -164,17 +164,17 @@ namespace Ats {
 
         sigc::signal<void,const Settings&>   set;
     
-        Settings() {}
+        Settings(const std::string& n) : Chatterer(n) {}
         virtual ~Settings() {}
 
         void   init(Initial&);
 
-        // Chatter implementation
+        // Chatterer implementation
         string to_json_body() const;
 	
         string to_string() const;	
         string to_json()   const;
-        void   of_json(const string&);
+        void   of_json(json&);
         string to_msgpack()   const;
         void   of_msgpack(const string&);
     };

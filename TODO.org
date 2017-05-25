@@ -1,4 +1,4 @@
-* Pre-pre-alpha goals [8/12]:
+* Pre-pre-alpha goals [9/13]:
 
 - [X] Forbid move and copy constructors for any non-copyable objects [15ee6b4]
 - [X] Extend udpsrc buffer size [171ecff]
@@ -8,7 +8,8 @@
 - [X] Implement Control type [6fb6470]
 - [X] Implement Options type [6fb6470]
 - [X] Remove address.cpp [48463b8]
-- [ ] Cleanup int/uint mess
+- [X] Cleanup int/uint mess
+- [ ] Break Chatterer into Logger, Deputy and Character
 - [ ] Add predefinitions
 - [ ] Add JSON support
 - [ ] Implement Graph type
@@ -17,8 +18,9 @@
   - [ ] graph apply functions
   - [ ] rtp sink
 
-* Pre-alpha goals [0/2]:
+* Pre-alpha goals [0/3]:
 
+- [ ] Inline doc
 - [ ] Add msgpack support
 - [ ] Add analysing elements
 

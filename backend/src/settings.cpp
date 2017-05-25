@@ -514,14 +514,11 @@ Settings::to_json() const {
 }
 
 void
-Settings::of_json(const string& j) {
+Settings::of_json(json& js) {
     using Df = Chatterer::Deserializer_failure;
-    using json = nlohmann::json;
     
     constexpr const char* div = "::";
     bool o_set = false;
-
-    auto js = json::parse(j);
 
     if (!js.is_object()) throw Df(string("Settings") + Df::expn_object);
 

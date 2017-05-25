@@ -19,10 +19,10 @@ namespace Ats {
     class Options;
     class Settings;
     
-    class Graph : public Chatterer {
+    class Graph : public Chatterer, public Logger {
 	
     public:
-        Graph() {}
+        Graph(const std::string& n) : Chatterer(n) {}
         Graph(const Graph&) = delete;
         Graph(Graph&&) = delete;
         virtual ~Graph() {}
@@ -47,7 +47,7 @@ namespace Ats {
         // Chatterer
         string to_string() const;
         string to_json() const;
-        void   of_json(const string&);
+        void   of_json(json&);
         string to_msgpack() const;
         void   of_msgpack(const string&);
 	

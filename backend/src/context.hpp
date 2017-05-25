@@ -12,13 +12,14 @@
 #include "options.hpp"
 #include "settings.hpp"
 #include "graph.hpp"
+#include "msgtype.hpp"
 
 using namespace std;
 using namespace Glib;
 
 namespace Ats {
 
-    class Context : public Chatterer {
+    class Context : public Chatterer_proxy, public Logger {
     public:
 	struct Size_error : std::exception {};
 	
@@ -37,14 +38,21 @@ namespace Ats {
 	Context(Context&&) = delete;
 	virtual ~Context() {}
 
+	Msg_type msg_type = Msg_type::Debug;
+
 	void run() { main_loop->run(); }
 
-	// Chatterer	
+	// Chatterer_proxy
+	void forward_talk(const Chatterer&);
+	void forward_error(const std::string&);
+	void dispatch(const std::string&);
+	/*
 	string to_string() const;	
 	string to_json()   const;
 	void   of_json(const string&);
 	string to_msgpack()   const;
 	void   of_msgpack(const string&);
+	*/
     };
 
 };

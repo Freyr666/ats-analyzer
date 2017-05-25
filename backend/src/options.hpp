@@ -16,7 +16,7 @@ namespace Ats {
     class Graph;
     class Probe;
 
-    class Options : public Chatterer {
+    class Options : public Chatterer, public Logger {
 
     public:
 
@@ -33,7 +33,7 @@ namespace Ats {
         sigc::signal<void,const Options&>   destructive_set;
         sigc::signal<void>                  updated;
     
-        Options() {}
+        Options(const std::string& n) : Chatterer(n) {}
         virtual ~Options() {}
 
         bool   is_empty () const;
@@ -45,7 +45,7 @@ namespace Ats {
         // Chatter implementation
         string to_string() const;	
         string to_json()   const;
-        void   of_json(const string&);
+        void   of_json(json&);
         string to_msgpack()   const;
         void   of_msgpack(const string&);
 

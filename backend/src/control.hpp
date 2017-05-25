@@ -23,25 +23,24 @@ namespace Ats {
         RefPtr<IOChannel> in;
         RefPtr<IOChannel> out;
         RefPtr<IOChannel> out_log;
-        Msg_type          msg_type;
 	
     public:
-        Control (Msg_type t = Msg_type::Debug);
+        Control ();
         Control (const Control&) = delete;
         Control (Control&&) = delete;
 
-        sigc::signal<void,const string&> received_json;
-        sigc::signal<void,const string&> received_msgpack;
+        sigc::signal<void,const string&> received;
 
-	void set_msg_type(Msg_type t) { msg_type = t; }
         void recv ();
-        void send (const Chatterer&);
+        void send (const std::string&);
         void error(const std::string&);
         void log  (const std::string&);
         
-        void   connect(Chatterer& c) {
+        void   connect(Chatterer_proxy& c) {
             c.send.connect(sigc::mem_fun(this, &Control::send));
             c.send_err.connect(sigc::mem_fun(this, &Control::error));
+        }
+	void   connect(Logger& c) {
             c.send_log.connect(sigc::mem_fun(this, &Control::log));
         }
     };
