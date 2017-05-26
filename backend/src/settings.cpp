@@ -83,20 +83,14 @@ Settings::Channel_settings::Error_overlay::to_string() const {
     return rval;
 }
 
-string
-Settings::Channel_settings::Error_overlay::to_json() const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 128;
+void
+Ats::to_json(json& j, const Settings::Channel_settings::Error_overlay& eo) {
+    j = {{"enabled", eo.enabled},
+         {"error_color", eo.error_color}};
+}
 
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"enabled\":%s,"
-        "\"error_color\":%u"
-        "}";
-
-    int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), error_color);
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Channel_settings::Error_overlay: ") + Sf::expn_overflow + std::to_string(size));
+void
+Ats::from_json(const json& j, Settings::Channel_settings::Error_overlay& eo) {
 }
 
 string
@@ -111,22 +105,17 @@ Settings::Channel_settings::Channel_name::to_string() const {
     return rval;
 }
 
-string
-Settings::Channel_settings::Channel_name::to_json() const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 256;
-
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"enabled\":%s,"
-        "\"font_size\":%d,"
-        "\"fmt\":\"%s\""
-        "}";
-
-    int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), font_size, this->fmt.c_str());
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Channel_settings::Channel_name: ") + Sf::expn_overflow + std::to_string(size));
+void
+Ats::to_json(json& j, const Settings::Channel_settings::Channel_name& cn) {
+    j = {{"enabled", cn.enabled},
+         {"font_size", cn.font_size},
+         {"fmt", cn.fmt}};
 }
+
+void
+Ats::from_json(const json& j, Settings::Channel_settings::Channel_name& cn) {
+}
+
 
 string
 Settings::Channel_settings::Audio_meter::to_string() const {
@@ -138,24 +127,17 @@ Settings::Channel_settings::Audio_meter::to_string() const {
     return rval;
 }
 
-string
-Settings::Channel_settings::Audio_meter::to_json() const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 128;
+void
+Ats::to_json(json& j, const Settings::Channel_settings::Audio_meter& am) {
+    using Audio_meter_pos = Settings::Channel_settings::Audio_meter::Audio_meter_pos;
+    j = {{"enabled", am.enabled},
+         {"position", (am.position == Audio_meter_pos::Left ? "left" :
+                       am.position == Audio_meter_pos::Right ? "right" :
+                       "right")}};
+}
 
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"enabled\":%s,"
-        "\"position\":\"%s\""
-        "}";
-
-    int n = snprintf (buffer, size, fmt,
-                      Ats::to_string(enabled).c_str(),
-                      position == Audio_meter_pos::Left ? "left" :
-                      position == Audio_meter_pos::Right ? "right" :
-                      "right");
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Channel_settings::Audio_meter: ") + Sf::expn_overflow + std::to_string(size));
+void
+Ats::from_json(const json& j, Settings::Channel_settings::Audio_meter& am) {
 }
 
 string
@@ -186,40 +168,27 @@ Settings::Channel_settings::Status_bar::to_string() const {
     return rval;
 }
 
-string
-Settings::Channel_settings::Status_bar::to_json() const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 1024;
+void
+Ats::to_json(json& j, const Settings::Channel_settings::Status_bar& sb) {
+    using Status_bar_pos = Settings::Channel_settings::Status_bar::Status_bar_pos;
+    j = {{"enabled", sb.enabled},
+         {"position", (sb.position == Status_bar_pos::Top_left ? "top_left" :
+                       sb.position == Status_bar_pos::Top_right ? "top_right" :
+                       sb.position == Status_bar_pos::Left ? "left" :
+                       sb.position == Status_bar_pos::Right ? "right" :
+                       sb.position == Status_bar_pos::Bottom_left ? "bottom_left" :
+                       sb.position == Status_bar_pos::Bottom_right ? "bottom_right" :
+                       "top_left")},
+         {"aspect", sb.aspect},
+         {"subtitles", sb.subtitles},
+         {"teletext", sb.teletext},
+         {"eit", sb.eit},
+         {"qos", sb.qos},
+         {"scte35", sb.scte35}};
+}
 
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"enabled\":%s,"
-        "\"position\":\"%s\","
-        "\"aspect\":%s,"
-        "\"subtitles\":%s,"
-        "\"teletext\":%s,"
-        "\"eit\":%s,"
-        "\"qos\":%s,"
-        "\"scte35\":%s"
-        "}";
-
-    int n = snprintf (buffer, size, fmt,
-                      Ats::to_string(enabled).c_str(),
-                      position == Status_bar_pos::Top_left ? "top_left" :
-                      position == Status_bar_pos::Top_right ? "top_right" :
-                      position == Status_bar_pos::Left ? "left" :
-                      position == Status_bar_pos::Right ? "right" :
-                      position == Status_bar_pos::Bottom_left ? "bottom_left" :
-                      position == Status_bar_pos::Bottom_right ? "bottom_right" :
-                      "top_left",
-                      Ats::to_string(aspect).c_str(),
-                      Ats::to_string(subtitles).c_str(),
-                      Ats::to_string(teletext).c_str(),
-                      Ats::to_string(eit).c_str(),
-                      Ats::to_string(qos).c_str(),
-                      Ats::to_string(scte35).c_str());
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Channel_settings::Status_bar ") + Sf::expn_overflow + std::to_string(size));
+void
+Ats::from_json(const json& j, Settings::Channel_settings::Status_bar& sb) {
 }
 
 string
@@ -243,34 +212,20 @@ Settings::Channel_settings::to_string() const {
     return rval;
 }
 
-string
-Settings::Channel_settings::to_json() const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 1024;
+void
+Ats::to_json(json& j, const Settings::Channel_settings& c) {
+    j = {{"show_border", c.show_border},
+         {"border_color", c.border_color},
+         {"show_aspect_border", c.show_aspect_border},
+         {"aspect_border_color", c.aspect_border_color},
+         {"error_overlay", c.error_overlay},
+         {"channel_name", c.channel_name},
+         {"audio_meter", c.audio_meter},
+         {"status_bar", c.status_bar}};
+}
 
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"show_border\":%s,"
-        "\"border_color\":%u,"
-        "\"show_aspect_border\":%s,"
-        "\"aspect_border_color\":%u,"
-        "\"error_overlay\":%s,"
-        "\"channel_name\":%s,"
-        "\"audio_meter\":%s,"
-        "\"status_bar\":%s"
-        "}";
-
-    int n = snprintf (buffer, size, fmt,
-                      Ats::to_string(show_border).c_str(),
-                      border_color,
-                      Ats::to_string(show_aspect_border).c_str(),
-                      aspect_border_color,
-                      error_overlay.to_json().c_str(),
-                      channel_name.to_json().c_str(),
-                      audio_meter.to_json().c_str(),
-                      status_bar.to_json().c_str());
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Channel_settings: ") + Sf::expn_overflow + std::to_string(size));
+void
+Ats::from_json(const json& j, Settings::Channel_settings& sb) {
 }
 
 /* ---------- QoE settings --------------- */
@@ -361,110 +316,52 @@ Settings::Qoe_settings::to_string() const {
     return rval;
 }
 
-string
-Settings::Qoe_settings::to_json() const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 1024;
-
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"vloss\":%.2f,"
-        "\"aloss\":%.2f,"
-        "\"black_cont_en\":%s,"
-        "\"black_cont\":%.2f,"
-        "\"black_peak_en\":%s,"
-        "\"black_peak\":%.2f,"
-        "\"luma_cont_en\":%s,"
-        "\"luma_cont\":%.2f,"
-        "\"luma_peak_en\":%s,"
-        "\"luma_peak\":%.2f,"
-        "\"black_time\":%.2f,"
-        "\"black_pixel\":%u,"
-        "\"freeze_cont_en\":%s,"
-        "\"freeze_cont\":%.2f,"
-        "\"freeze_peak_en\":%s,"
-        "\"freeze_peak\":%.2f,"
-        "\"diff_cont_en\":%s,"
-        "\"diff_cont\":%.2f,"
-        "\"diff_peak_en\":%s,"
-        "\"diff_peak\":%.2f,"
-        "\"freeze_time\":%.2f,"
-        "\"pixel_diff\":%u,"
-        "\"blocky_cont_en\":%s,"
-        "\"blocky_cont\":%.2f,"
-        "\"blocky_peak_en\":%s,"
-        "\"blocky_peak\":%.2f,"
-        "\"blocky_time\":%.2f,"
-        "\"mark_blocks\":%s,"
-        "\"silence_cont_en\":%s,"
-        "\"silence_cont\":%.2f,"
-        "\"silence_peak_en\":%s,"
-        "\"silence_peak\":%.2f,"
-        "\"silence_time\":%.2f,"
-        "\"loudness_cont_en\":%s,"
-        "\"loudness_cont\":%.2f,"
-        "\"loudness_peak_en\":%s,"
-        "\"loudness_peak\":%.2f,"
-        "\"loudness_time\":%.2f,"
-        "\"adv_diff\":%.2f,"
-        "\"adv_buf\":%u"
-        "}";
-
-    int n = snprintf (buffer, size, fmt,
-                      vloss, aloss,
-                      Ats::to_string(black_cont_en).c_str(), black_cont,
-                      Ats::to_string(black_peak_en).c_str(), black_peak,
-                      Ats::to_string(luma_cont_en).c_str(), luma_cont,
-                      Ats::to_string(luma_peak_en).c_str(), luma_peak,
-                      black_time, black_pixel,
-                      Ats::to_string(freeze_cont_en).c_str(), freeze_cont,
-                      Ats::to_string(freeze_peak_en).c_str(), freeze_peak,
-                      Ats::to_string(diff_cont_en).c_str(), diff_cont,
-                      Ats::to_string(diff_peak_en).c_str(), diff_peak,
-                      freeze_time, pixel_diff,
-                      Ats::to_string(blocky_cont_en).c_str(), blocky_cont,
-                      Ats::to_string(blocky_peak_en).c_str(), blocky_peak,
-                      blocky_time, Ats::to_string(mark_blocks).c_str(),
-                      Ats::to_string(silence_cont_en).c_str(), silence_cont,
-                      Ats::to_string(silence_peak_en).c_str(), silence_peak,
-                      silence_time,
-                      Ats::to_string(loudness_cont_en).c_str(), loudness_cont,
-                      Ats::to_string(loudness_peak_en).c_str(), loudness_peak,
-                      loudness_time,
-                      adv_diff, adv_buf);
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Qoe_settings: ") + Sf::expn_overflow + std::to_string(size));
+void
+Ats::to_json(json& j, const Settings::Qoe_settings& qoe) {
+    j = {{"vloss", qoe.vloss},
+         {"aloss", qoe.aloss},
+         {"black_cont_en", qoe.black_cont_en},
+         {"black_cont", qoe.black_cont},
+         {"black_peak_en", qoe.black_peak_en},
+         {"black_peak", qoe.black_peak},
+         {"luma_cont_en", qoe.luma_cont_en},
+         {"luma_cont", qoe.luma_cont},
+         {"luma_peak_en", qoe.luma_peak},
+         {"luma_peak", qoe.luma_peak},
+         {"black_time", qoe.black_time},
+         {"black_pixel", qoe.black_pixel},
+         {"freeze_cont_en", qoe.freeze_cont_en},
+         {"freeze_cont", qoe.freeze_cont},
+         {"freeze_peak_en", qoe.freeze_peak_en},
+         {"freeze_peak", qoe.freeze_peak},
+         {"diff_cont_en", qoe.diff_cont_en},
+         {"diff_cont", qoe.diff_cont},
+         {"diff_peak_en", qoe.diff_peak_en},
+         {"diff_peak", qoe.luma_peak},
+         {"freeze_time", qoe.freeze_time},
+         {"pixel_diff", qoe.pixel_diff},
+         {"blocky_cont_en", qoe.blocky_cont_en},
+         {"blocky_cont", qoe.blocky_cont},
+         {"blocky_peak_en", qoe.blocky_peak_en},
+         {"blocky_peak", qoe.blocky_peak},
+         {"blocky_time", qoe.blocky_time},
+         {"mark_blocks", qoe.mark_blocks},
+         {"silence_cont_en", qoe.silence_cont_en},
+         {"silence_cont", qoe.silence_cont},
+         {"silence_peak_en", qoe.silence_peak_en},
+         {"silence_peak", qoe.silence_peak},
+         {"silence_time", qoe.silence_time},
+         {"loudness_cont_en", qoe.loudness_cont_en},
+         {"loudness_cont", qoe.loudness_cont},
+         {"loudness_peak_en", qoe.loudness_peak_en},
+         {"loudness_peak", qoe.loudness_peak},
+         {"loudness_time", qoe.loudness_time},
+         {"adv_diff", qoe.adv_diff},
+         {"adv_buf", qoe.adv_buf}};
 }
 
-/* ---------- Output sink settings --------------- */
-
-string
-Settings::Output_sink::to_string() const {
-    string rval = "Enabled: ";
-    rval += Ats::to_string(enabled);
-    rval += ", Address: ";
-    rval += address;
-    rval += ", Port: ";
-    rval += std::to_string(port);
-    rval += "\n";
-    return rval;
-}
-
-string
-Settings::Output_sink::to_json() const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 256;
-
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"enabled\":%s,"
-        "\"address\":\"%s\","
-        "\"port\":%u"
-        "}";
-
-    int n = snprintf (buffer, size, fmt, Ats::to_string(enabled).c_str(), address.c_str(), port);
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Output_sink: ") + Sf::expn_overflow + std::to_string(size));
+void
+Ats::from_json(const json& j, Settings::Qoe_settings& qoe) {
 }
 
 /* ---------- Settings -------------------- */
@@ -486,31 +383,25 @@ Settings::to_string() const {
     rval += "\tChannel_settings:\n\t\t";
     string channel_string = channel_settings.to_string();
     rval += Ats::add_indent(channel_string);
-    rval += "\tOutput sink settings:\n\t\t";
-    string output_sink_string = output_sink_settings.to_string();
-    rval += Ats::add_indent(output_sink_string);
     rval += "\n";
     return rval;
 }
 
+json
+Settings::serialize() const {
+    json j = json{{"qoe_settings", qoe_settings},
+                  {"channel_settings", channel_settings}};
+    return j;
+}
+
+void
+Settings::deserialize(const json& j) {
+    
+}
+
 string
 Settings::to_json() const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 1024 * 8;
-
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"qoe_settings\":%s,"
-        "\"channel_settings\":%s,"
-        "\"output_sink\":%s"
-        "}";
-
-    int n = snprintf (buffer, size, fmt,
-                      qoe_settings.to_json().c_str(),
-                      channel_settings.to_json().c_str(),
-                      output_sink_settings.to_json().c_str());
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Settings: ") + Sf::expn_overflow + std::to_string(size));
+    return "";
 }
 
 void
@@ -899,29 +790,6 @@ Settings::of_json(json& js) {
                 }
             }
         }
-        else if (jk == "output_sink_settings") {
-            if (!jv.is_object()) throw Df(jk + Df::expn_object);
-            for (json::iterator it = jv.begin(); it != jv.end(); ++it) {
-                const std::string k = it.key();
-                auto v = it.value();
- 
-                if (k == "enabled") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    output_sink_settings.enabled = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "address") {
-                    if (!v.is_string()) throw Df(jk + div + k + Df::expn_string);
-                    output_sink_settings.address = v.get<std::string>();
-                    o_set = true;
-                }
-                else if (k == "port") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    output_sink_settings.port = v.get<uint>();
-                    o_set = true;
-                }
-            }
-        }
     }
 
     if (o_set) set.emit(*this);
@@ -935,16 +803,4 @@ Settings::to_msgpack() const {
 void
 Settings::of_msgpack(const string&) {
     set.emit(*this);
-}
-
-json
-Settings::serialize() const {
-    // TODO add implementation
-    json j = 42;
-    return j;
-}
-
-void
-Settings::deserialize(const json& j) {
-    // TODO add implementation
 }

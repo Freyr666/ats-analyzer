@@ -147,23 +147,11 @@ namespace Ats {
             string to_json() const;
         };
 
-        struct Output_sink {
-            string address = "239.0.0.1";
-            uint port = 1234;
-            bool enabled = true;
-
-            string to_string() const;
-            string to_json() const;
-        };
-
         /* ------- Qoe analysis settings -------- */
         Qoe_settings qoe_settings;
 
         /* ------- Mosaic settings -------------- */
         Channel_settings channel_settings;
-
-        /* ------- Output sink settings ------- */
-        Output_sink output_sink_settings;
 
         sigc::signal<void,const Settings&>   set;
     
@@ -187,6 +175,25 @@ namespace Ats {
         //
 
     };
+
+    // nlohmann json arbitrary types conversions
+    void to_json(json& j, const Settings::Channel_settings::Error_overlay&);
+    void from_json(const json& j, Settings::Channel_settings::Error_overlay&);
+
+    void to_json(json& j, const Settings::Channel_settings::Channel_name&);
+    void from_json(const json& j, Settings::Channel_settings::Channel_name&);
+
+    void to_json(json& j, const Settings::Channel_settings::Audio_meter&);
+    void from_json(const json& j, Settings::Channel_settings::Audio_meter&);
+
+    void to_json(json& j, const Settings::Channel_settings::Status_bar&);
+    void from_json(const json& j, Settings::Channel_settings::Status_bar&);
+
+    void to_json(json& j, const Settings::Channel_settings&);
+    void from_json(const json& j, Settings::Channel_settings&);
+
+    void to_json(json& j, const Settings::Qoe_settings&);
+    void from_json(const json& j, Settings::Qoe_settings&);
 };
 
 #endif /* SETTINGS_H */
