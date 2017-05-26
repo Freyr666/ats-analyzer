@@ -1,6 +1,7 @@
 #ifndef METADATA_H
 #define METADATA_H
 
+#include "json.hpp"
 #include <string>
 #include <vector>
 #include <exception>
@@ -14,6 +15,8 @@ using namespace std;
 
 namespace Ats {
 
+    using json = nlohmann::json;
+
     struct Position {
         uint x = 0;
         uint y = 0;
@@ -24,8 +27,6 @@ namespace Ats {
         bool operator!= (const Position&);
         bool is_overlap (const Position&);
         string to_string () const;
-        string to_json()   const;
-        void   of_json(const string&);
     };
 
     struct Meta_pid {
@@ -41,17 +42,11 @@ namespace Ats {
             pair<uint, uint> aspect_ratio = {0, 0};
             string interlaced;
             float frame_rate = 0;
-
-            string to_json()   const;
-            void   of_json(const string&);
         };
         struct Audio_pid {
             string codec;
             string bitrate;
             uint sample_rate = 0;
-
-            string to_json()   const;
-            void   of_json(const string&);
         };
         using Pid_type = boost::variant<Audio_pid, Video_pid, Empty_pid>;
 
@@ -71,8 +66,6 @@ namespace Ats {
         void        set (Audio_pid a) { data = a; }
         void        set (Pid_type p)  { data = p; }
         string      to_string () const;
-        string      to_json ()   const;
-        void        of_json (const string&);
 
     private:
         Pid_type data = Empty_pid();
@@ -95,8 +88,6 @@ namespace Ats {
         void   append_pid (Meta_pid&& p) { pids.push_back(p); }
         uint   pids_num () { return pids.size(); }
         string to_string () const;
-        string to_json()   const;
-        void   of_json(const string&);
     };
     
     struct Metadata {
@@ -125,11 +116,30 @@ namespace Ats {
         bool   is_empty() const { return channels.empty(); }
         bool   to_be_analyzed () const;
         string to_string () const;
-        string to_json() const;
+        json to_json() const;
 
         void   for_analyzable (std::function<void(const Meta_channel&)>) const;
         bool   validate_grid (uint, uint) const;
     };
+
+    // nlohmann json arbitrary types conversions
+    void to_json(json& j, const Position&);
+    void from_json(const json& j, Position&);
+
+    void to_json(json& j, const Meta_pid::Video_pid&);
+    void from_json(const json& j, Meta_pid::Video_pid&);
+
+    void to_json(json& j, const Meta_pid::Audio_pid&);
+    void from_json(const json& j, Meta_pid::Audio_pid&);
+
+    void to_json(json& j, const Meta_pid&);
+    void from_json(const json& j, Meta_pid&);
+
+    void to_json(json& j, const Meta_channel&);
+    void from_json(const json& j, Meta_channel&);
+
+    void to_json(json& j, const Metadata&);
+    void from_json(const json& j, Metadata&);
 };
 
 #endif /* METADATA_H */

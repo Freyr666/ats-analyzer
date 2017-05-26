@@ -1,6 +1,7 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include "json.hpp"
 #include <string>
 #include <gstreamermm.h>
 #include <boost/optional.hpp>
@@ -12,6 +13,8 @@
 using namespace std;
 
 namespace Ats {
+
+    using json = nlohmann::json;
 
     struct Initial {
         struct Wrong_option : public Error_expn {
@@ -172,11 +175,17 @@ namespace Ats {
         // Chatterer implementation
         string to_json_body() const;
 	
-        string to_string() const;	
+        string to_string() const;
+        json serialize() const;
+        void deserialize(const json&);
+
+        // TODO remove
         string to_json()   const;
         void   of_json(json&);
         string to_msgpack()   const;
         void   of_msgpack(const string&);
+        //
+
     };
 };
 

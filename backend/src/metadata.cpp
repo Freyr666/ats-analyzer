@@ -1,5 +1,4 @@
 #include "metadata.hpp"
-
 #include <algorithm>
 #include <gst/mpegts/gstmpegtssection.h>
 
@@ -38,25 +37,14 @@ Position::to_string () const {
     return rval;
 }
 
-string
-Position::to_json () const {
-    constexpr size_t size = 1024;
-
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"x\":%u,"
-        "\"y\":%u,"
-        "\"width\":%u,"
-        "\"height\":%u"
-        "}";
-
-    int n = snprintf (buffer, size, fmt, x, y, width, height);
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Chatterer::Serializer_failure ();
+void
+Ats::to_json (json& j, const Position& p) {
+    j = json{{"x", p.x}, {"y", p.y},
+             {"width", p.width}, {"height", p.height}};
 }
 
 void
-Position::of_json(const string& s) {
+Ats::from_json(const json& j, Position& p) {
     
 }
 // --------- Meta_pid -------------------
@@ -96,52 +84,31 @@ Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
     if (type == Type::Audio) data = Audio_pid ();
 }
 
-string
-Meta_pid::Video_pid::to_json () const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 1024;
-
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"codec\":\"%s\","
-        "\"width\":%u,"
-        "\"height\":%u,"
-        "\"aspect_ratio\":{\"x\":%u,\"y\":%u},"
-        "\"interlaced\":\"%s\","
-        "\"frame_rate\":%.2f"
-        "}";
-
-    int n = snprintf (buffer, size, fmt, codec.c_str(), width, height,
-                      aspect_ratio.first, aspect_ratio.second,
-                      interlaced.c_str(), frame_rate);
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Video_pid: ") + Sf::expn_overflow  + std::to_string(size));
+void
+Ats::to_json (json& j, const Meta_pid::Video_pid& vp) {
+    j = json{{"codec", vp.codec},
+             {"width", vp.width},
+             {"height", vp.height},
+             {"aspect_ratio", {{"x", vp.aspect_ratio.first},
+                               {"y", vp.aspect_ratio.second}}},
+             {"interlaced", vp.interlaced},
+             {"frame_rate", vp.frame_rate}};
 }
 
 void
-Meta_pid::Video_pid::of_json(const string& s) {
+Ats::from_json(const json& j, Meta_pid::Video_pid& vp) {
     
 }
 
-string
-Meta_pid::Audio_pid::to_json () const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 512;
-
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"codec\":\"%s\","
-        "\"bitrate\":\"%s\","
-        "\"sample_rate\":%u"
-        "}";
-
-    int n = snprintf (buffer, size, fmt, codec.c_str(), bitrate.c_str(), sample_rate);
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Audio_pid: ") + Sf::expn_overflow  + std::to_string(size));
+void
+Ats::to_json (json& j, const Meta_pid::Audio_pid& ap) {
+    j = json{{"codec", ap.codec},
+             {"bitrate", ap.bitrate},
+             {"sample_rate", ap.sample_rate}};
 }
 
 void
-Meta_pid::Audio_pid::of_json(const string& s) {
+Ats::from_json(const json& j, Meta_pid::Audio_pid& ap) {
     
 }
 
@@ -172,40 +139,29 @@ Meta_pid::to_string () const {
     return rval;
 }
 
-string
-Meta_pid::to_json () const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 5 * 1024;
+void
+Ats::to_json (json& j, const Meta_pid& p) {
+    json j_description = json::object();
+    if (p.type == Meta_pid::Type::Video)
+        j_description = p.get_video();
+    else if (p.type == Meta_pid::Type::Audio)
+        j_description = p.get_audio();
 
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"pid\":%u,"
-        "\"to_be_analyzed\":%s,"
-        "\"type\":\"%s\","
-        "\"stream_type\":%u,"
-        "\"stream_type_name\":\"%s\","
-        "\"description\":%s,"
-        "\"position\":%s"
-        "}";
-
-    int n = snprintf (buffer, size, fmt,
-                      pid, Ats::to_string(to_be_analyzed).c_str(),
-                      type == Type::Video ? "video" :
-                      type == Type::Audio ? "audio" :
-                      type == Type::Subtitles ? "subtitles" :
-                      type == Type::Teletext ? "teletext" :
-                      "empty",
-                      stream_type, stream_type_name.c_str(),
-                      type == Type::Video ? this->get_video().to_json().c_str() :
-                      type == Type::Audio ? this->get_audio().to_json().c_str() :
-                      "{}",
-                      position.to_json().c_str());
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Meta_pid: ") + Sf::expn_overflow  + std::to_string(size));
+    j = {{"pid", p.pid},
+         {"to_be_analyzed", p.to_be_analyzed},
+         {"type", (p.type == Meta_pid::Type::Video ? "video" :
+                   p.type == Meta_pid::Type::Audio ? "audio" :
+                   p.type == Meta_pid::Type::Subtitles ? "subtitles" :
+                   p.type == Meta_pid::Type::Teletext ? "teletext" :
+                   "empty")},
+         {"stream_type", p.stream_type},
+         {"stream_type_name", p.stream_type_name},
+         {"description", j_description},
+         {"position", p.position}};
 }
 
 void
-Meta_pid::of_json (const string& s) {
+Ats::from_json (const json& j, Meta_pid& p) {
     
 }
 
@@ -257,33 +213,17 @@ Meta_channel::to_be_analyzed () const {
     return result != pids.end();
 }
 
-string
-Meta_channel::to_json () const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 20 * (5 * 1024);
-
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"number\":%u,"
-        "\"service_name\":\"%s\","
-        "\"provider_name\":\"%s\","
-        "\"pids\":[%s]"
-        "}";
-
-    string s = "";
-    for (auto it = pids.begin(); it != pids.end(); ++it) {
-        if ( it != pids.begin() )
-            s += ",";
-        s += it->to_json();
-    }
-    int n = snprintf (buffer, size, fmt, number, service_name.c_str(), provider_name.c_str(),
-                      s.c_str());
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Meta_channel: ") + Sf::expn_overflow  + std::to_string(size));
+void
+Ats::to_json (json& j, const Meta_channel& c) {
+    json j_pids(c.pids);
+    j = json{{"number", c.number},
+             {"service_name", c.service_name},
+             {"provider_name", c.provider_name},
+             {"pids", j_pids}};
 }
 
 void
-Meta_channel::of_json (const string& s) {
+Ats::from_json (const json& j, Meta_channel& c) {
     
 }
 
@@ -365,26 +305,16 @@ Metadata::to_string () const {
     return rval;
 }
 
-string
-Metadata::to_json () const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 50 * (20 * 5 * 1024);
+void
+Ats::to_json(json& j, const Metadata& m) {
+    json j_channels(m.channels);
+    j = json{{"stream", m.stream},
+             {"channels", j_channels}};
+}
 
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"stream\":%u,"
-        "\"channels\":[%s]"
-        "}";
-
-    string s = "";
-    for (auto it = channels.begin(); it != channels.end(); ++it) {
-        if ( it != channels.begin() )
-            s += ",";
-        s += it->to_json();
-    }
-    int n = snprintf (buffer, size, fmt, stream, s.c_str());
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Metadata: ") + Sf::expn_overflow  + std::to_string(size));
+void
+Ats::from_json(const json& j, Metadata& m) {
+    
 }
 
 bool

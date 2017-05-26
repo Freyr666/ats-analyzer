@@ -936,3 +936,15 @@ void
 Settings::of_msgpack(const string&) {
     set.emit(*this);
 }
+
+json
+Settings::serialize() const {
+    // TODO add implementation
+    json j = 42;
+    return j;
+}
+
+void
+Settings::deserialize(const json& j) {
+    // TODO add implementation
+}

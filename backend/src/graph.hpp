@@ -1,6 +1,7 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
+#include "json.hpp"
 #include <string>
 #include <gstreamermm.h>
 #include <glibmm.h>
@@ -15,6 +16,8 @@ using namespace std;
 using namespace Glib;
 
 namespace Ats {
+
+    using json = nlohmann::json;
 
     class Options;
     class Settings;
@@ -46,6 +49,10 @@ namespace Ats {
 	
         // Chatterer
         string to_string() const;
+        json   serialize() const;
+        void   deserialize(const json&);
+
+        // TODO remove
         string to_json() const;
         void   of_json(json&);
         string to_msgpack() const;

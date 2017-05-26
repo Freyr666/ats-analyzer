@@ -408,6 +408,18 @@ Graph::of_msgpack(const string&) {
     
 }
 
+json
+Graph::serialize() const {
+    // TODO add implementation
+    json j = 42;
+    return j;
+}
+
+void
+Graph::deserialize (const json& j) {
+    // TODO add implementation
+}
+
 
 /*
  * Node and Tree
