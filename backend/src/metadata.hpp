@@ -122,24 +122,15 @@ namespace Ats {
         bool   validate_grid (uint, uint) const;
     };
 
-    // nlohmann json arbitrary types conversions
+    // json arbitrary types conversions
     void to_json(json& j, const Position&);
     void from_json(const json& j, Position&);
-
     void to_json(json& j, const Meta_pid::Video_pid&);
-    void from_json(const json& j, Meta_pid::Video_pid&);
-
     void to_json(json& j, const Meta_pid::Audio_pid&);
-    void from_json(const json& j, Meta_pid::Audio_pid&);
-
     void to_json(json& j, const Meta_pid&);
-    void from_json(const json& j, Meta_pid&);
-
     void to_json(json& j, const Meta_channel&);
-    void from_json(const json& j, Meta_channel&);
-
     void to_json(json& j, const Metadata&);
-    void from_json(const json& j, Metadata&);
+
 };
 
 #endif /* METADATA_H */

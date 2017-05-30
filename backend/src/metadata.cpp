@@ -45,7 +45,10 @@ Ats::to_json (json& j, const Position& p) {
 
 void
 Ats::from_json(const json& j, Position& p) {
-    
+    p.x = j.at("x").get<uint>();
+    p.y = j.at("y").get<uint>();
+    p.width = j.at("width").get<uint>();
+    p.height = j.at("height").get<uint>();
 }
 // --------- Meta_pid -------------------
 
@@ -79,9 +82,8 @@ Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
                                                  stream_type(t), stream_type_name(tn) {
     type = get_type (t);
     if (type == Type::Empty) throw Wrong_type ();
-
-    if (type == Type::Video) data = Video_pid ();
-    if (type == Type::Audio) data = Audio_pid ();
+    else if (type == Type::Video) data = Video_pid ();
+    else if (type == Type::Audio) data = Audio_pid ();
 }
 
 void
@@ -96,20 +98,10 @@ Ats::to_json (json& j, const Meta_pid::Video_pid& vp) {
 }
 
 void
-Ats::from_json(const json& j, Meta_pid::Video_pid& vp) {
-    
-}
-
-void
 Ats::to_json (json& j, const Meta_pid::Audio_pid& ap) {
     j = json{{"codec", ap.codec},
              {"bitrate", ap.bitrate},
              {"sample_rate", ap.sample_rate}};
-}
-
-void
-Ats::from_json(const json& j, Meta_pid::Audio_pid& ap) {
-    
 }
 
 const Meta_pid::Audio_pid&
@@ -159,12 +151,6 @@ Ats::to_json (json& j, const Meta_pid& p) {
          {"description", j_description},
          {"position", p.position}};
 }
-
-void
-Ats::from_json (const json& j, Meta_pid& p) {
-    
-}
-
 
 // --------- Meta_channel  ---------------
 
@@ -220,11 +206,6 @@ Ats::to_json (json& j, const Meta_channel& c) {
              {"service_name", c.service_name},
              {"provider_name", c.provider_name},
              {"pids", j_pids}};
-}
-
-void
-Ats::from_json (const json& j, Meta_channel& c) {
-    
 }
 
 // ---------- Metadata ---------------------
@@ -310,11 +291,6 @@ Ats::to_json(json& j, const Metadata& m) {
     json j_channels(m.channels);
     j = json{{"stream", m.stream},
              {"channels", j_channels}};
-}
-
-void
-Ats::from_json(const json& j, Metadata& m) {
-    
 }
 
 bool

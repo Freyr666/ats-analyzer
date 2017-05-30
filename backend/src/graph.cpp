@@ -411,7 +411,7 @@ Graph::of_msgpack(const string&) {
 json
 Graph::serialize() const {
     // TODO add implementation
-    json j = 42;
+    json j = json::object();
     return j;
 }
 

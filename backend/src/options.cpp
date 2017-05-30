@@ -100,12 +100,21 @@ Options::to_string() const {
     rval += std::to_string(resolution.second);
     rval += "\n";
     rval += "\tBackground color:\n\t\t";
-    rval += std::to_string(background_color);
+    rval += std::to_string(bg_color);
     rval += "\n\n";
 
     // FIXME remove
-    json j = serialize();
-    rval = j.dump();
+    // json j = serialize();
+    // rval = j.dump();
+
+    // Position p;
+    // json j = json{{"x", 123},
+    //               {"y", 456},
+    //               {"width", 100},
+    //               {"height", 200}};
+    // rval = j.dump();
+    // p = j;
+    // rval = p.to_string();
 
     return rval;
 }
@@ -115,14 +124,49 @@ Options::serialize() const {
     json j = json{{"prog_list", data},
                   {"resolution", {{"width", resolution.first},
                                   {"height", resolution.second}}},
-                  {"bg_color", background_color}};
+                  {"bg_color", bg_color}};
     return j;
 }
 
 void
 Options::deserialize(const json& j) {
+    constexpr const char* metadata_key = "prog_list";
+    constexpr const char* resolution_key = "resolution";
+    constexpr const char* bg_color_key = "bg_color";
+
     bool o_set = false;
     bool o_destr_set = false;
+
+    auto warn = [](const char* prop)->std::string{
+        return (std::string)"No" + prop + "property provided in Options";
+    };
+
+    // NOTE settings should not be written until we are not sure that
+    // received json structure is valid
+
+    /* program list (metadata) parsing */
+    if (j.find(metadata_key) != j.end()) {
+        auto j_prog_list = j.at(metadata_key);
+        // TODO add an exception if not array?
+        // if (!j_prog_list.is_array())
+        //     throw JSON_THROW(type_error::create(302, ((std::string)metadata_key + ""
+        for (json::iterator it = j_prog_list.begin(); it != j_prog_list.end(); ++it) {
+            auto j_stream = s_it.value();
+        }
+    }
+    else log(warn(metadata_key));
+
+    /* mosaic resolution parsing */
+    if (j.find(resolution_key) != j.end()) {
+        auto j_resolution = j.at(resolution_key);
+    }
+    else log(warn(resolution_key));
+
+    /* mosaic background color parsing */
+    if (j.find(bg_color_key) != j.end()) {
+        bg_color = j.at(bg_color_key).get<uint>();
+    }
+    else log(warn(bg_color_key));
 
     if (o_destr_set) destructive_set(*this);
     else if (o_set) set.emit(*this);
