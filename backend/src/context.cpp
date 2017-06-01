@@ -75,6 +75,7 @@ Context::forward_talk(const Chatterer& c) {
     }
     send.emit(rval);
 }
+
 void
 Context::forward_error(const std::string& s) {
     std::string rval;
@@ -83,12 +84,14 @@ Context::forward_error(const std::string& s) {
     case Msg_type::Debug:
         rval = "Error: " + s;
         break;
-    case Msg_type::Json: 
-        rval = "{error: " + s;
-        rval += "}";
-        break;
+    case Msg_type::Json:
     case Msg_type::Msgpack:
-        rval = s;
+        json j = json{{"error", s}};
+        if (msg_type == Msg_type::Msgpack) {
+            std::vector<uint8_t> msgpack = json::to_msgpack(j);
+            rval = std::string(msgpack.begin(), msgpack.end());
+        }
+        else rval = j.dump();
         break;
     }
     send_err.emit(rval);

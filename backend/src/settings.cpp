@@ -351,7 +351,7 @@ Settings::init(Initial& i) {
 
 string
 Settings::to_string() const {
-    string rval = "Settings:\n\tQoe settings:\n\t\t";
+    string rval = "Qoe settings:\n\t\t";
     string qoe_string = qoe_settings.to_string();
     rval += Ats::add_indent(qoe_string);
     rval += "\tChannel_settings:\n\t\t";

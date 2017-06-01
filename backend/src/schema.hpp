@@ -231,6 +231,7 @@ compose_schema() {
     const string j_root = string(R"({
         "comment":"JSON schema for data passed to backend",
         "type":"object",
+        "additionalProperties":false,
         "properties":{
             "options":)") + j_options + R"(,
             "settings":)" + j_settings + R"(,

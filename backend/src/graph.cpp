@@ -380,7 +380,11 @@ Graph::connect(Settings& s) {
 
 string
 Graph::to_string() const {
-    return "TODO";
+    std::string rval = "State:\n\t\t";
+    auto st = get_state();
+    rval += from_state(st);
+    rval += "\n\n";
+    return rval;
 }
 
 json

@@ -92,7 +92,7 @@ Options::to_string() const {
             streams += "\n";
         });
     Ats::add_indent(streams);
-    string rval = "Options:\n\tStreams:\n\t\t";
+    string rval = "Streams:\n\t\t";
     rval += streams;
     rval += "\tResolution:\n\t\t";
     rval += std::to_string(resolution.first);
