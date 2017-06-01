@@ -50,7 +50,6 @@ void
 Context::forward_talk(const Chatterer& c) {
     std::string rval = "";
 
-
     switch (msg_type) {
     case Msg_type::Debug:
         rval = c.name + " : ";
@@ -58,16 +57,12 @@ Context::forward_talk(const Chatterer& c) {
         break;
     case Msg_type::Json:
     case Msg_type::Msgpack:
-        rval = "{" + c.name;
-        rval += ":";
-        rval += c.serialize();
-        rval += "}";
-
+        json j = json{{c.name,c.serialize()}};
         if (msg_type == Msg_type::Msgpack) {
-            json j = json::parse(rval);
             std::vector<uint8_t> msgpack = json::to_msgpack(j);
             rval = std::string(msgpack.begin(), msgpack.end());
         }
+        else rval = j.dump();
         break;
     }
     send.emit(rval);
@@ -107,7 +102,7 @@ Context::dispatch(const std::string& s) {
                 std::vector<uint8_t> msgpack(s.begin(), s.end());
                 j = json::from_msgpack(msgpack);
             } catch (const std::exception& e) {
-                throw Df (std::string("Top-level Msgpack is corrupted: ") + e.what());
+                throw Df (std::string("Top-level MsgPack is corrupted: ") + e.what());
             }
         }
         else {
