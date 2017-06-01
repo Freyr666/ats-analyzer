@@ -44,7 +44,7 @@ namespace Ats {
         void       apply_settings(const Settings&);
 	
         void       set_state(Gst::State);
-        Gst::State get_state();
+        Gst::State get_state() const;
 
         void   set_resolution(const pair<uint,uint>);
         void   set_position(uint, uint, uint, const Position&);

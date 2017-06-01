@@ -21,6 +21,14 @@ to_state(string& s) {
     return Gst::STATE_NULL;
 }
 
+static inline string
+from_state(Gst::State s) {
+    if (s == Gst::STATE_NULL) return "stop";
+    if (s == Gst::STATE_PAUSED) return "pause";
+    if (s == Gst::STATE_PLAYING) return "play";
+    return "null";
+}
+
 void
 Graph::set(const Options& o) {
     if (o.is_empty()) return;
@@ -130,7 +138,7 @@ Graph::set_state(Gst::State s) {
 }
 
 Gst::State
-Graph::get_state() {
+Graph::get_state() const {
     Gst::State rval;
     Gst::State pend;
     if (pipe) {
@@ -377,8 +385,8 @@ Graph::to_string() const {
 
 json
 Graph::serialize() const {
-    // TODO add implementation
-    json j = json::object();
+    auto st = get_state();
+    json j = json{{"state", from_state(st)}};
     return j;
 }
 
