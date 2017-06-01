@@ -1,7 +1,6 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include "json.hpp"
 #include <string>
 #include <gstreamermm.h>
 #include <glibmm.h>
@@ -17,14 +16,23 @@ using namespace Glib;
 
 namespace Ats {
 
-    using json = nlohmann::json;
-
     class Options;
     class Settings;
     
     class Graph : public Chatterer, public Logger {
 	
     public:
+
+        /* --------- Json schema ----------------- */
+        static constexpr const char* JSON_SCHEMA = R"({
+            "comment":"JSON schema for Graph class",
+            "type":"object",
+            "properties":{
+                "state":{"type":"string",
+                         "enum":["null","pause","play","stop"]}
+            }
+        })";
+
         Graph(const std::string& n) : Chatterer(n) {}
         Graph(const Graph&) = delete;
         Graph(Graph&&) = delete;
@@ -51,12 +59,6 @@ namespace Ats {
         string to_string() const;
         json   serialize() const;
         void   deserialize(const json&);
-
-        // TODO remove
-        string to_json() const;
-        void   of_json(json&);
-        string to_msgpack() const;
-        void   of_msgpack(const string&);
 	
     private:
         struct Node {

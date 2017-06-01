@@ -1,5 +1,4 @@
 #include "options.hpp"
-#include "json.hpp"
 #include "graph.hpp"
 #include "probe.hpp"
 
@@ -190,22 +189,3 @@ Options::deserialize(const json& j) {
     if (o_destr_set) destructive_set(*this);
     else if (o_set) set.emit(*this);
 }
-
-string
-Options::to_json() const {
-    return "";
-}
-
-void
-Options::of_json(json& j) {
-}
-
-string
-Options::to_msgpack() const {
-    return "todo";
-}
-
-void
-Options::of_msgpack(const string&) {
-}
-

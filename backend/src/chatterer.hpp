@@ -44,19 +44,11 @@ namespace Ats {
     class Chatterer {
     public:
         struct Serializer_failure : public Error_expn {
-            static constexpr const char* expn_overflow = "serializer buffer overflowed: ";
             Serializer_failure() : Error_expn() {}
             Serializer_failure(string s) : Error_expn(s) {}
         };
 	
         struct Deserializer_failure : public Error_expn {
-            static constexpr const char* expn_bool = " must be a boolean";
-            static constexpr const char* expn_number = " must be a number";
-            static constexpr const char* expn_string = " must be a string";
-            static constexpr const char* expn_object = " must be an object";
-            static constexpr const char* expn_array = " must be an array";
-            static constexpr const char* expn_null = " must be null";
-            
             Deserializer_failure() : Error_expn() {}
             Deserializer_failure(string s) : Error_expn(s) {}
         };
@@ -88,7 +80,7 @@ namespace Ats {
         virtual json        serialize()    const = 0;
         virtual void        deserialize(const json&) = 0;
 
-        void validate(const json& j, const json& j_schema) const {
+        static void validate(const json& j, const json& j_schema) {
 
             using nlohmann::json;
             using nlohmann::json_uri;
@@ -108,14 +100,6 @@ namespace Ats {
                 throw Validator_failure((std::string)Validator_failure::json_failure + e.what());
             }
         };
-
-        // TEMP
-        virtual std::string to_json()      const = 0;
-        virtual std::string to_msgpack()   const = 0;
-
-        virtual void   of_json(json&) = 0;
-        virtual void of_msgpack(const std::string&) = 0;
-        //
 
         static std::string err_to_json(const std::string& s) {
             std::string rval = "{\"error\":\"";

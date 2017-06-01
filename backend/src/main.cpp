@@ -15,7 +15,7 @@ main(int argc, char *argv[])
 	c.run();
     } catch (Initial::Wrong_option& e) {
 	if (e)
-	    std::cerr << "Error: " << e.message() << std::endl;
+	    std::cerr << "Error: " << e.what() << std::endl;
 	std::cerr << Initial::usage(argv[0]) << std::endl;
     } catch (Context::Size_error) {
 	std::cerr << "Error: at list one input uri should be provided" << std::endl;

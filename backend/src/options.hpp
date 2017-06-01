@@ -124,12 +124,6 @@ namespace Ats {
         json   serialize() const;
         void   deserialize(const json&);
 
-        //temp
-        string to_json()   const;
-        void   of_json(json&);
-        string to_msgpack()   const;
-        void of_msgpack(const string&);
-
         void operator=(const Metadata& m) { set_data(m); }
 
         void   connect(Probe&);

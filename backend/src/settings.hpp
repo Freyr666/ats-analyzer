@@ -1,7 +1,6 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include "json.hpp"
 #include <string>
 #include <gstreamermm.h>
 #include <boost/optional.hpp>
@@ -38,11 +37,9 @@ namespace Ats {
         static constexpr const char* JSON_SCHEMA = R"({
             "comment":"JSON schema for Settings class",
             "type":"object",
-            "additionalProperties":false,
             "properties": {
                 "qoe_settings":{
                     "type":"object",
-                    "additionalProperties":false,
                     "properties":{
                         "adv_buf":{
                             "type":"integer",
@@ -82,7 +79,9 @@ namespace Ats {
                             "properties":{
                                 "enabled":{"type":"boolean"},
                                 "font_size":{"type":"integer"},
-                                "fmt":{"type":"string"}
+                                "fmt":{
+                                    "type":"string",
+                                    "maxLength":200}
                             }
                         },
                         "audio_meter":{
@@ -265,31 +264,14 @@ namespace Ats {
         json serialize() const;
         void deserialize(const json&);
 
-        // TODO remove
-        string to_json()   const;
-        void   of_json(json&);
-        string to_msgpack()   const;
-        void   of_msgpack(const string&);
-        //
-
     };
 
     // nlohmann json arbitrary types conversions
     void to_json(json& j, const Settings::Channel_settings::Error_overlay&);
-    void from_json(const json& j, Settings::Channel_settings::Error_overlay&);
-
     void to_json(json& j, const Settings::Channel_settings::Channel_name&);
-    void from_json(const json& j, Settings::Channel_settings::Channel_name&);
-
     void to_json(json& j, const Settings::Channel_settings::Audio_meter&);
-    void from_json(const json& j, Settings::Channel_settings::Audio_meter&);
-
     void to_json(json& j, const Settings::Channel_settings::Status_bar&);
-    void from_json(const json& j, Settings::Channel_settings::Status_bar&);
-
     void to_json(json& j, const Settings::Channel_settings&);
-    void from_json(const json& j, Settings::Channel_settings&);
-
     void to_json(json& j, const Settings::Qoe_settings&);
 };
 

@@ -1,5 +1,4 @@
 #include "settings.hpp"
-#include "json.hpp"
 #include "validate.hpp"
 
 #include <cstdio>
@@ -433,6 +432,7 @@ Settings::deserialize(const json& j) {
         // adv loudness
         set_value_from_json(j_qoe,qoe_settings,adv_diff,float);
         set_value_from_json(j_qoe,qoe_settings,adv_buf,uint);
+        o_set = true;
     } // TODO maybe add log message at else clause
 
     /* if channel settings present in json */
@@ -484,27 +484,9 @@ Settings::deserialize(const json& j) {
             set_value_from_json(j_sb,channel_settings.status_bar,eit,bool);
             set_value_from_json(j_sb,channel_settings.status_bar,qos,bool);
             set_value_from_json(j_sb,channel_settings.status_bar,scte35,bool);
+            o_set = true;
         }
     } // TODO maybe add log message at else clause
 
     if (o_set) set.emit(*this);
-}
-
-string
-Settings::to_json() const {
-    return "";
-}
-
-void
-Settings::of_json(json& j) {
-}
-
-string
-Settings::to_msgpack() const {
-    return "todo";
-}
-
-void
-Settings::of_msgpack(const string&) {
-    set.emit(*this);
 }
