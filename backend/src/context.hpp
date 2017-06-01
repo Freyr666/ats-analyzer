@@ -21,20 +21,11 @@ namespace Ats {
 
     class Context : public Chatterer_proxy, public Logger {
     public:
-        /* --------- Json schema ----------------- */
-        static constexpr const char* JSON_SCHEMA = R"({
-            "comment":"JSON schema for Context class",
-            "type":"object",
-            "properties":{
-                "options":{"type":"object"},
-                "settings":{"type":"object"},
-                "graph":{"type":"object"}
-            }
-        })";
 
         struct Size_error : std::exception {};
 	
-    private:	
+    private:
+        json          j_schema;
         Graph         graph;
         vector< unique_ptr<Probe> > probes;
         Control       control;

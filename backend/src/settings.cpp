@@ -375,13 +375,6 @@ Settings::deserialize(const json& j) {
 
     bool o_set = false;
 
-    /* get json schema */
-    // TODO autogenerate schema from class?
-    auto j_schema = json::parse(JSON_SCHEMA);
-    /* Validate incoming json.
-       This will throw an exception in case if json is bad */
-    validate(j, j_schema);
-
     /* if qoe settings present in json */
     if (j.find(qoe_settings_key) != j.end()) {
         // loss

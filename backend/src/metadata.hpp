@@ -36,17 +36,19 @@ namespace Ats {
         struct Empty_pid {};
 
         struct Video_pid {
+            Video_pid () : width(0), height(0), aspect_ratio({0,0}), frame_rate(0.)  {}
             string codec;
-            uint width = 0;
-            uint height = 0;
-            pair<uint, uint> aspect_ratio = {0, 0};
+            uint width;
+            uint height;
+            pair<uint, uint> aspect_ratio;
             string interlaced;
-            float frame_rate = 0;
+            float frame_rate;
         };
         struct Audio_pid {
+            Audio_pid () : sample_rate(0) {}
             string codec;
             string bitrate;
-            uint sample_rate = 0;
+            uint sample_rate;
         };
         using Pid_type = boost::variant<Audio_pid, Video_pid, Empty_pid>;
 

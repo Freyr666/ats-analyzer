@@ -23,16 +23,6 @@ namespace Ats {
 	
     public:
 
-        /* --------- Json schema ----------------- */
-        static constexpr const char* JSON_SCHEMA = R"({
-            "comment":"JSON schema for Graph class",
-            "type":"object",
-            "properties":{
-                "state":{"type":"string",
-                         "enum":["null","pause","play","stop"]}
-            }
-        })";
-
         Graph(const std::string& n) : Chatterer(n) {}
         Graph(const Graph&) = delete;
         Graph(Graph&&) = delete;

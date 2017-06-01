@@ -394,13 +394,6 @@ void
 Graph::deserialize (const json& j) {
     constexpr const char* state_key = "state";
 
-    /* get json schema */
-    // TODO autogenerate schema from class?
-    auto j_schema = json::parse(JSON_SCHEMA);
-    /* Validate incoming json.
-       This will throw an exception in case if json is bad */
-    validate(j, j_schema);
-
     /* if state key present in json */
     if (j.find(state_key) != j.end()) {
         auto sst = j.at(state_key).get<std::string>();

@@ -1,10 +1,8 @@
 #include "context.hpp"
-#include "json.hpp"
+#include "schema.hpp"
 
 using namespace Glib;
 using namespace Ats;
-
-using json = nlohmann::json;
 
 Context::Context(Initial init) : graph("graph"), options("options"), settings("settings") {
     uint size = init.uris.size();
@@ -43,7 +41,17 @@ Context::Context(Initial init) : graph("graph"), options("options"), settings("s
     
     graph.connect(options);
     graph.connect(settings);
-    
+
+    try {
+        std::string s_schema = compose_schema();
+
+        j_schema = json::parse(s_schema);
+    } catch (std::exception& e) {
+        j_schema = json::object();
+        // TODO do something if json schema was not loaded
+        // This will lead to any input json will be considered as valid
+    }
+
 }
 
 void
@@ -90,7 +98,6 @@ Context::dispatch(const std::string& s) {
     using Df = Chatterer::Deserializer_failure;
 
     json j;
-    json j_schema;
     
     switch (msg_type) {
     case Msg_type::Debug:
@@ -113,11 +120,9 @@ Context::dispatch(const std::string& s) {
             }
         }
 
-        /* get json schema */
-        j_schema = json::parse(JSON_SCHEMA);
         /* Validate incoming json.
            This will throw an exception in case if json is bad */
-        Chatterer::validate(j, j_schema);
+        validate(j, j_schema);
 
         if(j.find(options.name) != j.end()) options.deserialize(j.at(options.name));
         if(j.find(settings.name) != j.end()) settings.deserialize(j.at(settings.name));

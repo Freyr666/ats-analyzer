@@ -53,14 +53,6 @@ namespace Ats {
             Deserializer_failure(string s) : Error_expn(s) {}
         };
 
-        struct Validator_failure : public Error_expn {
-            static constexpr const char* schema_failure = "JSON Schema loading failure: ";
-            static constexpr const char* json_failure = "Invalid JSON: ";
-
-            Validator_failure() : Error_expn() {}
-            Validator_failure(string s) : Error_expn(s) {}
-        };
-
         Chatterer(const std::string n) : name(n) {}
 	
         Chatterer(const Chatterer&) = delete;
@@ -79,6 +71,37 @@ namespace Ats {
         virtual std::string to_string()    const = 0;
         virtual json        serialize()    const = 0;
         virtual void        deserialize(const json&) = 0;
+
+        static std::string err_to_json(const std::string& s) {
+            std::string rval = "{\"error\":\"";
+            rval += s;
+            return rval + "\"}";
+        }
+        static std::string err_to_msgpack(const std::string& s) {
+            return s;
+        }
+    };
+
+    class Chatterer_proxy {
+    public:
+        struct Validator_failure : public Error_expn {
+            static constexpr const char* schema_failure = "JSON Schema loading failure: ";
+            static constexpr const char* json_failure = "Invalid JSON: ";
+
+            Validator_failure() : Error_expn() {}
+            Validator_failure(string s) : Error_expn(s) {}
+        };
+
+        Chatterer_proxy() {}
+        Chatterer_proxy(const Chatterer_proxy&) = delete;
+        Chatterer_proxy(Chatterer_proxy&&) = delete;
+	
+        sigc::signal<void,const std::string&>      send;
+        sigc::signal<void,const std::string&>      send_err;
+	
+        virtual void forward_talk(const Chatterer&) = 0;
+        virtual void forward_error(const std::string&) = 0;
+        virtual void dispatch(const std::string&) = 0;
 
         static void validate(const json& j, const json& j_schema) {
 
@@ -100,29 +123,6 @@ namespace Ats {
                 throw Validator_failure((std::string)Validator_failure::json_failure + e.what());
             }
         };
-
-        static std::string err_to_json(const std::string& s) {
-            std::string rval = "{\"error\":\"";
-            rval += s;
-            return rval + "\"}";
-        }
-        static std::string err_to_msgpack(const std::string& s) {
-            return s;
-        }
-    };
-
-    class Chatterer_proxy {
-    public:
-        Chatterer_proxy() {}
-        Chatterer_proxy(const Chatterer_proxy&) = delete;
-        Chatterer_proxy(Chatterer_proxy&&) = delete;
-	
-        sigc::signal<void,const std::string&>      send;
-        sigc::signal<void,const std::string&>      send_err;
-	
-        virtual void forward_talk(const Chatterer&) = 0;
-        virtual void forward_error(const std::string&) = 0;
-        virtual void dispatch(const std::string&) = 0;
 
         void connect(Chatterer& c) {
             c.send.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_talk));

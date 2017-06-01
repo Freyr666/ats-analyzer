@@ -102,7 +102,6 @@ Options::to_string() const {
     rval += "\tBackground color:\n\t\t";
     rval += std::to_string(bg_color);
     rval += "\n\n";
-    rval = "";
     return rval;
 }
 
@@ -123,13 +122,6 @@ Options::deserialize(const json& j) {
 
     bool o_set = false;
     bool o_destr_set = false;
-
-    /* get json schema */
-    // TODO autogenerate schema from class?
-    auto j_schema = json::parse(JSON_SCHEMA);
-    /* Validate incoming json.
-       This will throw an exception in case if json is bad */
-    validate(j, j_schema);
 
     /* if metadata present in json */
     if (j.find(metadata_key) != j.end()) {
