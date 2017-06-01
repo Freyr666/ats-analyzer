@@ -4,7 +4,18 @@
 #include <glibmm.h>
 #include <string>
 #include "json.hpp"
+#include "json-schema.hpp"
 #include "errexpn.hpp"
+
+/* sets the value of *type* and *name* (if present),
+   taken from the root of json object,
+   to variable *obj.name* */
+#define set_value_from_json(j_obj,obj,name,type) do{  \
+        if (j.find(#name) != j.end())           \
+            (obj).name = j_obj.at(#name).get<type>(); \
+    } while (0)
+
+#define set_json
 
 namespace Ats {
 
@@ -49,7 +60,15 @@ namespace Ats {
             Deserializer_failure() : Error_expn() {}
             Deserializer_failure(string s) : Error_expn(s) {}
         };
-	
+
+        struct Validator_failure : public Error_expn {
+            static constexpr const char* schema_failure = "JSON Schema loading failure: ";
+            static constexpr const char* json_failure = "Invalid JSON: ";
+
+            Validator_failure() : Error_expn() {}
+            Validator_failure(string s) : Error_expn(s) {}
+        };
+
         Chatterer(const std::string n) : name(n) {}
 	
         Chatterer(const Chatterer&) = delete;
@@ -68,6 +87,27 @@ namespace Ats {
         virtual std::string to_string()    const = 0;
         virtual json        serialize()    const = 0;
         virtual void        deserialize(const json&) = 0;
+
+        void validate(const json& j, const json& j_schema) const {
+
+            using nlohmann::json;
+            using nlohmann::json_uri;
+            using nlohmann::json_schema_draft4::json_validator;
+
+            json_validator validator;
+
+            try {
+                validator.set_root_schema(j_schema);
+            } catch (const std::exception &e) {
+                throw Validator_failure((std::string)Validator_failure::schema_failure + e.what());
+            }
+
+            try {
+                validator.validate(j);
+            } catch (const std::exception &e) {
+                throw Validator_failure((std::string)Validator_failure::json_failure + e.what());
+            }
+        };
 
         // TEMP
         virtual std::string to_json()      const = 0;

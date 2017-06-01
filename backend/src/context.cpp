@@ -96,7 +96,7 @@ Context::dispatch(const std::string& s) {
 	if (! js.is_object())
 	    throw Df (std::string("Top-level JSON") + Df::expn_object);
 	for (json::iterator el = js.begin(); el != js.end(); ++el) {
-	    if (el.key() == "options" && el.value().is_object()) {
+	    if (el.key() == "options") { // && el.value().is_object()) {
 		options.of_json(el.value());
 	    } else if (el.key() == "settings" && el.value().is_object()) {
 		settings.of_json(el.value());

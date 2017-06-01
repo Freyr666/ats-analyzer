@@ -33,6 +33,109 @@ namespace Ats {
     class Settings : public Chatterer, public Logger {
 
     public:
+
+        /* -------- Json schema -------------------- */
+        static constexpr const char* JSON_SCHEMA = R"({
+            "comment":"JSON schema for Settings class",
+            "type":"object",
+            "additionalProperties":false,
+            "properties": {
+                "qoe_settings":{
+                    "type":"object",
+                    "additionalProperties":false,
+                    "properties":{
+                        "adv_buf":{
+                            "type":"integer",
+                            "minimum":0,
+                            "maximum":14400
+                        },
+                        "adv_diff":{
+                            "type":"number",
+                            "minimum":0,
+                            "maximum":59
+                        },
+                        "vloss":{"$ref":"#/definitions/time"},
+                        "aloss":{"$ref":"#/definitions/time"}
+                    },
+                    "patternProperties":{
+                        "^(black|luma|freeze|diff|blocky|loudness|silence)_(peak|cont)$":{"$ref":"#/definitions/percent"},
+                        "^(black|freeze|blocky|loudness|silence)_time$":{"$ref":"#/definitions/time"},
+                        "^(black|luma|freeze|diff|blocky|loudness|silence)_(peak|cont)_en$":{"type":"boolean"}
+                    }
+                },
+                "channel_settings":{
+                    "type":"object",
+                    "properties":{
+                        "show_border":{"type":"boolean"},
+                        "border_color":{"$ref":"#/definitions/color"},
+                        "show_aspect_border":{"type":"boolean"},
+                        "aspect_border_color":{"$ref":"#/definitions/color"},
+                        "error_overlay":{
+                            "type":"object",
+                            "properties":{
+                                "enabled":{"type":"boolean"},
+                                "error_color":{"$ref":"#/definitions/color"}
+                            }
+                        },
+                        "channel_name":{
+                            "type":"object",
+                            "properties":{
+                                "enabled":{"type":"boolean"},
+                                "font_size":{"type":"integer"},
+                                "fmt":{"type":"string"}
+                            }
+                        },
+                        "audio_meter":{
+                            "type":"object",
+                            "properties":{
+                                "enabled":{"type":"boolean"},
+                                "position":{"type":"string",
+                                            "enum":["left","right"]}
+                            }
+                        },
+                        "status_bar":{
+                            "type":"object",
+                            "properties":{
+                                "enabled":{"type":"boolean"},
+                                "position":{"type":"string",
+                                            "enum":["top_left","top_right",
+                                                    "left","right",
+                                                    "bottom_left","bottom_right"]},
+                                "aspect":{"type":"boolean"},
+                                "subtitles":{"type":"boolean"},
+                                "teletext":{"type":"boolean"},
+                                "eit":{"type":"boolean"},
+                                "qos":{"type":"boolean"},
+                                "scte35":{"type":"boolean"}
+                            }
+                        }
+                    }
+                }
+            },
+            "definitions":{
+                "percent":{
+                    "type":"number",
+                    "minimum":0,
+                    "maximum":100
+                },
+                "time":{
+                    "type":"number",
+                    "minimum":0,
+                    "maximum":3600
+                },
+                "lufs":{
+                    "type":"number",
+                    "minimum":-59,
+                    "maximum":-5
+                },
+                "color":{
+                    "type":"integer",
+                    "minimum":0,
+                    "maximum":16777215
+                }
+            }
+        })";
+
         struct Channel_settings {
 
             struct Error_overlay {
@@ -49,7 +152,6 @@ namespace Ats {
                 string fmt = "$INPUT_TYPE, $INPUT_NAME, $CH_NAME";
 
                 string to_string() const;
-                string to_json() const;
             };
 
             struct Audio_meter {
@@ -59,7 +161,6 @@ namespace Ats {
                 Audio_meter_pos position = Audio_meter_pos::Right;
 
                 string to_string() const;
-                string to_json() const;
             };
 
             struct Status_bar {
@@ -77,7 +178,6 @@ namespace Ats {
                 bool scte35 = true;
 
                 string to_string() const;
-                string to_json() const;
             };
 
             bool show_border = false;
@@ -90,7 +190,6 @@ namespace Ats {
             Status_bar status_bar;
 
             string to_string() const;
-            string to_json() const;
         };
 
         struct Qoe_settings {
@@ -144,7 +243,6 @@ namespace Ats {
             uint adv_buf = 2 * 60 * 60;
 
             string to_string() const;
-            string to_json() const;
         };
 
         /* ------- Qoe analysis settings -------- */
@@ -193,7 +291,6 @@ namespace Ats {
     void from_json(const json& j, Settings::Channel_settings&);
 
     void to_json(json& j, const Settings::Qoe_settings&);
-    void from_json(const json& j, Settings::Qoe_settings&);
 };
 
 #endif /* SETTINGS_H */

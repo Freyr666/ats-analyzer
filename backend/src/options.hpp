@@ -22,7 +22,82 @@ namespace Ats {
 
     public:
 
-        class Serializer_buffer_overflow : std::exception {};
+        /* ------- Json schema ------------------ */
+        static constexpr const char* JSON_SCHEMA = R"({
+            "comment": "JSON schema for Options class",
+            "type": "object",
+            "properties": {
+                "prog_list": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "number": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "service_name": {"type": "string"},
+                            "provider_name": {"type": "string"},
+                            "pids": {
+                                "type": "array",
+                                "uniqueItems": true,
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "pid": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 8191
+                                        },
+                                        "to_be_analyzed": {"type": "boolean"},
+                                        "position": {
+                                            "type": "object",
+                                            "properties": {
+                                                "x": {"$ref": "#/definitions/coord"},
+                                                "y": {"$ref": "#/definitions/coord"},
+                                                "width": {"$ref": "#/definitions/coord"},
+                                                "height": {"$ref": "#/definitions/coord"}
+                                            },
+                                            "required": ["x","y","width","height"]
+                                        }
+                                    },
+                                    "required": ["pid", "to_be_analyzed","position"]
+                                }
+                            }
+                        },
+                        "required": ["number", "pids"]
+                    }
+                },
+                "resolution": {
+                    "type": "object",
+                    "properties": {
+                        "width": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 1920
+                        },
+                        "height": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 1080
+                        },
+                        "required": ["width", "height"]
+                    }
+                },
+                "bg_color": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 16777215
+                }
+            },
+            "definitions": {
+                "coord": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        })";
 
         /* ------- Prog list -------------------- */
         vector<Metadata> data;

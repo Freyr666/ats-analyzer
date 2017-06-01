@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iostream>
 
+
 using namespace std;
 using namespace Ats;
 
@@ -102,20 +103,7 @@ Options::to_string() const {
     rval += "\tBackground color:\n\t\t";
     rval += std::to_string(bg_color);
     rval += "\n\n";
-
-    // FIXME remove
-    // json j = serialize();
-    // rval = j.dump();
-
-    // Position p;
-    // json j = json{{"x", 123},
-    //               {"y", 456},
-    //               {"width", 100},
-    //               {"height", 200}};
-    // rval = j.dump();
-    // p = j;
-    // rval = p.to_string();
-
+    rval = "";
     return rval;
 }
 
@@ -137,36 +125,67 @@ Options::deserialize(const json& j) {
     bool o_set = false;
     bool o_destr_set = false;
 
-    auto warn = [](const char* prop)->std::string{
-        return (std::string)"No" + prop + "property provided in Options";
-    };
+    /* get json schema */
+    // TODO autogenerate schema from class?
+    auto j_schema = json::parse(JSON_SCHEMA);
+    /* Validate incoming json.
+       This will throw an exception in case if json is bad */
+    validate(j, j_schema);
 
-    // NOTE settings should not be written until we are not sure that
-    // received json structure is valid
-
-    /* program list (metadata) parsing */
+    /* if metadata present in json */
     if (j.find(metadata_key) != j.end()) {
-        auto j_prog_list = j.at(metadata_key);
-        // TODO add an exception if not array?
-        // if (!j_prog_list.is_array())
-        //     throw JSON_THROW(type_error::create(302, ((std::string)metadata_key + ""
-        for (json::iterator it = j_prog_list.begin(); it != j_prog_list.end(); ++it) {
-            auto j_stream = s_it.value();
+        for (json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
+            auto j_stream = it.value();
+            uint stream_id = j_stream.at("stream").get<uint>();
+            auto matching_stream = find_stream(stream_id);
+
+            if (matching_stream == nullptr) {
+                // TODO maybe add log message here
+                continue;
+            }
+
+            auto j_channels = j_stream.at("channels");
+            for (json::iterator c_it = j_channels.begin(); c_it != j_channels.end(); ++c_it) {
+                auto j_channel = c_it.value();
+                uint channel_id = j_channel.at("number").get<uint>();
+                auto matching_channel = matching_stream->find_channel(channel_id);
+
+                if(matching_channel == nullptr) {
+                    // TODO maybe add log message here
+                    continue;
+                }
+
+                auto j_pids = j_channel.at("pids");
+                for (json::iterator p_it = j_pids.begin(); p_it != j_pids.end(); ++p_it) {
+                    auto j_pid = p_it.value();
+                    uint pid = j_pid.at("pid").get<uint>();
+                    auto matching_pid = matching_stream->find_pid(channel_id, pid);
+
+                    if(matching_pid == nullptr) {
+                        // TODO maybe add log message here
+                        continue;
+                    }
+
+                    matching_pid->to_be_analyzed = j_pid.at("to_be_analyzed").get<bool>();
+                    matching_pid->position = j_pid.at("position").get<Ats::Position>();
+                    o_destr_set = true;
+                }
+            }
         }
-    }
-    else log(warn(metadata_key));
+    } // TODO maybe add log message at else clause
 
-    /* mosaic resolution parsing */
+    /* if multiscreen resolution present in json */
     if (j.find(resolution_key) != j.end()) {
-        auto j_resolution = j.at(resolution_key);
-    }
-    else log(warn(resolution_key));
+        resolution.first = j.at(resolution_key).at("width").get<uint>();
+        resolution.second = j.at(resolution_key).at("height").get<uint>();
+        o_set = true;
+    } // TODO maybe add log message at else clause
 
-    /* mosaic background color parsing */
+    /* if multiscreen background color present in json */
     if (j.find(bg_color_key) != j.end()) {
-        bg_color = j.at(bg_color_key).get<uint>();
-    }
-    else log(warn(bg_color_key));
+        set_value_from_json(j,*this,bg_color,uint);
+        o_set = true;
+    } // TODO maybe add log message at else clause
 
     if (o_destr_set) destructive_set(*this);
     else if (o_set) set.emit(*this);
@@ -178,7 +197,7 @@ Options::to_json() const {
 }
 
 void
-Options::of_json(json& js) {
+Options::of_json(json& j) {
 }
 
 string

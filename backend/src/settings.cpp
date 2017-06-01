@@ -89,10 +89,6 @@ Ats::to_json(json& j, const Settings::Channel_settings::Error_overlay& eo) {
          {"error_color", eo.error_color}};
 }
 
-void
-Ats::from_json(const json& j, Settings::Channel_settings::Error_overlay& eo) {
-}
-
 string
 Settings::Channel_settings::Channel_name::to_string() const {
     string rval = "Enabled: ";
@@ -112,11 +108,6 @@ Ats::to_json(json& j, const Settings::Channel_settings::Channel_name& cn) {
          {"fmt", cn.fmt}};
 }
 
-void
-Ats::from_json(const json& j, Settings::Channel_settings::Channel_name& cn) {
-}
-
-
 string
 Settings::Channel_settings::Audio_meter::to_string() const {
     string rval = "Enabled: ";
@@ -134,10 +125,6 @@ Ats::to_json(json& j, const Settings::Channel_settings::Audio_meter& am) {
          {"position", (am.position == Audio_meter_pos::Left ? "left" :
                        am.position == Audio_meter_pos::Right ? "right" :
                        "right")}};
-}
-
-void
-Ats::from_json(const json& j, Settings::Channel_settings::Audio_meter& am) {
 }
 
 string
@@ -187,10 +174,6 @@ Ats::to_json(json& j, const Settings::Channel_settings::Status_bar& sb) {
          {"scte35", sb.scte35}};
 }
 
-void
-Ats::from_json(const json& j, Settings::Channel_settings::Status_bar& sb) {
-}
-
 string
 Settings::Channel_settings::to_string() const {
     string rval = "Show border:\n\t";
@@ -222,10 +205,6 @@ Ats::to_json(json& j, const Settings::Channel_settings& c) {
          {"channel_name", c.channel_name},
          {"audio_meter", c.audio_meter},
          {"status_bar", c.status_bar}};
-}
-
-void
-Ats::from_json(const json& j, Settings::Channel_settings& sb) {
 }
 
 /* ---------- QoE settings --------------- */
@@ -360,10 +339,6 @@ Ats::to_json(json& j, const Settings::Qoe_settings& qoe) {
          {"adv_buf", qoe.adv_buf}};
 }
 
-void
-Ats::from_json(const json& j, Settings::Qoe_settings& qoe) {
-}
-
 /* ---------- Settings -------------------- */
 
 void
@@ -396,7 +371,123 @@ Settings::serialize() const {
 
 void
 Settings::deserialize(const json& j) {
-    
+    constexpr const char* qoe_settings_key = "qoe_settings";
+    constexpr const char* channel_settings_key = "channel_settings";
+
+    bool o_set = false;
+
+    /* get json schema */
+    // TODO autogenerate schema from class?
+    auto j_schema = json::parse(JSON_SCHEMA);
+    /* Validate incoming json.
+       This will throw an exception in case if json is bad */
+    validate(j, j_schema);
+
+    /* if qoe settings present in json */
+    if (j.find(qoe_settings_key) != j.end()) {
+        // loss
+        auto j_qoe = j.at(qoe_settings_key);
+        set_value_from_json(j_qoe,qoe_settings,vloss,float);
+        set_value_from_json(j_qoe,qoe_settings,aloss,float);
+        // black frame
+        set_value_from_json(j_qoe,qoe_settings,black_cont_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,black_cont,float);
+        set_value_from_json(j_qoe,qoe_settings,black_peak_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,black_peak,float);
+        set_value_from_json(j_qoe,qoe_settings,luma_cont_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,luma_cont,float);
+        set_value_from_json(j_qoe,qoe_settings,luma_peak_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,luma_peak,float);
+        set_value_from_json(j_qoe,qoe_settings,black_time,float);
+        set_value_from_json(j_qoe,qoe_settings,black_pixel,uint);
+        // freeze
+        set_value_from_json(j_qoe,qoe_settings,freeze_cont_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,freeze_cont,float);
+        set_value_from_json(j_qoe,qoe_settings,freeze_peak_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,freeze_peak,float);
+        set_value_from_json(j_qoe,qoe_settings,diff_cont_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,diff_cont,float);
+        set_value_from_json(j_qoe,qoe_settings,diff_peak_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,diff_peak,float);
+        set_value_from_json(j_qoe,qoe_settings,freeze_time,float);
+        set_value_from_json(j_qoe,qoe_settings,pixel_diff,uint);
+        // blockiness
+        set_value_from_json(j_qoe,qoe_settings,blocky_cont_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,blocky_cont,float);
+        set_value_from_json(j_qoe,qoe_settings,blocky_peak_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,blocky_peak,float);
+        set_value_from_json(j_qoe,qoe_settings,blocky_time,float);
+        set_value_from_json(j_qoe,qoe_settings,mark_blocks,bool);
+        // silence
+        set_value_from_json(j_qoe,qoe_settings,silence_cont_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,silence_cont,float);
+        set_value_from_json(j_qoe,qoe_settings,silence_peak_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,silence_peak,float);
+        set_value_from_json(j_qoe,qoe_settings,silence_time,float);
+        // loudness
+        set_value_from_json(j_qoe,qoe_settings,loudness_cont_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,loudness_cont,float);
+        set_value_from_json(j_qoe,qoe_settings,loudness_peak_en,bool);
+        set_value_from_json(j_qoe,qoe_settings,loudness_peak,float);
+        set_value_from_json(j_qoe,qoe_settings,loudness_time,float);
+        // adv loudness
+        set_value_from_json(j_qoe,qoe_settings,adv_diff,float);
+        set_value_from_json(j_qoe,qoe_settings,adv_buf,uint);
+    } // TODO maybe add log message at else clause
+
+    /* if channel settings present in json */
+    if (j.find(channel_settings_key) != j.end()) {
+        auto j_channel = j.at(channel_settings_key);
+        set_value_from_json(j_channel,channel_settings,show_border,bool);
+        set_value_from_json(j_channel,channel_settings,border_color,uint);
+        set_value_from_json(j_channel,channel_settings,show_aspect_border,bool);
+        set_value_from_json(j_channel,channel_settings,aspect_border_color,uint);
+        if (j_channel.find("error_overlay") != j_channel.end()) {
+            auto j_eo = j_channel.at("error_overlay");
+            set_value_from_json(j_eo,channel_settings.error_overlay,enabled,bool);
+            set_value_from_json(j_eo,channel_settings.error_overlay,error_color,uint);
+        }
+        if (j_channel.find("channel_name") != j_channel.end()) {
+            auto j_cn = j_channel.at("channel_name");
+            set_value_from_json(j_cn,channel_settings.channel_name,enabled,bool);
+            set_value_from_json(j_cn,channel_settings.channel_name,font_size,int);
+            set_value_from_json(j_cn,channel_settings.channel_name,fmt,std::string);
+        }
+        if (j_channel.find("audio_meter") != j_channel.end()) {
+            auto j_am = j_channel.at("audio_meter");
+            set_value_from_json(j_am,channel_settings.audio_meter,enabled,bool);
+            if (j_am.find("position") != j_am.end()) {
+                using Audio_meter_pos = Settings::Channel_settings::Audio_meter::Audio_meter_pos;
+                std::string pos_str = j_am.at("position").get<std::string>();
+                channel_settings.audio_meter.position = \
+                    (pos_str == "left" ? Audio_meter_pos::Left :
+                     Audio_meter_pos::Right);
+            }
+        }
+        if (j_channel.find("status_bar") != j_channel.end()) {
+            auto j_sb = j_channel.at("status_bar");
+            set_value_from_json(j_sb,channel_settings.status_bar,enabled,bool);
+            if (j_sb.find("position") != j_sb.end()) {
+                using Status_bar_pos = Settings::Channel_settings::Status_bar::Status_bar_pos;
+                std::string pos_str = j_sb.at("position").get<std::string>();
+                channel_settings.status_bar.position = \
+                    (pos_str == "top_left" ? Status_bar_pos::Top_left :
+                     pos_str == "top_right" ? Status_bar_pos::Top_right :
+                     pos_str == "left" ? Status_bar_pos::Left :
+                     pos_str == "right" ? Status_bar_pos::Right :
+                     pos_str == "bottom_left" ? Status_bar_pos::Bottom_left :
+                     Status_bar_pos::Bottom_right);
+            }
+            set_value_from_json(j_sb,channel_settings.status_bar,aspect,bool);
+            set_value_from_json(j_sb,channel_settings.status_bar,subtitles,bool);
+            set_value_from_json(j_sb,channel_settings.status_bar,teletext,bool);
+            set_value_from_json(j_sb,channel_settings.status_bar,eit,bool);
+            set_value_from_json(j_sb,channel_settings.status_bar,qos,bool);
+            set_value_from_json(j_sb,channel_settings.status_bar,scte35,bool);
+        }
+    } // TODO maybe add log message at else clause
+
+    if (o_set) set.emit(*this);
 }
 
 string
@@ -405,394 +496,7 @@ Settings::to_json() const {
 }
 
 void
-Settings::of_json(json& js) {
-    using Df = Chatterer::Deserializer_failure;
-    
-    constexpr const char* div = "::";
-    bool o_set = false;
-
-    if (!js.is_object()) throw Df(string("Settings") + Df::expn_object);
-
-    for (json::iterator el = js.begin(); el != js.end(); ++el) {
-        const string jk = el.key();
-        auto jv = el.value();
-        
-        if (jk == "qoe_settings") {
-            if (!jv.is_object()) throw Df(jk + Df::expn_object);
-            
-            for (json::iterator it = jv.begin(); it != jv.end(); ++it) {
-                const std::string k = it.key();
-                auto v = it.value();
-
-                if (k == "vloss") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.vloss = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "aloss") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.aloss = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "black_cont_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.black_cont_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "black_cont") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.black_cont = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "black_peak_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.black_peak_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "black_peak") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.black_peak = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "luma_cont_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.luma_cont_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "luma_cont") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.luma_cont = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "luma_peak_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.luma_peak_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "luma_peak") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.luma_peak = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "black_time") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.black_time = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "black_pixel") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.black_pixel = v.get<uint>();
-                    o_set = true;
-                }
-                else if (k == "freeze_cont_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.freeze_cont_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "freeze_cont") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.freeze_cont = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "freeze_peak_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.freeze_peak_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "freeze_peak") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.freeze_peak = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "diff_cont_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.diff_cont_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "diff_cont") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.diff_cont = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "diff_peak_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.diff_peak_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "diff_peak") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.diff_peak = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "freeze_time") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.freeze_time = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "pixel_diff") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.pixel_diff = v.get<uint>();
-                    o_set = true;
-                }
-                else if (k == "blocky_cont_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.blocky_cont_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "blocky_cont") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.blocky_cont = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "blocky_peak_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.blocky_peak_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "blocky_peak") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.blocky_peak = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "blocky_time") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.blocky_time = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "mark_blocks") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.mark_blocks = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "silence_cont_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.silence_cont_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "silence_cont") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.silence_cont = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "silence_peak_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.silence_peak_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "silence_peak") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.silence_peak = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "silence_time") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.silence_time = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "loudness_cont_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.loudness_cont_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "loudness_cont") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.loudness_cont = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "loudness_peak_en") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    qoe_settings.loudness_peak_en = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "loudness_peak") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.loudness_peak = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "loudness_time") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.loudness_time = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "adv_diff") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.adv_diff = v.get<float>();
-                    o_set = true;
-                }
-                else if (k == "adv_buf") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    qoe_settings.adv_buf = v.get<uint>();
-                    o_set = true;
-                }
-            }
-        }
-        else if (jk == "channel_settings") {
-            if (!jv.is_object()) throw Df(jk + Df::expn_object);
-            for (json::iterator it = jv.begin(); it != jv.end(); ++it) {
-                const std::string k = it.key();
-                auto v = it.value();
-
-                if (k == "error_overlay") {
-                    if (!v.is_object()) throw Df(jk + div + k + Df::expn_object);
-                    for (json::iterator eo_it = v.begin(); eo_it != v.end(); ++eo_it) {
-                        const std::string eo_k = eo_it.key();
-                        auto eo_v = eo_it.value();
-
-                        if (eo_k == "enabled") {
-                            if (!eo_v.is_boolean())
-                                throw Df(jk + div + k + div + eo_k + Df::expn_bool);
-                            channel_settings.error_overlay.enabled = eo_v.get<bool>();
-                            o_set = true;
-                        }
-                        else if (eo_k == "error_color") {
-                            if (!eo_v.is_number())
-                                throw Df(jk + div + k + div + eo_k + Df::expn_number);
-                            channel_settings.error_overlay.error_color = eo_v.get<uint>();
-                            o_set = true;
-                        }
-                    }
-                }
-                else if (k == "channel_name") {
-                    if (!v.is_object()) throw Df(jk + div + k + Df::expn_object);
-                    for (json::iterator cn_it = v.begin(); cn_it != v.end(); ++cn_it) {
-                        const std::string cn_k = cn_it.key();
-                        auto cn_v = cn_it.value();
-
-                        if (cn_k == "enabled") {
-                            if (!cn_v.is_boolean())
-                                throw Df(jk + div + k + div + cn_k + Df::expn_bool);
-                            channel_settings.channel_name.enabled = cn_v.get<bool>();
-                            o_set = true;
-                        }
-                        else if (cn_k == "font_size") {
-                            if (!cn_v.is_number())
-                                throw Df(jk + div + k + div + cn_k + Df::expn_number);
-                            channel_settings.channel_name.font_size = cn_v.get<int>();
-                            o_set = true;
-                        }
-                        else if (cn_k == "fmt") {
-                            if (!cn_v.is_string())
-                                throw Df(jk + div + k + div + cn_k + Df::expn_string);
-                            channel_settings.channel_name.fmt = cn_v.get<std::string>();
-                            o_set = true;
-                        }
-                    }
-                }
-                else if (k == "audio_meter") {
-                    if (!v.is_object()) throw Df(jk + div + k + Df::expn_object);
-                    for (json::iterator am_it = v.begin(); am_it != v.end(); ++am_it) {
-                        const std::string am_k = am_it.key();
-                        auto am_v = am_it.value();
-
-                        if (am_k == "enabled") {
-                            if (!am_v.is_boolean())
-                                throw Df(jk + div + k + div + am_k + Df::expn_bool);
-                            channel_settings.audio_meter.enabled = am_v.get<bool>();
-                            o_set = true;
-                        }
-                        else if (am_k == "position") {
-                            if (!am_v.is_string())
-                                throw Df(jk + div + k + div + am_k + Df::expn_string);
-                            std::string pos = am_v.get<std::string>();
-                            using Audio_meter_pos = Channel_settings::Audio_meter::Audio_meter_pos;
-                            channel_settings.audio_meter.position = \
-                                (pos == "left") ? Audio_meter_pos::Left :
-                                (pos == "right") ? Audio_meter_pos::Right :
-                                Audio_meter_pos::Right;
-                            o_set = true;
-                        }
-                    }
-                }
-                else if (k == "status_bar") {
-                    if (!v.is_object()) throw Df(jk + div + k + Df::expn_object);
-                    for (json::iterator sb_it = v.begin(); sb_it != v.end(); ++sb_it) {
-                        const std::string sb_k = sb_it.key();
-                        auto sb_v = sb_it.value();
-
-                        if (sb_k == "enabled") {
-                            if (!sb_v.is_boolean())
-                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
-                            channel_settings.status_bar.enabled = sb_v.get<bool>();
-                            o_set = true;
-                        }
-                        else if (sb_k == "position") {
-                            if (!sb_v.is_string())
-                                throw Df(jk + div + k + div + sb_k + Df::expn_string);
-                            std::string pos = sb_v.get<std::string>();
-                            using Status_bar_pos = Channel_settings::Status_bar::Status_bar_pos;
-                            channel_settings.status_bar.position = \
-                                (pos == "top_left") ? Status_bar_pos::Top_left :
-                                (pos == "top_right") ? Status_bar_pos::Top_right :
-                                (pos == "left") ? Status_bar_pos::Left :
-                                (pos == "right") ? Status_bar_pos::Right :
-                                (pos == "bottom_left") ? Status_bar_pos::Bottom_left :
-                                (pos == "bottom_right") ? Status_bar_pos::Bottom_right :
-                                Status_bar_pos::Top_left;
-                            o_set = true;
-                        }
-                        else if (sb_k == "aspect") {
-                            if (!sb_v.is_boolean())
-                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
-                            channel_settings.status_bar.aspect = sb_v.get<bool>();
-                            o_set = true;
-                        }
-                        else if (sb_k == "subtitles") {
-                            if (!sb_v.is_boolean())
-                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
-                            channel_settings.status_bar.subtitles = sb_v.get<bool>();
-                            o_set = true;
-                        }
-                        else if (sb_k == "teletext") {
-                            if (!sb_v.is_boolean())
-                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
-                            channel_settings.status_bar.teletext = sb_v.get<bool>();
-                            o_set = true;
-                        }
-                        else if (sb_k == "eit") {
-                            if (!sb_v.is_boolean())
-                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
-                            channel_settings.status_bar.eit = sb_v.get<bool>();
-                            o_set = true;
-                        }
-                        else if (sb_k == "qos") {
-                            if (!sb_v.is_boolean())
-                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
-                            channel_settings.status_bar.qos = sb_v.get<bool>();
-                            o_set = true;
-                        }
-                        else if (sb_k == "scte35") {
-                            if (!sb_v.is_boolean())
-                                throw Df(jk + div + k + div + sb_k + Df::expn_bool);
-                            channel_settings.status_bar.scte35 = sb_v.get<bool>();
-                            o_set = true;
-                        }
-                    }
-                }
-                else if (k == "show_border") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    channel_settings.show_border = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "border_color") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    channel_settings.border_color = v.get<uint>();
-                    o_set = true;
-                }
-                else if (k == "show_aspect_border") {
-                    if (!v.is_boolean()) throw Df(jk + div + k + Df::expn_bool);
-                    channel_settings.show_aspect_border = v.get<bool>();
-                    o_set = true;
-                }
-                else if (k == "aspect_border_color") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    channel_settings.aspect_border_color = v.get<uint>();
-                    o_set = true;
-                }
-            }
-        }
-    }
-
-    if (o_set) set.emit(*this);
+Settings::of_json(json& j) {
 }
 
 string
