@@ -9,10 +9,17 @@
 
 /* sets the value of *type* and *name* (if present),
    taken from the root of json object,
-   to variable *obj.name* */
-#define set_value_from_json(j_obj,obj,name,type) do{  \
-        if (j.find(#name) != j.end())           \
-            (obj).name = j_obj.at(#name).get<type>(); \
+   to variable 'obj.name'.
+   Also sets flag indicating changes */
+#define typeof __typeof__
+#define SET_VALUE_FROM_JSON(json,obj,name,type,flag) do{    \
+        typeof(json)& _json = (json);                        \
+        typeof(obj)& _obj = (obj);                           \
+        typeof(flag)& _flag = (flag);                        \
+        if ((_json).find(#name) != (_json).end()) {         \
+            (_obj).name = (_json).at(#name).get<type>();    \
+            (_flag) = true;                                 \
+        }                                                   \
     } while (0)
 
 #define set_json
@@ -71,15 +78,6 @@ namespace Ats {
         virtual std::string to_string()    const = 0;
         virtual json        serialize()    const = 0;
         virtual void        deserialize(const json&) = 0;
-
-        static std::string err_to_json(const std::string& s) {
-            std::string rval = "{\"error\":\"";
-            rval += s;
-            return rval + "\"}";
-        }
-        static std::string err_to_msgpack(const std::string& s) {
-            return s;
-        }
     };
 
     class Chatterer_proxy {

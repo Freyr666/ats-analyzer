@@ -379,87 +379,87 @@ Settings::deserialize(const json& j) {
     if (j.find(qoe_settings_key) != j.end()) {
         // loss
         auto j_qoe = j.at(qoe_settings_key);
-        set_value_from_json(j_qoe,qoe_settings,vloss,float);
-        set_value_from_json(j_qoe,qoe_settings,aloss,float);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,vloss,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,aloss,float,o_set);
         // black frame
-        set_value_from_json(j_qoe,qoe_settings,black_cont_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,black_cont,float);
-        set_value_from_json(j_qoe,qoe_settings,black_peak_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,black_peak,float);
-        set_value_from_json(j_qoe,qoe_settings,luma_cont_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,luma_cont,float);
-        set_value_from_json(j_qoe,qoe_settings,luma_peak_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,luma_peak,float);
-        set_value_from_json(j_qoe,qoe_settings,black_time,float);
-        set_value_from_json(j_qoe,qoe_settings,black_pixel,uint);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,black_cont_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,black_cont,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,black_peak_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,black_peak,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,luma_cont_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,luma_cont,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,luma_peak_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,luma_peak,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,black_time,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,black_pixel,uint,o_set);
         // freeze
-        set_value_from_json(j_qoe,qoe_settings,freeze_cont_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,freeze_cont,float);
-        set_value_from_json(j_qoe,qoe_settings,freeze_peak_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,freeze_peak,float);
-        set_value_from_json(j_qoe,qoe_settings,diff_cont_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,diff_cont,float);
-        set_value_from_json(j_qoe,qoe_settings,diff_peak_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,diff_peak,float);
-        set_value_from_json(j_qoe,qoe_settings,freeze_time,float);
-        set_value_from_json(j_qoe,qoe_settings,pixel_diff,uint);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,freeze_cont_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,freeze_cont,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,freeze_peak_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,freeze_peak,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,diff_cont_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,diff_cont,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,diff_peak_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,diff_peak,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,freeze_time,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,pixel_diff,uint,o_set);
         // blockiness
-        set_value_from_json(j_qoe,qoe_settings,blocky_cont_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,blocky_cont,float);
-        set_value_from_json(j_qoe,qoe_settings,blocky_peak_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,blocky_peak,float);
-        set_value_from_json(j_qoe,qoe_settings,blocky_time,float);
-        set_value_from_json(j_qoe,qoe_settings,mark_blocks,bool);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,blocky_cont_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,blocky_cont,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,blocky_peak_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,blocky_peak,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,blocky_time,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,mark_blocks,bool,o_set);
         // silence
-        set_value_from_json(j_qoe,qoe_settings,silence_cont_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,silence_cont,float);
-        set_value_from_json(j_qoe,qoe_settings,silence_peak_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,silence_peak,float);
-        set_value_from_json(j_qoe,qoe_settings,silence_time,float);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,silence_cont_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,silence_cont,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,silence_peak_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,silence_peak,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,silence_time,float,o_set);
         // loudness
-        set_value_from_json(j_qoe,qoe_settings,loudness_cont_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,loudness_cont,float);
-        set_value_from_json(j_qoe,qoe_settings,loudness_peak_en,bool);
-        set_value_from_json(j_qoe,qoe_settings,loudness_peak,float);
-        set_value_from_json(j_qoe,qoe_settings,loudness_time,float);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,loudness_cont_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,loudness_cont,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,loudness_peak_en,bool,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,loudness_peak,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,loudness_time,float,o_set);
         // adv loudness
-        set_value_from_json(j_qoe,qoe_settings,adv_diff,float);
-        set_value_from_json(j_qoe,qoe_settings,adv_buf,uint);
-        o_set = true;
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,adv_diff,float,o_set);
+        SET_VALUE_FROM_JSON(j_qoe,qoe_settings,adv_buf,uint,o_set);
     } // TODO maybe add log message at else clause
 
     /* if channel settings present in json */
     if (j.find(channel_settings_key) != j.end()) {
         auto j_channel = j.at(channel_settings_key);
-        set_value_from_json(j_channel,channel_settings,show_border,bool);
-        set_value_from_json(j_channel,channel_settings,border_color,uint);
-        set_value_from_json(j_channel,channel_settings,show_aspect_border,bool);
-        set_value_from_json(j_channel,channel_settings,aspect_border_color,uint);
+        SET_VALUE_FROM_JSON(j_channel,channel_settings,show_border,bool,o_set);
+        SET_VALUE_FROM_JSON(j_channel,channel_settings,border_color,uint,o_set);
+        SET_VALUE_FROM_JSON(j_channel,channel_settings,show_aspect_border,bool,o_set);
+        SET_VALUE_FROM_JSON(j_channel,channel_settings,aspect_border_color,uint,o_set);
         if (j_channel.find("error_overlay") != j_channel.end()) {
             auto j_eo = j_channel.at("error_overlay");
-            set_value_from_json(j_eo,channel_settings.error_overlay,enabled,bool);
-            set_value_from_json(j_eo,channel_settings.error_overlay,error_color,uint);
+            SET_VALUE_FROM_JSON(j_eo,channel_settings.error_overlay,enabled,bool,o_set);
+            SET_VALUE_FROM_JSON(j_eo,channel_settings.error_overlay,error_color,uint,o_set);
         }
         if (j_channel.find("channel_name") != j_channel.end()) {
             auto j_cn = j_channel.at("channel_name");
-            set_value_from_json(j_cn,channel_settings.channel_name,enabled,bool);
-            set_value_from_json(j_cn,channel_settings.channel_name,font_size,int);
-            set_value_from_json(j_cn,channel_settings.channel_name,fmt,std::string);
+            SET_VALUE_FROM_JSON(j_cn,channel_settings.channel_name,enabled,bool,o_set);
+            SET_VALUE_FROM_JSON(j_cn,channel_settings.channel_name,font_size,int,o_set);
+            SET_VALUE_FROM_JSON(j_cn,channel_settings.channel_name,fmt,std::string,o_set);
         }
         if (j_channel.find("audio_meter") != j_channel.end()) {
             auto j_am = j_channel.at("audio_meter");
-            set_value_from_json(j_am,channel_settings.audio_meter,enabled,bool);
+            SET_VALUE_FROM_JSON(j_am,channel_settings.audio_meter,enabled,bool,o_set);
             if (j_am.find("position") != j_am.end()) {
                 using Audio_meter_pos = Settings::Channel_settings::Audio_meter::Audio_meter_pos;
                 std::string pos_str = j_am.at("position").get<std::string>();
                 channel_settings.audio_meter.position = \
                     (pos_str == "left" ? Audio_meter_pos::Left :
                      Audio_meter_pos::Right);
+                o_set = true;
             }
         }
         if (j_channel.find("status_bar") != j_channel.end()) {
             auto j_sb = j_channel.at("status_bar");
-            set_value_from_json(j_sb,channel_settings.status_bar,enabled,bool);
+            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,enabled,bool,o_set);
             if (j_sb.find("position") != j_sb.end()) {
                 using Status_bar_pos = Settings::Channel_settings::Status_bar::Status_bar_pos;
                 std::string pos_str = j_sb.at("position").get<std::string>();
@@ -470,14 +470,14 @@ Settings::deserialize(const json& j) {
                      pos_str == "right" ? Status_bar_pos::Right :
                      pos_str == "bottom_left" ? Status_bar_pos::Bottom_left :
                      Status_bar_pos::Bottom_right);
+                o_set = true;
             }
-            set_value_from_json(j_sb,channel_settings.status_bar,aspect,bool);
-            set_value_from_json(j_sb,channel_settings.status_bar,subtitles,bool);
-            set_value_from_json(j_sb,channel_settings.status_bar,teletext,bool);
-            set_value_from_json(j_sb,channel_settings.status_bar,eit,bool);
-            set_value_from_json(j_sb,channel_settings.status_bar,qos,bool);
-            set_value_from_json(j_sb,channel_settings.status_bar,scte35,bool);
-            o_set = true;
+            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,aspect,bool,o_set);
+            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,subtitles,bool,o_set);
+            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,teletext,bool,o_set);
+            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,eit,bool,o_set);
+            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,qos,bool,o_set);
+            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,scte35,bool,o_set);
         }
     } // TODO maybe add log message at else clause
 

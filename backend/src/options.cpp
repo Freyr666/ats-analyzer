@@ -156,10 +156,8 @@ Options::deserialize(const json& j) {
                         // TODO maybe add log message here
                         continue;
                     }
-
-                    matching_pid->to_be_analyzed = j_pid.at("to_be_analyzed").get<bool>();
-                    matching_pid->position = j_pid.at("position").get<Ats::Position>();
-                    o_destr_set = true;
+                    SET_VALUE_FROM_JSON(j_pid,(*matching_pid),to_be_analyzed,bool,o_destr_set);
+                    SET_VALUE_FROM_JSON(j_pid,(*matching_pid),position,Ats::Position,o_destr_set);
                 }
             }
         }
@@ -174,8 +172,7 @@ Options::deserialize(const json& j) {
 
     /* if multiscreen background color present in json */
     if (j.find(bg_color_key) != j.end()) {
-        set_value_from_json(j,*this,bg_color,uint);
-        o_set = true;
+        SET_VALUE_FROM_JSON(j,(*this),bg_color,uint,o_set);
     } // TODO maybe add log message at else clause
 
     if (o_destr_set) destructive_set(*this);

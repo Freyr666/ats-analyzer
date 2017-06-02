@@ -91,36 +91,35 @@ Context::dispatch(const std::string& s) {
     using Df = Chatterer::Deserializer_failure;
 
     json j;
-    
-    switch (msg_type) {
-    case Msg_type::Debug:
-        break;
-    case Msg_type::Json:
-    case Msg_type::Msgpack:
-        if (msg_type == Msg_type::Msgpack) {
-            try {
-                std::vector<uint8_t> msgpack(s.begin(), s.end());
-                j = json::from_msgpack(msgpack);
-            } catch (const std::exception& e) {
-                throw Df (std::string("Top-level MsgPack is corrupted: ") + e.what());
-            }
-        }
-        else {
-            try {
-                j = json::parse(s);
-            } catch (const std::exception& e) {
-                throw Df (std::string("Top-level JSON is corrupted: ") + e.what());
-            }
-        }
 
-        /* Validate incoming json.
-           This will throw an exception in case if json is bad */
-        validate(j, j_schema);
-
-        if(j.find(options.name) != j.end()) options.deserialize(j.at(options.name));
-        if(j.find(settings.name) != j.end()) settings.deserialize(j.at(settings.name));
-        if(j.find(graph.name) != j.end()) graph.deserialize(j.at(graph.name));
-        break;
+    if ((msg_type == Msg_type::Debug) ||
+        (msg_type == Msg_type::Json)) {
+        try {
+            j = json::parse(s);
+        } catch (const std::exception& e) {
+            throw Df (std::string("Top-level JSON is corrupted: ") + e.what());
+        }
     }
+    else { /* msgpack */
+        try {
+            std::vector<uint8_t> msgpack(s.begin(), s.end());
+            j = json::from_msgpack(msgpack);
+        } catch (const std::exception& e) {
+            throw Df (std::string("Top-level MsgPack is corrupted: ") + e.what());
+        }
+    }
+
+    /* Validate incoming json.
+       This will throw an exception in case if json is bad */
+    try {
+        validate(j, j_schema);
+    } catch (Validator_failure& e) {
+        log(e.what());
+        return;
+    }
+
+    if(j.find(options.name) != j.end()) options.deserialize(j.at(options.name));
+    if(j.find(settings.name) != j.end()) settings.deserialize(j.at(settings.name));
+    if(j.find(graph.name) != j.end()) graph.deserialize(j.at(graph.name));
 }
 
