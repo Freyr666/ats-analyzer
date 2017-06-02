@@ -92,20 +92,19 @@ Context::dispatch(const std::string& s) {
 
     json j;
 
-    if ((msg_type == Msg_type::Debug) ||
-        (msg_type == Msg_type::Json)) {
-        try {
-            j = json::parse(s);
-        } catch (const std::exception& e) {
-            throw Df (std::string("Top-level JSON is corrupted: ") + e.what());
-        }
-    }
-    else { /* msgpack */
+    if (msg_type == Msg_type::Msgpack) {
         try {
             std::vector<uint8_t> msgpack(s.begin(), s.end());
             j = json::from_msgpack(msgpack);
         } catch (const std::exception& e) {
             throw Df (std::string("Top-level MsgPack is corrupted: ") + e.what());
+        }
+    }
+    else { /* Debug or Json */
+        try {
+            j = json::parse(s);
+        } catch (const std::exception& e) {
+            throw Df (std::string("Top-level JSON is corrupted: ") + e.what());
         }
     }
 
