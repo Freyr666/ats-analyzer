@@ -4,6 +4,9 @@
 #include <string>
 #include "json.hpp"
 
+#define LUMA_WHITE 235
+#define LUMA_BLACK 16
+
 using namespace std;
 using json = nlohmann::json;
 
@@ -71,7 +74,10 @@ compose_schema() {
 
 /* ----------------------- Qoe settings----------------------- */
 
-    const string qoe_param_regex = "^(black|luma|freeze|diff|blocky|loudness|silence)_(peak|cont)$";
+    const string qoe_perc_regex = "^(black|freeze|blocky)_(peak|cont)$";
+    const string qoe_lufs_regex = "^(loudness|silence)_(peak|cont)$";
+    const string qoe_luma_regex = "^luma_(peak|cont)$";
+    const string qoe_diff_regex = "^diff_(peak|cont)$";
     const string qoe_flag_regex = "^(black|luma|freeze|diff|blocky|loudness|silence)_(peak|cont)_en$";
     const string qoe_time_regex = "^(black|freeze|blocky|loudness|silence)_time$";
 
@@ -85,9 +91,16 @@ compose_schema() {
                                     {"maximum",59}}},
                        {"vloss",{{"$ref","#/definitions/time"}}},
                        {"aloss",{{"$ref","#/definitions/time"}}}}},
-        {"patternProperties",{{qoe_param_regex,{{"$ref","#/definitions/percent"}}},
-                              {qoe_time_regex,{{"$ref","#/definitions/time"}}},
-                              {qoe_flag_regex,{{"type","boolean"}}}}}
+        {"patternProperties",{{qoe_flag_regex,{{"type","boolean"}}},
+                              {qoe_perc_regex,{{"$ref","#/definitions/percent"}}},
+                              {qoe_lufs_regex,{{"$ref","#/definitions/lufs"}}},
+                              {qoe_luma_regex,{{"type","number"},
+                                               {"minimum",LUMA_BLACK},
+                                               {"maximum",LUMA_WHITE}}},
+                              {qoe_diff_regex,{{"type","number"},
+                                               {"minimum",0},
+                                               {"maximum",(LUMA_WHITE - LUMA_BLACK)}}},
+                              {qoe_time_regex,{{"$ref","#/definitions/time"}}}}}
     };
 
 /* ----------------------- Settings -------------------------- */
@@ -132,10 +145,19 @@ compose_schema() {
         {"required",{"number","pids"}}
     };
 
+    const json j_metastream = {
+        {"type","object"},
+        {"properties", {{"stream",{{"type","integer"},
+                                   {"minimum", 0}}},
+                        {"channels",{{"type","array"},
+                                     {"uniqueItems",true},
+                                     {"items",j_metachannel}}}}}
+    };
+
     const json j_metadata = {
         {"type","array"},
         {"uniqueItems",true},
-        {"items",j_metachannel}
+        {"items",j_metastream}
     };
 
 /* ----------------------- Options --------------------------- */

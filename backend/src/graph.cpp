@@ -293,7 +293,7 @@ Graph::create_branch(const uint stream,
 		    return;
 		}
 			
-		v.codec = "h264";
+		v.codec = "h264"; // FIXME not only h264 supported
 		v.width = vi->width;
 		v.height = vi->height;
 		v.aspect_ratio = {vi->par_n,vi->par_d};
