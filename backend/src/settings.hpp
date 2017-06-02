@@ -13,6 +13,8 @@ using namespace std;
 
 namespace Ats {
 
+    using json = nlohmann::json;
+
     struct Initial {
         struct Wrong_option : public Error_expn {
             Wrong_option() : Error_expn() {}
@@ -46,7 +48,6 @@ namespace Ats {
                 string fmt = "$INPUT_TYPE, $INPUT_NAME, $CH_NAME";
 
                 string to_string() const;
-                string to_json() const;
             };
 
             struct Audio_meter {
@@ -56,7 +57,6 @@ namespace Ats {
                 Audio_meter_pos position = Audio_meter_pos::Right;
 
                 string to_string() const;
-                string to_json() const;
             };
 
             struct Status_bar {
@@ -74,7 +74,6 @@ namespace Ats {
                 bool scte35 = true;
 
                 string to_string() const;
-                string to_json() const;
             };
 
             bool show_border = false;
@@ -87,7 +86,6 @@ namespace Ats {
             Status_bar status_bar;
 
             string to_string() const;
-            string to_json() const;
         };
 
         struct Qoe_settings {
@@ -141,16 +139,6 @@ namespace Ats {
             uint adv_buf = 2 * 60 * 60;
 
             string to_string() const;
-            string to_json() const;
-        };
-
-        struct Output_sink {
-            string address = "239.0.0.1";
-            uint port = 1234;
-            bool enabled = true;
-
-            string to_string() const;
-            string to_json() const;
         };
 
         /* ------- Qoe analysis settings -------- */
@@ -158,9 +146,6 @@ namespace Ats {
 
         /* ------- Mosaic settings -------------- */
         Channel_settings channel_settings;
-
-        /* ------- Output sink settings ------- */
-        Output_sink output_sink_settings;
 
         sigc::signal<void,const Settings&>   set;
     
@@ -172,12 +157,19 @@ namespace Ats {
         // Chatterer implementation
         string to_json_body() const;
 	
-        string to_string() const;	
-        string to_json()   const;
-        void   of_json(json&);
-        string to_msgpack()   const;
-        void   of_msgpack(const string&);
+        string to_string() const;
+        json serialize() const;
+        void deserialize(const json&);
+
     };
+
+    // nlohmann json arbitrary types conversions
+    void to_json(json& j, const Settings::Channel_settings::Error_overlay&);
+    void to_json(json& j, const Settings::Channel_settings::Channel_name&);
+    void to_json(json& j, const Settings::Channel_settings::Audio_meter&);
+    void to_json(json& j, const Settings::Channel_settings::Status_bar&);
+    void to_json(json& j, const Settings::Channel_settings&);
+    void to_json(json& j, const Settings::Qoe_settings&);
 };
 
 #endif /* SETTINGS_H */

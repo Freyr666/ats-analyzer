@@ -4,7 +4,25 @@
 #include <glibmm.h>
 #include <string>
 #include "json.hpp"
+#include "json-schema.hpp"
 #include "errexpn.hpp"
+
+/* sets the value of *type* and *name* (if present),
+   taken from the root of json object,
+   to variable 'obj.name'.
+   Also sets flag indicating changes */
+#define typeof __typeof__
+#define SET_VALUE_FROM_JSON(json,obj,name,type,flag) do{    \
+        typeof(json)& _json = (json);                        \
+        typeof(obj)& _obj = (obj);                           \
+        typeof(flag)& _flag = (flag);                        \
+        if ((_json).find(#name) != (_json).end()) {         \
+            (_obj).name = (_json).at(#name).get<type>();    \
+            (_flag) = true;                                 \
+        }                                                   \
+    } while (0)
+
+#define set_json
 
 namespace Ats {
 
@@ -13,90 +31,101 @@ namespace Ats {
     inline std::string to_string (bool b) { return b ? "true" : "false"; }
 
     inline std::string add_indent (std::string& s, int indent = 2) {
-	size_t start_pos = 0;
-	const std::string from = "\n";
-	const std::string to = from + std::string(indent, '\t');
-	while(((start_pos = s.find(from, start_pos)) != std::string::npos) &&
-	      (start_pos != (s.length() - 1))) {
-	    s.replace(start_pos, from.length(), to);
-	    start_pos += to.length();
-	}
-	return s;
+        size_t start_pos = 0;
+        const std::string from = "\n";
+        const std::string to = from + std::string(indent, '\t');
+        while(((start_pos = s.find(from, start_pos)) != std::string::npos) &&
+              (start_pos != (s.length() - 1))) {
+            s.replace(start_pos, from.length(), to);
+            start_pos += to.length();
+        }
+        return s;
     }
 
     class Logger {
     public:
-	sigc::signal<void,const std::string&> send_log;
-	void log  (const std::string& s) { send_log.emit(s); }
+        sigc::signal<void,const std::string&> send_log;
+        void log  (const std::string& s) { send_log.emit(s); }
     };
 
     class Chatterer {
     public:
-	struct Serializer_failure : public Error_expn {
-	    static constexpr const char* expn_overflow = "serializer buffer overflowed: ";
-	    Serializer_failure() : Error_expn() {}
-	    Serializer_failure(string s) : Error_expn(s) {}
-	};
+        struct Serializer_failure : public Error_expn {
+            Serializer_failure() : Error_expn() {}
+            Serializer_failure(string s) : Error_expn(s) {}
+        };
 	
-	struct Deserializer_failure : public Error_expn {
-	    static constexpr const char* expn_bool = " must be a boolean";
-	    static constexpr const char* expn_number = " must be a number";
-	    static constexpr const char* expn_string = " must be a string";
-	    static constexpr const char* expn_object = " must be an object";
-	    static constexpr const char* expn_array = " must be an array";
-	    static constexpr const char* expn_null = " must be null";
-            
-	    Deserializer_failure() : Error_expn() {}
-	    Deserializer_failure(string s) : Error_expn(s) {}
-	};
+        struct Deserializer_failure : public Error_expn {
+            Deserializer_failure() : Error_expn() {}
+            Deserializer_failure(string s) : Error_expn(s) {}
+        };
+
+        Chatterer(const std::string n) : name(n) {}
 	
-	Chatterer(const std::string n) : name(n) {}
-	
-	Chatterer(const Chatterer&) = delete;
+        Chatterer(const Chatterer&) = delete;
         Chatterer(Chatterer&&) = delete;
 	
-	const std::string name;
+        const std::string name;
         
-	sigc::signal<void,const Chatterer&>   send;
-	sigc::signal<void,const std::string&> send_err;
+        sigc::signal<void,const Chatterer&>   send;
+        sigc::signal<void,const std::string&> send_err;
 
-	void talk ()                     { send.emit(*this); }
-	void error(const std::string& s) { send_err.emit(s); }
-	
-	virtual std::string to_string()    const = 0;	
-	virtual std::string to_json()      const = 0;
-	virtual std::string to_msgpack()   const = 0;
+        void talk ()                     { send.emit(*this); }
+        void error(const std::string& s) { send_err.emit(s); }
 
-	virtual void   of_json(json&) = 0;
-	virtual void   of_msgpack(const std::string&) = 0;
+        
 
-	static std::string err_to_json(const std::string& s) {
-	    std::string rval = "{\"error\":\"";
-	    rval += s;
-	    return rval + "\"}";
-	}
-	static std::string err_to_msgpack(const std::string& s) {
-	    return s;
-	}
+        virtual std::string to_string()    const = 0;
+        virtual json        serialize()    const = 0;
+        virtual void        deserialize(const json&) = 0;
     };
 
     class Chatterer_proxy {
     public:
-	Chatterer_proxy() {}
-	Chatterer_proxy(const Chatterer_proxy&) = delete;
+        struct Validator_failure : public Error_expn {
+            static constexpr const char* schema_failure = "JSON Schema loading failure: ";
+            static constexpr const char* json_failure = "Invalid JSON: ";
+
+            Validator_failure() : Error_expn() {}
+            Validator_failure(string s) : Error_expn(s) {}
+        };
+
+        Chatterer_proxy() {}
+        Chatterer_proxy(const Chatterer_proxy&) = delete;
         Chatterer_proxy(Chatterer_proxy&&) = delete;
 	
-	sigc::signal<void,const std::string&>      send;
-	sigc::signal<void,const std::string&>      send_err;
+        sigc::signal<void,const std::string&>      send;
+        sigc::signal<void,const std::string&>      send_err;
 	
-	virtual void forward_talk(const Chatterer&) = 0;
-	virtual void forward_error(const std::string&) = 0;
-	virtual void dispatch(const std::string&) = 0;
+        virtual void forward_talk(const Chatterer&) = 0;
+        virtual void forward_error(const std::string&) = 0;
+        virtual void dispatch(const std::string&) = 0;
 
-	void connect(Chatterer& c) {
-	    c.send.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_talk));
-	    c.send_err.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_error));
-	}
+        static void validate(const json& j, const json& j_schema) {
+
+            using nlohmann::json;
+            using nlohmann::json_uri;
+            using nlohmann::json_schema_draft4::json_validator;
+
+            json_validator validator;
+
+            try {
+                validator.set_root_schema(j_schema);
+            } catch (const std::exception &e) {
+                throw Validator_failure((std::string)Validator_failure::schema_failure + e.what());
+            }
+
+            try {
+                validator.validate(j);
+            } catch (const std::exception &e) {
+                throw Validator_failure((std::string)Validator_failure::json_failure + e.what());
+            }
+        };
+
+        void connect(Chatterer& c) {
+            c.send.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_talk));
+            c.send_err.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_error));
+        }
 	
     };
 

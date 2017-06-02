@@ -5,7 +5,6 @@
 #include <gst/video/video.h>
 
 #include "graph.hpp"
-#include "json.hpp"
 #include "options.hpp"
 #include "settings.hpp"
 
@@ -20,6 +19,14 @@ to_state(string& s) {
     if (s == "stop") return Gst::STATE_NULL;
     // FIXME
     return Gst::STATE_NULL;
+}
+
+static inline string
+from_state(Gst::State s) {
+    if (s == Gst::STATE_NULL) return "stop";
+    if (s == Gst::STATE_PAUSED) return "pause";
+    if (s == Gst::STATE_PLAYING) return "play";
+    return "null";
 }
 
 void
@@ -131,7 +138,7 @@ Graph::set_state(Gst::State s) {
 }
 
 Gst::State
-Graph::get_state() {
+Graph::get_state() const {
     Gst::State rval;
     Gst::State pend;
     if (pipe) {
@@ -373,39 +380,30 @@ Graph::connect(Settings& s) {
 
 string
 Graph::to_string() const {
-    return "todo";
+    std::string rval = "State:\n\t\t";
+    auto st = get_state();
+    rval += from_state(st);
+    rval += "\n\n";
+    return rval;
 }
 
-string
-Graph::to_json() const {
-    return "todo";
-}
-
-string
-Graph::to_msgpack() const {
-    return "todo";
+json
+Graph::serialize() const {
+    auto st = get_state();
+    json j = json{{"state", from_state(st)}};
+    return j;
 }
 
 void
-Graph::of_json(json& js) {
-    using Df = Deserializer_failure;
-    using json = nlohmann::json;
- 
-    if (! js.is_object())
-        throw Df (std::string("Graph JSON ") + Df::expn_object );
+Graph::deserialize (const json& j) {
+    constexpr const char* state_key = "state";
 
-    for (json::iterator el = js.begin(); el != js.end(); ++el) {
- 	if (el.key() == "state") {
-	    auto sst = el.value().get<string>();
-	    auto st = to_state(sst);
-	    set_state(st);
-	} 
+    /* if state key present in json */
+    if (j.find(state_key) != j.end()) {
+        auto sst = j.at(state_key).get<std::string>();
+        auto st = to_state(sst);
+        set_state(st);
     }
-}
-
-void
-Graph::of_msgpack(const string&) {
-    
 }
 
 

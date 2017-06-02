@@ -12,10 +12,10 @@ namespace Ats {
     class Error_expn : exception {
         boost::optional<string> _err;
     public:
-        Error_expn() {}
-        Error_expn(string s) : _err(s) {}
-        string message() const { return _err ? *_err : ""; }
-        operator bool() const { return true; }
+        Error_expn() noexcept {}
+        Error_expn(string s) noexcept: _err(s) {}
+        const char* what() const noexcept { return _err ? (*_err).c_str() : ""; }
+        operator bool() const noexcept { return true; }
     };
 
 }

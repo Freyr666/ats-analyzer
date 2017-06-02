@@ -22,6 +22,7 @@ namespace Ats {
     class Graph : public Chatterer, public Logger {
 	
     public:
+
         Graph(const std::string& n) : Chatterer(n) {}
         Graph(const Graph&) = delete;
         Graph(Graph&&) = delete;
@@ -33,7 +34,7 @@ namespace Ats {
         void       apply_settings(const Settings&);
 	
         void       set_state(Gst::State);
-        Gst::State get_state();
+        Gst::State get_state() const;
 
         void   set_resolution(const pair<uint,uint>);
         void   set_position(uint, uint, uint, const Position&);
@@ -46,10 +47,8 @@ namespace Ats {
 	
         // Chatterer
         string to_string() const;
-        string to_json() const;
-        void   of_json(json&);
-        string to_msgpack() const;
-        void   of_msgpack(const string&);
+        json   serialize() const;
+        void   deserialize(const json&);
 	
     private:
         struct Node {

@@ -13,26 +13,25 @@ using namespace Glib;
 
 namespace Ats {
 
+    using json = nlohmann::json;
+
     class Graph;
     class Probe;
 
     class Options : public Chatterer, public Logger {
 
     public:
-
-        class Serializer_buffer_overflow : std::exception {};
-
         /* ------- Prog list -------------------- */
         vector<Metadata> data;
 
         /* ------- Mosaic settings -------------- */
         pair<uint,uint> resolution = make_pair(1920, 1080);
-        uint background_color = 0;
+        uint bg_color = 0;
 
         sigc::signal<void,const Options&>   set;
         sigc::signal<void,const Options&>   destructive_set;
         sigc::signal<void>                  updated;
-    
+        
         Options(const std::string& n) : Chatterer(n) {}
         virtual ~Options() {}
 
@@ -43,11 +42,9 @@ namespace Ats {
         const Metadata*     find_stream (uint stream) const;
 
         // Chatter implementation
-        string to_string() const;	
-        string to_json()   const;
-        void   of_json(json&);
-        string to_msgpack()   const;
-        void   of_msgpack(const string&);
+        string to_string() const;
+        json   serialize() const;
+        void   deserialize(const json&);
 
         void operator=(const Metadata& m) { set_data(m); }
 

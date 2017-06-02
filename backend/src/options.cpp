@@ -1,5 +1,4 @@
 #include "options.hpp"
-#include "json.hpp"
 #include "graph.hpp"
 #include "probe.hpp"
 
@@ -7,6 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+
 
 using namespace std;
 using namespace Ats;
@@ -92,7 +92,7 @@ Options::to_string() const {
             streams += "\n";
         });
     Ats::add_indent(streams);
-    string rval = "Options:\n\tStreams:\n\t\t";
+    string rval = "Streams:\n\t\t";
     rval += streams;
     rval += "\tResolution:\n\t\t";
     rval += std::to_string(resolution.first);
@@ -100,197 +100,81 @@ Options::to_string() const {
     rval += std::to_string(resolution.second);
     rval += "\n";
     rval += "\tBackground color:\n\t\t";
-    rval += std::to_string(background_color);
+    rval += std::to_string(bg_color);
     rval += "\n\n";
     return rval;
 }
 
-string
-Options::to_json() const {
-    using Sf = Chatterer::Serializer_failure;
-    constexpr size_t size = 1024 * 8;
-
-    char buffer[size];
-    constexpr const char* fmt = "{"
-        "\"prog_list\":[%s],"
-        "\"resolution\":{\"width\":%u,\"height\":%u},"
-        "\"background_color\":%u"
-        "}";
-
-    string s = "";
-    for (auto it = data.begin(); it != data.end(); ++it) {
-        if ( it != data.begin() )
-            s += ",";
-        s += it->to_json();
-    }
-    int n = snprintf (buffer, size, fmt, s.c_str(),
-                      resolution.first, resolution.second,
-                      background_color);
-    if ( (n>=0) && (n<size) ) return string(buffer);
-    else throw Sf (string("Options: ") + Sf::expn_overflow + std::to_string(size));
+json
+Options::serialize() const {
+    json j = json{{"prog_list", data},
+                  {"resolution", {{"width", resolution.first},
+                                  {"height", resolution.second}}},
+                  {"bg_color", bg_color}};
+    return j;
 }
 
 void
-Options::of_json(json& js) {
-    using Df = Chatterer::Deserializer_failure;
-    using json = nlohmann::json;
+Options::deserialize(const json& j) {
+    constexpr const char* metadata_key = "prog_list";
+    constexpr const char* resolution_key = "resolution";
+    constexpr const char* bg_color_key = "bg_color";
 
-    constexpr const char* div = "::";
     bool o_set = false;
     bool o_destr_set = false;
-    
-    if (! js.is_object()) throw Df(string("Options") + Df::expn_object);
 
-    for (json::iterator el = js.begin(); el != js.end(); ++el) {
-        const std::string jk = el.key();
-        auto jv = el.value();
-        
-        if (jk == "prog_list") {
-            if (!jv.is_array()) throw Df(jk + Df::expn_object);
+    /* if metadata present in json */
+    if (j.find(metadata_key) != j.end()) {
+        for (json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
+            auto j_stream = it.value();
+            uint stream_id = j_stream.at("stream").get<uint>();
+            auto matching_stream = find_stream(stream_id);
 
-            for (json::iterator s_it = jv.begin(); s_it != jv.end(); ++s_it) {
-                auto j_stream = s_it.value();
-                if (!j_stream.is_object())
-                    throw Df(jk + div + "Metadata" + Df::expn_object);
-                if (!j_stream["stream"].is_number())
-                    throw Df(jk + div + "Metadata" + div + "stream" + Df::expn_object);
-                if (!j_stream["channels"].is_array())
-                    throw Df(jk + div + "Metadata" + div + "channels" + Df::expn_object);
+            if (matching_stream == nullptr) {
+                // TODO maybe add log message here
+                continue;
+            }
 
-                uint stream_id = j_stream["stream"].get<uint>();
-                auto matching_stream = find_stream(stream_id);
+            auto j_channels = j_stream.at("channels");
+            for (json::iterator c_it = j_channels.begin(); c_it != j_channels.end(); ++c_it) {
+                auto j_channel = c_it.value();
+                uint channel_id = j_channel.at("number").get<uint>();
+                auto matching_channel = matching_stream->find_channel(channel_id);
 
-                /* if such stream was not found */
-                if (matching_stream == nullptr)
-                    throw Df(string("Stream ") + std::to_string(stream_id) + " does not exist");
+                if(matching_channel == nullptr) {
+                    // TODO maybe add log message here
+                    continue;
+                }
 
-                auto j_channels = j_stream["channels"];
-                for (json::iterator c_it = j_channels.begin(); c_it != j_channels.end(); ++c_it) {
-                    auto j_channel = c_it.value();
-                    if (!j_channel.is_object())
-                        throw Df(jk + div + "Meta_channel" + Df::expn_object);
-                    if (!j_channel["number"].is_number())
-                        throw Df(jk + div + "Meta_channel" + div + "number" + Df::expn_object);
-                    if (!j_channel["pids"].is_array() &&
-                        !j_channel["pids"].is_null())
-                        throw Df(jk + div + "Meta_channel" + div + "number" + \
-                                 Df::expn_object + " or" + Df::expn_null);
+                auto j_pids = j_channel.at("pids");
+                for (json::iterator p_it = j_pids.begin(); p_it != j_pids.end(); ++p_it) {
+                    auto j_pid = p_it.value();
+                    uint pid = j_pid.at("pid").get<uint>();
+                    auto matching_pid = matching_stream->find_pid(channel_id, pid);
 
-                    uint number = j_channel["number"].get<uint>();
-                    auto matching_channel = matching_stream->find_channel(number);
-
-                    /* if such channel was not found */
-                    if (matching_channel == nullptr)
-                        throw Df(string("Channel ") + std::to_string(number) + \
-                                 " does not exist in stream " + std::to_string(stream_id));
-                  auto j_pids = j_channel["pids"];
-                    for (json::iterator p_it = j_pids.begin(); p_it != j_pids.end(); ++p_it) {
-                        auto j_pid = p_it.value();
-                        if (!j_pid.is_object())
-                            throw Df(jk + div + "Meta_pid" + Df::expn_object);
-                        if (!j_pid["pid"].is_number())
-                            throw Df(jk + div + "Meta_pid" + div + "pid" + Df::expn_number);
-
-                        uint pid = j_pid["pid"].get<uint>();
-                        auto matching_pid = matching_stream->find_pid(number, pid);
-
-                        /* if such pid was not found */
-                        if (matching_pid == nullptr)
-                            throw Df(string("PID ") + std::to_string(pid) + \
-                                     " does not exist in stream " + std::to_string(stream_id) + \
-                                     ", channel " + std::to_string(number));
-
-                        for (json::iterator it = j_pid.begin(); it != j_pid.end(); ++it) {
-                            const string k = it.key();
-                            auto v = it.value();
-
-                            if (k == "to_be_analyzed") {
-                                if (!v.is_boolean())
-                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_bool);
-                                matching_pid->to_be_analyzed = v.get<bool>();
-                                o_destr_set = true;
-                            }
-                            if (k == "position") {
-                                if (!v.is_object())
-                                    throw Df(jk + div + "Meta_pid" + div + k + Df::expn_object);
-
-                                for (json::iterator pos_it = v.begin(); pos_it != v.end(); ++pos_it) {
-
-                                    const string pos_k = pos_it.key();
-                                    auto pos_v = pos_it.value();
-
-                                    if (pos_k == "x") {
-                                        if (!pos_v.is_number())
-                                            throw Df(jk + div + "Meta_pid" + div + k + \
-                                                     + div + pos_k + Df::expn_number);
-                                        matching_pid->position.x = pos_v.get<uint>();
-                                        o_set = true;
-                                    }
-                                    else if (pos_k == "y") {
-                                        if (!pos_v.is_number())
-                                            throw Df(jk + div + "Meta_pid" + div + k + \
-                                                     + div + pos_k + Df::expn_number);
-                                        matching_pid->position.y = pos_v.get<uint>();
-                                        o_set = true;
-                                    }
-                                    else if (pos_k == "width") {
-                                        if (!pos_v.is_number())
-                                            throw Df(jk + div + "Meta_pid" + div + k + \
-                                                     + div + pos_k + Df::expn_number);
-                                        matching_pid->position.width = pos_v.get<uint>();
-                                        o_set = true;
-                                    }
-                                    else if (pos_k == "height") {
-                                        if (!pos_v.is_number())
-                                            throw Df(jk + div + "Meta_pid" + div + k + \
-                                                     + div + pos_k + Df::expn_number);
-                                        matching_pid->position.height = pos_v.get<uint>();
-                                        o_set = true;
-                                    }
-                                }
-                            }
-                        }
+                    if(matching_pid == nullptr) {
+                        // TODO maybe add log message here
+                        continue;
                     }
+                    SET_VALUE_FROM_JSON(j_pid,(*matching_pid),to_be_analyzed,bool,o_destr_set);
+                    SET_VALUE_FROM_JSON(j_pid,(*matching_pid),position,Ats::Position,o_destr_set);
                 }
             }
         }
-        else if (jk == "resolution") {
-            if (!jv.is_object()) throw Df(jk + Df::expn_object);
-            for (json::iterator it = jv.begin(); it != jv.end(); ++it) {
-                const std::string k = it.key();
-                auto v = it.value();
+    } // TODO maybe add log message at else clause
 
-                if (k == "width") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    resolution.first = v.get<uint>();
-                    o_destr_set = true;
-                }
-                else if (k == "height") {
-                    if (!v.is_number()) throw Df(jk + div + k + Df::expn_number);
-                    resolution.second = v.get<uint>();
-                    o_destr_set = true;
-                }
-            }
-        }
-        else if (jk == "background_color") {
-            if (!jv.is_number()) throw Df(jk + Df::expn_number);
-            background_color = jv.get<uint>();
-            o_set = true;
-        }
-    }
+    /* if multiscreen resolution present in json */
+    if (j.find(resolution_key) != j.end()) {
+        resolution.first = j.at(resolution_key).at("width").get<uint>();
+        resolution.second = j.at(resolution_key).at("height").get<uint>();
+        o_set = true;
+    } // TODO maybe add log message at else clause
+
+    /* if multiscreen background color present in json */
+    if (j.find(bg_color_key) != j.end()) {
+        SET_VALUE_FROM_JSON(j,(*this),bg_color,uint,o_set);
+    } // TODO maybe add log message at else clause
 
     if (o_destr_set) destructive_set(*this);
     else if (o_set) set.emit(*this);
-}
-
-string
-Options::to_msgpack() const {
-    return "todo";
-}
-
-void
-Options::of_msgpack(const string&) {
-
-    destructive_set(*this);
-    set.emit(*this);
 }

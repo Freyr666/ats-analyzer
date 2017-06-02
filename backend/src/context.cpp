@@ -1,10 +1,11 @@
 #include "context.hpp"
-#include "json.hpp"
+#include "schema.hpp"
 
 using namespace Glib;
 using namespace Ats;
 
-Context::Context(Initial init) : graph("graph"), options("options"), settings("settings") {
+Context::Context(Initial init) : graph("graph"), options("options"), settings("settings"),
+                                 j_schema(compose_schema()) {
     uint size = init.uris.size();
 
     if (init.msg_type) msg_type  = *init.msg_type;
@@ -41,72 +42,83 @@ Context::Context(Initial init) : graph("graph"), options("options"), settings("s
     
     graph.connect(options);
     graph.connect(settings);
-    
 }
 
 void
 Context::forward_talk(const Chatterer& c) {
-    std::string rval;
-    
+    std::string rval = "";
+
     switch (msg_type) {
     case Msg_type::Debug:
-	rval = c.name + " : ";
-	rval += c.to_string();
-	break;
+        rval = c.name + " : ";
+        rval += c.to_string();
+        break;
     case Msg_type::Json:
-	rval = "{" + c.name;
-	rval += ":";
-        rval += c.to_json();
-	rval += "}";
-	break;
     case Msg_type::Msgpack:
-        rval = c.name + c.to_msgpack();
-	break;
+        json j = json{{c.name,c.serialize()}};
+        if (msg_type == Msg_type::Msgpack) {
+            std::vector<uint8_t> msgpack = json::to_msgpack(j);
+            rval = std::string(msgpack.begin(), msgpack.end());
+        }
+        else rval = j.dump();
+        break;
     }
     send.emit(rval);
 }
+
 void
 Context::forward_error(const std::string& s) {
     std::string rval;
 
     switch (msg_type) {
     case Msg_type::Debug:
-	rval = "Error: " + s;
-	break;
-    case Msg_type::Json: 
-        rval = "{error: " + s;
-	rval += "}";
-	break;
+        rval = "Error: " + s;
+        break;
+    case Msg_type::Json:
     case Msg_type::Msgpack:
-        rval = s;
-	break;
+        json j = json{{"error", s}};
+        if (msg_type == Msg_type::Msgpack) {
+            std::vector<uint8_t> msgpack = json::to_msgpack(j);
+            rval = std::string(msgpack.begin(), msgpack.end());
+        }
+        else rval = j.dump();
+        break;
     }
     send_err.emit(rval);
 }
 void
 Context::dispatch(const std::string& s) {
-    using json = nlohmann::json;
     using Df = Chatterer::Deserializer_failure;
-    json js;
-    
-    switch (msg_type) {
-    case Msg_type::Debug:
-    case Msg_type::Json:
-	js = json::parse(s);
-	if (! js.is_object())
-	    throw Df (std::string("Top-level JSON") + Df::expn_object);
-	for (json::iterator el = js.begin(); el != js.end(); ++el) {
-	    if (el.key() == "options" && el.value().is_object()) {
-		options.of_json(el.value());
-	    } else if (el.key() == "settings" && el.value().is_object()) {
-		settings.of_json(el.value());
-	    } else if (el.key() == "graph" && el.value().is_object()) {
-		graph.of_json(el.value());
-	    }
-	}
-	break;
-    case Msg_type::Msgpack:
-	break;
+
+    json j;
+
+    if (msg_type == Msg_type::Msgpack) {
+        try {
+            std::vector<uint8_t> msgpack(s.begin(), s.end());
+            j = json::from_msgpack(msgpack);
+        } catch (const std::exception& e) {
+            throw Df (std::string("Top-level MsgPack is corrupted: ") + e.what());
+        }
     }
+    else { /* Debug or Json */
+        try {
+            j = json::parse(s);
+        } catch (const std::exception& e) {
+            throw Df (std::string("Top-level JSON is corrupted: ") + e.what());
+        }
+    }
+
+    /* Validate incoming json.
+       This will throw an exception in case if json is bad */
+    try {
+        validate(j, j_schema);
+    } catch (Validator_failure& e) {
+        log(e.what());
+        return;
+    }
+
+    if(j.find(options.name) != j.end()) options.deserialize(j.at(options.name));
+    if(j.find(settings.name) != j.end()) settings.deserialize(j.at(settings.name));
+    if(j.find(graph.name) != j.end()) graph.deserialize(j.at(graph.name));
 }
 
