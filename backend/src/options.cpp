@@ -125,7 +125,8 @@ Options::deserialize(const json& j) {
 
     /* if metadata present in json */
     if (j.find(metadata_key) != j.end()) {
-        for (json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
+        json j_prog_list = j.at(metadata_key);
+        for (json::const_iterator it = j_prog_list.cbegin(); it != j_prog_list.cend(); ++it) {
             auto j_stream = it.value();
             uint stream_id = j_stream.at("stream").get<uint>();
             auto matching_stream = find_stream(stream_id);
