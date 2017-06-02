@@ -25,12 +25,13 @@ namespace Ats {
         struct Size_error : std::exception {};
 	
     private:
-        json          j_schema;
         Graph         graph;
         vector< unique_ptr<Probe> > probes;
         Control       control;
         Options       options;
         Settings      settings;
+
+        const json    j_schema;
 	
         RefPtr<MainLoop> main_loop;
   	

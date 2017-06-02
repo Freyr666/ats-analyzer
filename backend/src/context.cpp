@@ -4,7 +4,8 @@
 using namespace Glib;
 using namespace Ats;
 
-Context::Context(Initial init) : graph("graph"), options("options"), settings("settings") {
+Context::Context(Initial init) : graph("graph"), options("options"), settings("settings"),
+                                 j_schema(compose_schema()) {
     uint size = init.uris.size();
 
     if (init.msg_type) msg_type  = *init.msg_type;
@@ -41,17 +42,6 @@ Context::Context(Initial init) : graph("graph"), options("options"), settings("s
     
     graph.connect(options);
     graph.connect(settings);
-
-    try {
-        std::string s_schema = compose_schema();
-
-        j_schema = json::parse(s_schema);
-    } catch (std::exception& e) {
-        j_schema = json::object();
-        // TODO do something if json schema was not loaded
-        // This will lead to any input json will be considered as valid
-    }
-
 }
 
 void
