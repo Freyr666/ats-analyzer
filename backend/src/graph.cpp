@@ -48,7 +48,7 @@ Graph::set(const Options& o) {
 
     bg_pad = mixer->get_request_pad("sink_%u");
 
-    set_resolution(o.resolution);
+    set_resolution(o.mosaic_resolution);
 
     auto in_pad = bg->get_static_pad("src");
     in_pad->link(bg_pad);
@@ -113,16 +113,19 @@ Graph::reset() {
 
 void
 Graph::apply_options(const Options& o) {
-    set_resolution(o.resolution);
+    if (!pipe) set(o);
+    else {
+        set_resolution(o.mosaic_resolution);
 
-    for (auto s : o.data) {
-	for (auto c : s.channels) {
-	    for (auto p : c.pids) {
-		if (! p.to_be_analyzed) continue;
+        for (auto s : o.data) {
+            for (auto c : s.channels) {
+                for (auto p : c.pids) {
+                    if (! p.to_be_analyzed) continue;
 
-		set_position(s.stream, c.number, p.pid, p.position);
-	    }
-	}
+                    set_position(s.stream, c.number, p.pid, p.position);
+                }
+            }
+        }
     }
 }
 
@@ -213,7 +216,7 @@ Graph::create_root(const Metadata& m) {
             srcpad->link(sinkpad);
 	    
             demux->signal_pad_added().connect([this,&m, bin, num](const RefPtr<Gst::Pad>& p) {
-		    auto stream = m.stream;
+                    auto stream = m.stream;
 		    
                     auto pname = p->get_name();
                     auto pcaps = p->get_current_caps()->get_structure(0).get_name();

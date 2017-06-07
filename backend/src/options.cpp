@@ -95,30 +95,30 @@ Options::to_string() const {
     string rval = "Streams:\n\t\t";
     rval += streams;
     rval += "\tResolution:\n\t\t";
-    rval += std::to_string(resolution.first);
+    rval += std::to_string(mosaic_resolution.first);
     rval += "x";
-    rval += std::to_string(resolution.second);
+    rval += std::to_string(mosaic_resolution.second);
     rval += "\n";
     rval += "\tBackground color:\n\t\t";
-    rval += std::to_string(bg_color);
+    rval += std::to_string(mosaic_bg_color);
     rval += "\n\n";
     return rval;
 }
 
 json
 Options::serialize() const {
-    json j = json{{"prog_list", data},
-                  {"resolution", {{"width", resolution.first},
-                                  {"height", resolution.second}}},
-                  {"bg_color", bg_color}};
+    json j = json{{"prog_list",data},
+                  {"mosaic_resolution",{mosaic_resolution.first,
+                                        mosaic_resolution.second}},
+                  {"mosaic_bg_color",mosaic_bg_color}};
     return j;
 }
 
 void
 Options::deserialize(const json& j) {
-    constexpr const char* metadata_key = "prog_list";
-    constexpr const char* resolution_key = "resolution";
-    constexpr const char* bg_color_key = "bg_color";
+    constexpr const char* metadata_key   = "prog_list";
+    constexpr const char* resolution_key = "mosaic_resolution";
+    constexpr const char* bg_color_key   = "mosaic_bg_color";
 
     bool o_set = false;
     bool o_destr_set = false;
@@ -166,14 +166,14 @@ Options::deserialize(const json& j) {
 
     /* if multiscreen resolution present in json */
     if (j.find(resolution_key) != j.end()) {
-        resolution.first = j.at(resolution_key).at("width").get<uint>();
-        resolution.second = j.at(resolution_key).at("height").get<uint>();
+        mosaic_resolution.first = j.at(resolution_key).at(0).get<uint>();
+        mosaic_resolution.second = j.at(resolution_key).at(1).get<uint>();
         o_set = true;
     } // TODO maybe add log message at else clause
 
     /* if multiscreen background color present in json */
     if (j.find(bg_color_key) != j.end()) {
-        SET_VALUE_FROM_JSON(j,(*this),bg_color,uint,o_set);
+        SET_VALUE_FROM_JSON(j,(*this),mosaic_bg_color,uint,o_set);
     } // TODO maybe add log message at else clause
 
     if (o_destr_set) destructive_set(*this);
