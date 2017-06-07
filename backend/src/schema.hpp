@@ -74,33 +74,81 @@ compose_schema() {
 
 /* ----------------------- Qoe settings----------------------- */
 
-    const string qoe_perc_regex = "^(black|freeze|blocky)_(peak|cont)$";
-    const string qoe_lufs_regex = "^(loudness|silence)_(peak|cont)$";
-    const string qoe_luma_regex = "^luma_(peak|cont)$";
-    const string qoe_diff_regex = "^diff_(peak|cont)$";
-    const string qoe_flag_regex = "^(black|luma|freeze|diff|blocky|loudness|silence)_(peak|cont)_en$";
-    const string qoe_time_regex = "^(black|freeze|blocky|loudness|silence)_time$";
+    auto get_j_qoe_setting = [](string ref)-> const json {
+        const json j_qoe_setting = {
+            {"type","object"},
+            {"properties",{{"peak_en",{{"type","boolean"}}},
+                           {"peak",{{"$ref",ref}}},
+                           {"cont_en",{{"type","boolean"}}},
+                           {"cont",{{"$ref",ref}}}}}
+        };
+        return j_qoe_setting;
+    };
+
+    const json j_loss = {
+        {"type","object"},
+        {"properties",{{"vloss",{{"$ref","#/definitions/time"}}},
+                       {"aloss",{{"$ref","#/definitions/time"}}}}}
+    };
+
+    const json j_black = {
+        {"type","object"},
+        {"properties",{{"black",get_j_qoe_setting("#/definitions/percent")},
+                       {"luma",get_j_qoe_setting("#/definitions/luma")},
+                       {"black_pixel",{{"type","integer"},
+                                       {"minimum",LUMA_BLACK},
+                                       {"maximum",LUMA_WHITE}}},
+                       {"time",{{"$ref","#/definitions/time"}}}}}
+    };
+
+    const json j_freeze = {
+        {"type","object"},
+        {"properties",{{"freeze",get_j_qoe_setting("#/definitions/percent")},
+                       {"diff",get_j_qoe_setting("#/definitions/diff")},
+                       {"pixel_diff",{{"type","integer"},
+                                      {"minimum",0},
+                                      {"maximum",(LUMA_WHITE - LUMA_BLACK)}}},
+                       {"time",{{"$ref","#/definitions/time"}}}}}
+    };
+
+    const json j_blocky = {
+        {"type","object"},
+        {"properties",{{"blocky",get_j_qoe_setting("#/definitions/percent")},
+                       {"mark_blocks",{{"type","boolean"}}},
+                       {"time",{{"$ref","#/definitions/time"}}}}}
+    };
+
+    const json j_silence = {
+        {"type","object"},
+        {"properties",{{"silence",get_j_qoe_setting("#/definitions/lufs")},
+                       {"time",{{"$ref","#/definitions/time"}}}}}
+    };
+
+    const json j_loudness = {
+        {"type","object"},
+        {"properties",{{"loudness",get_j_qoe_setting("#/definitions/lufs")},
+                       {"time",{{"$ref","#/definitions/time"}}}}}
+    };
+
+    const json j_adv = {
+        {"type","object"},
+        {"properties",{{"adv_diff",{{"type","number"},
+                                    {"minimum",0},
+                                    {"maximum",59}}}, // FIXME
+                       {"adv_buf",{{"type","integer"},
+                                   {"minimum",0},
+                                   {"maximum",14400}}}}} // FIXME
+    };
 
     const json j_qoe = {
         {"type","object"},
-        {"properties",{{"adv_buf",{{"type","integer"},
-                                   {"minimum",0},
-                                   {"maximum",14400}}},
-                       {"adv_diff",{{"type","number"},
-                                    {"minimum",0},
-                                    {"maximum",59}}},
-                       {"vloss",{{"$ref","#/definitions/time"}}},
-                       {"aloss",{{"$ref","#/definitions/time"}}}}},
-        {"patternProperties",{{qoe_flag_regex,{{"type","boolean"}}},
-                              {qoe_perc_regex,{{"$ref","#/definitions/percent"}}},
-                              {qoe_lufs_regex,{{"$ref","#/definitions/lufs"}}},
-                              {qoe_luma_regex,{{"type","number"},
-                                               {"minimum",LUMA_BLACK},
-                                               {"maximum",LUMA_WHITE}}},
-                              {qoe_diff_regex,{{"type","number"},
-                                               {"minimum",0},
-                                               {"maximum",(LUMA_WHITE - LUMA_BLACK)}}},
-                              {qoe_time_regex,{{"$ref","#/definitions/time"}}}}}
+        {"properties",{{"loss",j_loss},
+                       {"black",j_black},
+                       {"freeze",j_freeze},
+                       {"blocky",j_blocky},
+                       {"silence",j_silence},
+                       {"loudness",j_loudness},
+                       {"adv",j_adv}}}
     };
 
 /* ----------------------- Settings -------------------------- */
@@ -145,13 +193,20 @@ compose_schema() {
         {"required",{"number","pids"}}
     };
 
+    const string port_regex = "([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])";
+    const string host_regex = R"((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))";
+    const string uri_regex = string(R"(^udp:\/\/)") + host_regex + "(:" + port_regex + ")?$";
+
     const json j_metastream = {
         {"type","object"},
         {"properties", {{"stream",{{"type","integer"},
                                    {"minimum", 0}}},
+                        {"uri",{{"type","string"},
+                                {"pattern",uri_regex}}},
                         {"channels",{{"type","array"},
                                      {"uniqueItems",true},
-                                     {"items",j_metachannel}}}}}
+                                     {"items",j_metachannel}}}}},
+        {"required",{"stream","channels"}}
     };
 
     const json j_metadata = {
@@ -166,15 +221,15 @@ compose_schema() {
         {"comment","JSON schema for Options class"},
         {"type","object"},
         {"properties",{{"prog_list",j_metadata},
-                       {"resolution",{{"type","object"},
-                                      {"properties",{{"width",{{"type","integer"},
-                                                               {"minimum",0},
-                                                               {"maximum",1920}}},
-                                                     {"height",{{"type","integer"},
-                                                                {"minimum",0},
-                                                                {"maximum",1080}}}}},
-                                      {"required",{"width","height"}}}},
-                       {"bg_color",{{"$ref","#/definitions/color"}}}}}
+                       {"mosaic_resolution",{{"type","array"},
+                                             {"items",{{{"type","integer"},
+                                                        {"minimum",0},
+                                                        {"maximum",1920}},
+                                                       {{"type","integer"},
+                                                        {"minimum",0},
+                                                        {"maximum",1080}}}},
+                                             {"additionalItems",false}}},
+                       {"mosaic_bg_color",{{"$ref","#/definitions/color"}}}}}
     };
 
 /* ----------------------- Root ------------------------------ */
@@ -183,6 +238,12 @@ compose_schema() {
         {"percent",{{"type","number"},
                     {"minimum",0},
                     {"maximum",100}}},
+        {"luma",{{"type","number"},
+                 {"minimum",LUMA_BLACK},
+                 {"maximum",LUMA_WHITE}}},
+        {"diff",{{"type","number"},
+                 {"minimum",0},
+                 {"maximum",(LUMA_WHITE - LUMA_BLACK)}}},
         {"time",{{"type","number"},
                  {"minimum",0},
                  {"maximum",3600}}},

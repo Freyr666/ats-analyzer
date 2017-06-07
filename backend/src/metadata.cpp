@@ -101,6 +101,7 @@ void
 Ats::to_json (json& j, const Meta_pid::Audio_pid& ap) {
     j = json{{"codec", ap.codec},
              {"bitrate", ap.bitrate},
+             {"channels", ap.channels},
              {"sample_rate", ap.sample_rate}};
 }
 
@@ -121,8 +122,32 @@ Meta_pid::to_string () const {
     string rval = "Pid: ";
     rval += std::to_string(pid);
     rval += "\nType: ";
+    rval += (type == Meta_pid::Type::Video) ? "Video" : \
+        (type == Meta_pid::Type::Audio) ? "Audio" : \
+        (type == Meta_pid::Type::Subtitles) ? "Subtitles" : \
+        "Unknown";
+    if (type == Meta_pid::Type::Video) {
+        Meta_pid::Video_pid vp = get_video();
+        rval += "\nVideo info: ";
+        rval += std::string("Codec: ") + vp.codec + ", ";
+        rval += std::string("Width: ") + std::to_string(vp.width) + ", ";
+        rval += std::string("Height: ") + std::to_string(vp.height) + ", ";
+        rval += std::string("Aspect ratio: ") + std::to_string(vp.aspect_ratio.first) + \
+            ":" + std::to_string(vp.aspect_ratio.second) + ", ";
+        rval += std::string("Interlaced: ") + vp.interlaced + ", ";
+        rval += std::string("Frame rate: ") + std::to_string(vp.frame_rate);
+    }
+    else if (type == Meta_pid::Type::Audio) {
+        Meta_pid::Audio_pid ap = get_audio();
+        rval += "\nAudio info: ";
+        rval += std::string("Codec: ") + ap.codec + ", ";
+        rval += std::string("Bitrate: ") + ap.bitrate + ", ";
+        rval += std::string("Channels: ") + std::to_string(ap.channels) + ", ";
+        rval += std::string("Sample rate: ") + std::to_string(ap.sample_rate);
+    }
+    rval += "\nStream type: ";
     rval += std::to_string(stream_type);
-    rval += "\nCodec: ";
+    rval += "\nStream type name: ";
     rval += stream_type_name;
     rval += "\nTo be analyzed: ";
     rval += Ats::to_string(to_be_analyzed);
@@ -290,6 +315,7 @@ void
 Ats::to_json(json& j, const Metadata& m) {
     json j_channels(m.channels);
     j = json{{"stream", m.stream},
+             {"uri",m.uri},
              {"channels", j_channels}};
 }
 

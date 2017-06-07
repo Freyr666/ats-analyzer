@@ -39,7 +39,6 @@ namespace Ats {
                 bool enabled = true;
 
                 string to_string() const;
-                string to_json() const;
             };
 
             struct Channel_name {
@@ -89,54 +88,63 @@ namespace Ats {
         };
 
         struct Qoe_settings {
-            /* FIXME add correct defaults */
-            /* loss */
-            float vloss = 2.;
-            float aloss = 2.;
-            /* black frame */
-            bool black_cont_en = true;
-            float black_cont = 90.;
-            bool black_peak_en = true;
-            float black_peak = 100.;
-            bool luma_cont_en = true;
-            float luma_cont = 20.;
-            bool luma_peak_en = false;
-            float luma_peak = 16.;
-            float black_time = 10.;
-            uint black_pixel = 16;
-            /* freeze */
-            bool freeze_cont_en = true;
-            float freeze_cont = 90.;
-            bool freeze_peak_en = true;
-            float freeze_peak = 100.;
-            bool diff_cont_en = true;
-            float diff_cont = .1;
-            bool diff_peak_en = false;
-            float diff_peak = .02;
-            float freeze_time = 10.;
-            uint pixel_diff = 0;
-            /* blockiness */
-            bool blocky_cont_en = true;
-            float blocky_cont = 4.;
-            bool blocky_peak_en = true;
-            float blocky_peak = 7.;
-            float blocky_time = 3.;
-            bool mark_blocks = false;
-            /* silence */
-            bool silence_cont_en = true;
-            float silence_cont = -35.;
-            bool silence_peak_en = false;
-            float silence_peak = -45.;
-            float silence_time = 10.;
-            /* loudness */
-            bool loudness_cont_en = true;
-            float loudness_cont = -22.;
-            bool loudness_peak_en = true;
-            float loudness_peak = -15.;
-            float loudness_time = 2.;
-            /* adv loudness */
-            float adv_diff = 1.5;
-            uint adv_buf = 2 * 60 * 60;
+
+            struct Setting {
+                bool cont_en;
+                float cont;
+                bool peak_en;
+                float peak;
+            };
+
+            struct Loss {
+                float vloss;
+                float aloss;
+            };
+
+            struct Black {
+                Setting black;
+                Setting luma;
+                float time;
+                uint black_pixel;
+            };
+
+            struct Freeze {
+                Setting freeze;
+                Setting diff;
+                float time;
+                uint pixel_diff;
+            };
+
+            struct Blocky {
+                Setting blocky;
+                float time;
+                bool mark_blocks;
+            };
+
+            struct Silence {
+                Setting silence;
+                float time;
+            };
+
+            struct Loudness {
+                Setting loudness;
+                float time;
+            };
+
+            struct Adv {
+                float adv_diff;
+                uint adv_buf;
+            };
+
+            Loss loss;
+            Black black;
+            Freeze freeze;
+            Blocky blocky;
+            Silence silence;
+            Loudness loudness;
+            Adv adv;
+
+            // FIXME add default constructors?
 
             string to_string() const;
         };
@@ -169,6 +177,15 @@ namespace Ats {
     void to_json(json& j, const Settings::Channel_settings::Audio_meter&);
     void to_json(json& j, const Settings::Channel_settings::Status_bar&);
     void to_json(json& j, const Settings::Channel_settings&);
+
+    void to_json(json& j, const Settings::Qoe_settings::Setting&);
+    void to_json(json& j, const Settings::Qoe_settings::Loss&);
+    void to_json(json& j, const Settings::Qoe_settings::Black&);
+    void to_json(json& j, const Settings::Qoe_settings::Freeze&);
+    void to_json(json& j, const Settings::Qoe_settings::Blocky&);
+    void to_json(json& j, const Settings::Qoe_settings::Loudness&);
+    void to_json(json& j, const Settings::Qoe_settings::Silence&);
+    void to_json(json& j, const Settings::Qoe_settings::Adv&);
     void to_json(json& j, const Settings::Qoe_settings&);
 };
 
