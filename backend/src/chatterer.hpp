@@ -20,7 +20,6 @@
             (_obj).name = (_json).at(#name).get<type>();      \
             (_flag) = true;                                   \
         }                                                     \
-        else std::cout << "No '" << #name << "' key found\n"; \
     } while (0)
 
 namespace Ats {
