@@ -6,13 +6,9 @@ Control::Control () {
     in      = IOChannel::create_from_fd(0);
     out     = IOChannel::create_from_fd(1);
     out_log = IOChannel::create_from_fd(2);
-
-    in->set_encoding("");
-    out->set_encoding("");
-    out_log->set_encoding("");
     
     const auto read_in = [this](Glib::IOCondition c) -> bool {
-        recv();
+	recv();
         return true;
     };
 
@@ -25,6 +21,7 @@ void
 Control::recv () {
     Glib::ustring s;
     in->read_line(s);
+    in->flush();
     received.emit(s);   
 }
 
