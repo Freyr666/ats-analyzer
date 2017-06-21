@@ -1,0 +1,45 @@
+*Simple WM implementation:*
+
+* TODO Implementation [0/3]
+
+
+   /-----------------------------\
+   |	WM               	 |
+   | +-------------------------+ |
+   | | Config                  | |
+   | +-------------------------+ |
+   | +-----------+-------------+ |
+   | |Window	 |Window       | |
+   | |+----+----+|+-----+-----+| |
+   | ||Widg|Widg|||Widg |Widg || |
+   | |+----+----+|+-----+-----+| |
+   | +-----------+-------------+ |
+   \-----------------------------/
+
+- [ ] widget implementation:
+  Widget decorates videoscale and implements
+  resize feature for each ui element
+  - [ ] being constructed with a proper pad
+  - [ ] implements resize
+  - [ ] implements move
+  - [ ] implements intersect
+
+- [ ] window implementation:
+  Window also decorates videoscale but only
+  for ``background'' elements such as video frame,
+  clock, image etc.
+  - [ ] being constructed with a proper pad
+  - [ ] implements resize
+  - [ ] implements move
+  - [ ] implements intersect
+  - [ ] encapsulates widgets and provide widg. management caps
+
+=Note: both widget and window should probably be inherited from one parent element=
+
+- [ ] WM implementation:
+  WM ought to provide a simple and coherent way of
+  window and widgets management.
+  - [ ] encapsulates background and videomuxer
+  - [ ] implements preferences:
+    - [ ] resolution
+    - [ ] widget and windows control
