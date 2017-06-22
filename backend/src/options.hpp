@@ -24,10 +24,6 @@ namespace Ats {
         /* ------- Prog list -------------------- */
         vector<Metadata> data;
 
-        /* ------- Mosaic settings -------------- */
-        pair<uint,uint> resolution = make_pair(1920, 1080);
-        uint bg_color = 0;
-
         sigc::signal<void,const Options&>   set;
         sigc::signal<void,const Options&>   destructive_set;
         sigc::signal<void>                  updated;
