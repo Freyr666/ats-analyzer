@@ -35,6 +35,7 @@ Context::Context(Initial init) : graph("graph"), options("options"), settings("s
     connect (settings);
     connect (options);
     connect (graph);
+    connect (graph.get_wm());
 
     control.received.connect(sigc::mem_fun(this,&Chatterer_proxy::dispatch));
     

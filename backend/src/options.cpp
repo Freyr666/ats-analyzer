@@ -94,31 +94,19 @@ Options::to_string() const {
     Ats::add_indent(streams);
     string rval = "Streams:\n\t\t";
     rval += streams;
-    rval += "\tResolution:\n\t\t";
-    rval += std::to_string(resolution.first);
-    rval += "x";
-    rval += std::to_string(resolution.second);
-    rval += "\n";
-    rval += "\tBackground color:\n\t\t";
-    rval += std::to_string(bg_color);
     rval += "\n\n";
     return rval;
 }
 
 json
 Options::serialize() const {
-    json j = json{{"prog_list", data},
-                  {"resolution", {{"width", resolution.first},
-                                  {"height", resolution.second}}},
-                  {"bg_color", bg_color}};
+    json j = json{{"prog_list", data}};
     return j;
 }
 
 void
 Options::deserialize(const json& j) {
     constexpr const char* metadata_key = "prog_list";
-    constexpr const char* resolution_key = "resolution";
-    constexpr const char* bg_color_key = "bg_color";
 
     bool o_set = false;
     bool o_destr_set = false;
@@ -158,22 +146,9 @@ Options::deserialize(const json& j) {
                         continue;
                     }
                     SET_VALUE_FROM_JSON(j_pid,(*matching_pid),to_be_analyzed,bool,o_destr_set);
-                    SET_VALUE_FROM_JSON(j_pid,(*matching_pid),position,Ats::Position,o_destr_set);
                 }
             }
         }
-    } // TODO maybe add log message at else clause
-
-    /* if multiscreen resolution present in json */
-    if (j.find(resolution_key) != j.end()) {
-        resolution.first = j.at(resolution_key).at("width").get<uint>();
-        resolution.second = j.at(resolution_key).at("height").get<uint>();
-        o_set = true;
-    } // TODO maybe add log message at else clause
-
-    /* if multiscreen background color present in json */
-    if (j.find(bg_color_key) != j.end()) {
-        SET_VALUE_FROM_JSON(j,(*this),bg_color,uint,o_set);
     } // TODO maybe add log message at else clause
 
     if (o_destr_set) destructive_set(*this);

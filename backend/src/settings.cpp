@@ -70,144 +70,6 @@ Initial::usage (string prog_name) {
     return rval;
 }
 
-/* ---------- Channel settings ----------- */
-
-string
-Settings::Channel_settings::Error_overlay::to_string() const {
-    string rval = "Enabled: ";
-    rval += Ats::to_string(enabled);
-    rval += ", Error color: ";
-    rval += std::to_string(error_color);
-    rval += "\n";
-    return rval;
-}
-
-void
-Ats::to_json(json& j, const Settings::Channel_settings::Error_overlay& eo) {
-    j = {{"enabled", eo.enabled},
-         {"error_color", eo.error_color}};
-}
-
-string
-Settings::Channel_settings::Channel_name::to_string() const {
-    string rval = "Enabled: ";
-    rval += Ats::to_string(enabled);
-    rval += ", Font size: ";
-    rval += std::to_string(font_size);
-    rval += ", Format: ";
-    rval += fmt;
-    rval += "\n";
-    return rval;
-}
-
-void
-Ats::to_json(json& j, const Settings::Channel_settings::Channel_name& cn) {
-    j = {{"enabled", cn.enabled},
-         {"font_size", cn.font_size},
-         {"fmt", cn.fmt}};
-}
-
-string
-Settings::Channel_settings::Audio_meter::to_string() const {
-    string rval = "Enabled: ";
-    rval += Ats::to_string(enabled);
-    rval += ", Position: ";
-    rval += (position == Audio_meter_pos::Left ? "left" : "right");
-    rval += "\n";
-    return rval;
-}
-
-void
-Ats::to_json(json& j, const Settings::Channel_settings::Audio_meter& am) {
-    using Audio_meter_pos = Settings::Channel_settings::Audio_meter::Audio_meter_pos;
-    j = {{"enabled", am.enabled},
-         {"position", (am.position == Audio_meter_pos::Left ? "left" :
-                       am.position == Audio_meter_pos::Right ? "right" :
-                       "right")}};
-}
-
-string
-Settings::Channel_settings::Status_bar::to_string() const {
-    string rval = "Enabled: ";
-    rval += Ats::to_string(enabled);
-    rval += ", Position: ";
-    rval += (position == Status_bar_pos::Top_left ? "top_left" :
-             position == Status_bar_pos::Top_right ? "top_right" :
-             position == Status_bar_pos::Left ? "left" :
-             position == Status_bar_pos::Right ? "right" :
-             position == Status_bar_pos::Bottom_left ? "bottom_left" :
-             position == Status_bar_pos::Bottom_right ? "bottom_right" :
-             "top_left");
-    rval += ", Aspect: ";
-    rval += Ats::to_string(aspect);
-    rval += ", Subtitles: ";
-    rval += Ats::to_string(subtitles);
-    rval += ", Teletext: ";
-    rval += Ats::to_string(teletext);
-    rval += ", Eit: ";
-    rval += Ats::to_string(eit);
-    rval += ", Qos: ";
-    rval += Ats::to_string(qos);
-    rval += ", Scte35: ";
-    rval += Ats::to_string(scte35);
-    rval += "\n";
-    return rval;
-}
-
-void
-Ats::to_json(json& j, const Settings::Channel_settings::Status_bar& sb) {
-    using Status_bar_pos = Settings::Channel_settings::Status_bar::Status_bar_pos;
-    j = {{"enabled", sb.enabled},
-         {"position", (sb.position == Status_bar_pos::Top_left ? "top_left" :
-                       sb.position == Status_bar_pos::Top_right ? "top_right" :
-                       sb.position == Status_bar_pos::Left ? "left" :
-                       sb.position == Status_bar_pos::Right ? "right" :
-                       sb.position == Status_bar_pos::Bottom_left ? "bottom_left" :
-                       sb.position == Status_bar_pos::Bottom_right ? "bottom_right" :
-                       "top_left")},
-         {"aspect", sb.aspect},
-         {"subtitles", sb.subtitles},
-         {"teletext", sb.teletext},
-         {"eit", sb.eit},
-         {"qos", sb.qos},
-         {"scte35", sb.scte35}};
-}
-
-string
-Settings::Channel_settings::to_string() const {
-    string rval = "Show border:\n\t";
-    rval += Ats::to_string(show_border);
-    rval += "\nBorder color:\n\t";
-    rval += std::to_string(border_color);
-    rval += "\nShow aspect border:\n\t";
-    rval += Ats::to_string(show_aspect_border);
-    rval += "\nAspect border color:\n\t";
-    rval += std::to_string(aspect_border_color);
-    rval += "\nError overlay:\n\t";
-    rval += error_overlay.to_string();
-    rval += "Channel name:\n\t";
-    rval += channel_name.to_string();
-    rval += "Audio meter:\n\t";
-    rval += audio_meter.to_string();
-    rval += "Status bar:\n\t";
-    rval += status_bar.to_string();
-    return rval;
-}
-
-void
-Ats::to_json(json& j, const Settings::Channel_settings& c) {
-    j = {{"show_border", c.show_border},
-         {"border_color", c.border_color},
-         {"show_aspect_border", c.show_aspect_border},
-         {"aspect_border_color", c.aspect_border_color},
-         {"error_overlay", c.error_overlay},
-         {"channel_name", c.channel_name},
-         {"audio_meter", c.audio_meter},
-         {"status_bar", c.status_bar}};
-}
-
-/* ---------- QoE settings --------------- */
-
 string
 Settings::Qoe_settings::to_string() const {
     string rval = "Vloss:\n\t";
@@ -354,24 +216,19 @@ Settings::to_string() const {
     string rval = "Qoe settings:\n\t\t";
     string qoe_string = qoe_settings.to_string();
     rval += Ats::add_indent(qoe_string);
-    rval += "\tChannel_settings:\n\t\t";
-    string channel_string = channel_settings.to_string();
-    rval += Ats::add_indent(channel_string);
     rval += "\n";
     return rval;
 }
 
 json
 Settings::serialize() const {
-    json j = json{{"qoe_settings", qoe_settings},
-                  {"channel_settings", channel_settings}};
+    json j = json{{"qoe_settings", qoe_settings}};
     return j;
 }
 
 void
 Settings::deserialize(const json& j) {
     constexpr const char* qoe_settings_key = "qoe_settings";
-    constexpr const char* channel_settings_key = "channel_settings";
 
     bool o_set = false;
 
@@ -426,60 +283,6 @@ Settings::deserialize(const json& j) {
         SET_VALUE_FROM_JSON(j_qoe,qoe_settings,adv_diff,float,o_set);
         SET_VALUE_FROM_JSON(j_qoe,qoe_settings,adv_buf,uint,o_set);
     } // TODO maybe add log message at else clause
-
-    /* if channel settings present in json */
-    if (j.find(channel_settings_key) != j.end()) {
-        auto j_channel = j.at(channel_settings_key);
-        SET_VALUE_FROM_JSON(j_channel,channel_settings,show_border,bool,o_set);
-        SET_VALUE_FROM_JSON(j_channel,channel_settings,border_color,uint,o_set);
-        SET_VALUE_FROM_JSON(j_channel,channel_settings,show_aspect_border,bool,o_set);
-        SET_VALUE_FROM_JSON(j_channel,channel_settings,aspect_border_color,uint,o_set);
-        if (j_channel.find("error_overlay") != j_channel.end()) {
-            auto j_eo = j_channel.at("error_overlay");
-            SET_VALUE_FROM_JSON(j_eo,channel_settings.error_overlay,enabled,bool,o_set);
-            SET_VALUE_FROM_JSON(j_eo,channel_settings.error_overlay,error_color,uint,o_set);
-        }
-        if (j_channel.find("channel_name") != j_channel.end()) {
-            auto j_cn = j_channel.at("channel_name");
-            SET_VALUE_FROM_JSON(j_cn,channel_settings.channel_name,enabled,bool,o_set);
-            SET_VALUE_FROM_JSON(j_cn,channel_settings.channel_name,font_size,int,o_set);
-            SET_VALUE_FROM_JSON(j_cn,channel_settings.channel_name,fmt,std::string,o_set);
-        }
-        if (j_channel.find("audio_meter") != j_channel.end()) {
-            auto j_am = j_channel.at("audio_meter");
-            SET_VALUE_FROM_JSON(j_am,channel_settings.audio_meter,enabled,bool,o_set);
-            if (j_am.find("position") != j_am.end()) {
-                using Audio_meter_pos = Settings::Channel_settings::Audio_meter::Audio_meter_pos;
-                std::string pos_str = j_am.at("position").get<std::string>();
-                channel_settings.audio_meter.position = \
-                    (pos_str == "left" ? Audio_meter_pos::Left :
-                     Audio_meter_pos::Right);
-                o_set = true;
-            }
-        }
-        if (j_channel.find("status_bar") != j_channel.end()) {
-            auto j_sb = j_channel.at("status_bar");
-            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,enabled,bool,o_set);
-            if (j_sb.find("position") != j_sb.end()) {
-                using Status_bar_pos = Settings::Channel_settings::Status_bar::Status_bar_pos;
-                std::string pos_str = j_sb.at("position").get<std::string>();
-                channel_settings.status_bar.position = \
-                    (pos_str == "top_left" ? Status_bar_pos::Top_left :
-                     pos_str == "top_right" ? Status_bar_pos::Top_right :
-                     pos_str == "left" ? Status_bar_pos::Left :
-                     pos_str == "right" ? Status_bar_pos::Right :
-                     pos_str == "bottom_left" ? Status_bar_pos::Bottom_left :
-                     Status_bar_pos::Bottom_right);
-                o_set = true;
-            }
-            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,aspect,bool,o_set);
-            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,subtitles,bool,o_set);
-            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,teletext,bool,o_set);
-            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,eit,bool,o_set);
-            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,qos,bool,o_set);
-            SET_VALUE_FROM_JSON(j_sb,channel_settings.status_bar,scte35,bool,o_set);
-        }
-    } // TODO maybe add log message at else clause
-
+    
     if (o_set) set.emit(*this);
 }

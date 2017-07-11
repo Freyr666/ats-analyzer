@@ -36,56 +36,35 @@ Graph::set(const Options& o) {
     reset();
 	
     pipe = Gst::Pipeline::create();
+
+    wm.init(pipe);
  
-    auto mixer  = Gst::ElementFactory::create_element("glvideomixer");
     auto output = Gst::ElementFactory::create_element("glimagesink");
-    bg = Gst::ElementFactory::create_element("videotestsrc");
+    pipe->add(output);
 
-    bg->set_property("is-live", true);
-    
-    pipe->add(mixer)->add(output)->add(bg);
-    mixer->link(output);
+    wm.get_src()->link(output->get_static_pad("sink"));
 
-    bg_pad = mixer->get_request_pad("sink_%u");
-
-    set_resolution(o.resolution);
-
-    auto in_pad = bg->get_static_pad("src");
-    in_pad->link(bg_pad);
-    
-    for_each(o.data.begin(),o.data.end(),[this, mixer](const Metadata& m){
+    for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
             auto root = create_root(m);
 
             if (root) {
                 pipe->add(root);
                 root->sync_state_with_parent();
 		
-                root->signal_pad_added().connect([this, mixer, m](const RefPtr<Gst::Pad>& p) {
-			
-                        auto pname = p->get_name();
+                root->signal_pad_added().connect([this, m](const RefPtr<Gst::Pad>& p) {
+			auto pname = p->get_name();
                         
-                        vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
-                        auto type    = name_toks[1];
-			
-                        if (type == "video") {
-			    auto channel = strtoul(name_toks[3].c_str(), NULL, 10);
+			vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
+			auto type    = name_toks[1];
+
+			if (type == "video") {
+			    // auto channel = strtoul(name_toks[3].c_str(), NULL, 10);
 			    auto pid     = strtoul(name_toks[4].c_str(), NULL, 10);
 
-			    auto pid_info = m.find_pid(channel, pid);
-			    // settings
-			    cerr << pid_info->position.to_string() << "\n";
-			    
-                            auto mixer_pad = mixer->get_request_pad("sink_%u");
-
-			    auto n = elms.get(m.stream, channel, pid);
-			    n->connected = mixer_pad;
-
-                            p->link(mixer_pad);
-
-			    set_position(m.stream, channel, pid, pid_info->position);
-                        }
+			    this->wm.add_sink(m.stream, pid, type, p);
+			}
 			
-                    });
+		    });
             }
         });
 
@@ -101,9 +80,6 @@ Graph::set(const Options& o) {
 void
 Graph::reset() {
     if (bus)   bus.reset();
-    if (bg_pad) bg_pad.reset();
-    if (bg)     bg.reset();
-    if (! elms.empty())  elms.reset();
     if (pipe)  {
 	set_state(Gst::STATE_PAUSED);
 	set_state(Gst::STATE_NULL);
@@ -112,18 +88,8 @@ Graph::reset() {
 }
 
 void
-Graph::apply_options(const Options& o) {
-    set_resolution(o.resolution);
+Graph::apply_options(const Options&) {
 
-    for (auto s : o.data) {
-	for (auto c : s.channels) {
-	    for (auto p : c.pids) {
-		if (! p.to_be_analyzed) continue;
-
-		set_position(s.stream, c.number, p.pid, p.position);
-	    }
-	}
-    }
 }
 
 void
@@ -147,24 +113,6 @@ Graph::get_state() const {
 	rval = Gst::STATE_NULL;
     }
     return rval;
-}
-
-void
-Graph::set_resolution(const pair<uint,uint> r) {
-    bg_pad->set_property("width", r.first);
-    bg_pad->set_property("height", r.second);
-}
-
-void
-Graph::set_position(uint stream, uint chan, uint pid, const Position& p) {
-    auto n = elms.get(stream, chan, pid);
-
-    if (n && n->connected) {
-        n->connected->set_property("height", p.height);
-        n->connected->set_property("width", p.width);
-        n->connected->set_property("xpos", p.x);
-        n->connected->set_property("ypos", p.y);
-    }
 }
 
 void
@@ -262,7 +210,7 @@ Graph::create_branch(const uint stream,
                      const uint channel,
                      const uint pid,
                      const Metadata& m) {
-
+/*
     RefPtr<Gst::Pad> src_pad;
     
     auto pidinfo = m.find_pid(channel, pid);
@@ -357,6 +305,8 @@ Graph::create_branch(const uint stream,
     bin->add_pad(sink_ghost);
 
     return bin;
+*/
+    return RefPtr<Gst::Bin>(nullptr);
 }
 
 bool
@@ -404,30 +354,4 @@ Graph::deserialize (const json& j) {
         auto st = to_state(sst);
         set_state(st);
     }
-}
-
-
-/*
- * Node and Tree
- */
-
-void
-Graph::Tree::reset () {
-    _tree.clear();
-}
-
-void
-Graph::Tree::add (uint stream, uint chan, uint pid, Graph::Node n) {
-    auto key = make_tuple (stream,chan,pid);
-    _tree.insert(make_pair(key,n));
-}
-
-Graph::Node*
-Graph::Tree::get (uint stream, uint chan, uint pid) {
-    auto key = make_tuple (stream,chan,pid);
-    auto it = _tree.find (key);
-    if (it != _tree.end ())
-	return &(it->second);
-    else
-	return nullptr;
 }

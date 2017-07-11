@@ -106,11 +106,6 @@ namespace Ats {
     };
 
     // nlohmann json arbitrary types conversions
-    void to_json(json& j, const Settings::Channel_settings::Error_overlay&);
-    void to_json(json& j, const Settings::Channel_settings::Channel_name&);
-    void to_json(json& j, const Settings::Channel_settings::Audio_meter&);
-    void to_json(json& j, const Settings::Channel_settings::Status_bar&);
-    void to_json(json& j, const Settings::Channel_settings&);
     void to_json(json& j, const Settings::Qoe_settings&);
 };
 

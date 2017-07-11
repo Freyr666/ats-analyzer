@@ -17,18 +17,6 @@ namespace Ats {
 
     using json = nlohmann::json;
 
-    struct Position {
-        uint x = 0;
-        uint y = 0;
-        uint width = 0;
-        uint height = 0;
-
-        bool operator== (const Position&);
-        bool operator!= (const Position&);
-        bool is_overlap (const Position&);
-        string to_string () const;
-    };
-
     struct Meta_pid {
         class Wrong_type : std::exception {};
         enum class Type {Video, Audio, Subtitles, Teletext, Empty};
@@ -57,7 +45,6 @@ namespace Ats {
         Type type = Type::Empty;
         uint stream_type;
         string stream_type_name;
-        Position position;
 
         Meta_pid (uint p, uint t, string c);
 
@@ -121,12 +108,9 @@ namespace Ats {
         json to_json() const;
 
         void   for_analyzable (std::function<void(const Meta_channel&)>) const;
-        bool   validate_grid (uint, uint) const;
     };
 
     // json arbitrary types conversions
-    void to_json(json& j, const Position&);
-    void from_json(const json& j, Position&);
     void to_json(json& j, const Meta_pid::Video_pid&);
     void to_json(json& j, const Meta_pid::Audio_pid&);
     void to_json(json& j, const Meta_pid&);

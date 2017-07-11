@@ -11,6 +11,7 @@ HEADERS = chatterer.hpp
 SOURCES = main.cpp probe.cpp settings.cpp \
           metadata.cpp parser.cpp options.cpp \
           graph.cpp context.cpp control.cpp	\
+          position.cpp wm.cpp \
           json-schema-draft4.json.cpp json-uri.cpp json-validator.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)
