@@ -32,20 +32,3 @@ Glib::RefPtr<Gst::Pad>
 Wm::get_src() {
     return mixer->get_static_pad("src");
 }
-
-// TODO Chatterer
-
-string
-Wm::to_string() const {
-    return "TODO";
-}
-
-json
-Wm::serialize() const {
-    return nullptr;
-}
-
-void
-Wm::deserialize(const json&) {
-
-}

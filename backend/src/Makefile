@@ -8,10 +8,10 @@ LDFLAGS += `pkg-config --libs gstreamermm-1.0 glibmm-2.4 gstreamer-1.0 gstreamer
 
 HEADERS = chatterer.hpp
 
-SOURCES = main.cpp probe.cpp settings.cpp \
-          metadata.cpp parser.cpp options.cpp \
-          graph.cpp context.cpp control.cpp	\
-          position.cpp wm.cpp \
+SOURCES = main.cpp probe.cpp settings.cpp settings_chatterer.cpp \
+          metadata.cpp parser.cpp options.cpp options_chatterer.cpp \
+          graph.cpp graph_chatterer.cpp context.cpp control.cpp	\
+          position.cpp wm.cpp wm_chatterer.cpp \
           json-schema-draft4.json.cpp json-uri.cpp json-validator.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)

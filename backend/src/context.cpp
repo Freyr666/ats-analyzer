@@ -87,6 +87,7 @@ Context::forward_error(const std::string& s) {
     }
     send_err.emit(rval);
 }
+
 void
 Context::dispatch(const std::string& s) {
     using Df = Chatterer::Deserializer_failure;
@@ -118,8 +119,9 @@ Context::dispatch(const std::string& s) {
         return;
     }
 
-    if(j.find(options.name) != j.end()) options.deserialize(j.at(options.name));
-    if(j.find(settings.name) != j.end()) settings.deserialize(j.at(settings.name));
-    if(j.find(graph.name) != j.end()) graph.deserialize(j.at(graph.name));
+    for (json::iterator it = j.begin(); it != j.end(); ++it) {
+        auto chatterer = get_chatterer(it.key());
+	if (chatterer) chatterer->deserialize(it.value());
+    }
 }
 
