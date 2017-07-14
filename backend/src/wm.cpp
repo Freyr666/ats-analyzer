@@ -19,7 +19,7 @@ Wm::init(Glib::RefPtr<Gst::Bin> b) {
 }
 
 void
-Wm::add_sink(uint stream, uint pid, string type, Glib::RefPtr<Gst::Pad> sink) {
+Wm::add_sink(const uint stream, const uint pid, const string type, const Meta_pid& p, Glib::RefPtr<Gst::Pad> sink) {
     /* create Window and Widgets */
 }
 

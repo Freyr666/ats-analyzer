@@ -1,6 +1,6 @@
-CC = clang++
+CC = g++
 
-CFLAGS = -Wall -O0 -std=c++1y -g -c
+CFLAGS = -Wall -O0 -std=c++17 -g -c
 CFLAGS += `pkg-config --cflags gstreamermm-1.0 glibmm-2.4 gstreamer-1.0 gstreamer-video-1.0 gstreamer-mpegts-1.0`
 
 LDFLAGS = 
@@ -10,7 +10,7 @@ HEADERS = chatterer.hpp
 
 SOURCES = main.cpp probe.cpp settings.cpp settings_chatterer.cpp \
           metadata.cpp parser.cpp options.cpp options_chatterer.cpp \
-          graph.cpp graph_chatterer.cpp context.cpp control.cpp	\
+          graph.cpp graph_auxilary.cpp graph_chatterer.cpp context.cpp control.cpp	\
           position.cpp wm.cpp wm_chatterer.cpp \
           json-schema-draft4.json.cpp json-uri.cpp json-validator.cpp
 

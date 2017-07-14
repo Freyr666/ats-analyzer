@@ -22,8 +22,8 @@ namespace Ats {
 	virtual ~Wm() {}
 
 	void init(Glib::RefPtr<Gst::Bin>);
-	void add_sink(uint stream, uint pid, string type, Glib::RefPtr<Gst::Pad> sink);
-	void on_remove_sink(uint stream, uint pid);
+	void add_sink(const uint stream, const uint pid, const string type, const Meta_pid& p, Glib::RefPtr<Gst::Pad> sink);
+	void on_remove_sink(const uint stream, const uint pid);
 	Glib::RefPtr<Gst::Pad> get_src();
 
 	// Chatterer

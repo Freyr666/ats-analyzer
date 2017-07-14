@@ -60,6 +60,10 @@ namespace Ats {
                                        const uint,
                                        const uint,
                                        const Metadata&);
+	/* auxilary fun-s */
+	void      build_root(const Metadata&,RefPtr<Gst::Bin>,RefPtr<Gst::Element>,const Meta_channel&);
+        void      build_branch(const Metadata&,RefPtr<Gst::Bin>,uint,const RefPtr<Gst::Pad>&);
+        void      build_subbranch(RefPtr<Gst::Bin>,uint,uint,uint,const RefPtr<Gst::Pad>&);
 
         bool             on_bus_message(const Glib::RefPtr<Gst::Bus>&,
                                         const Glib::RefPtr<Gst::Message>&);
