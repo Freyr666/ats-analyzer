@@ -23,7 +23,6 @@ namespace Ats {
 
 	void init(Glib::RefPtr<Gst::Bin>);
 	void add_sink(const uint stream, const uint pid, const string type, const Meta_pid& p, Glib::RefPtr<Gst::Pad> sink);
-	void on_remove_sink(const uint stream, const uint pid);
 	Glib::RefPtr<Gst::Pad> get_src();
 
 	// Chatterer
@@ -39,6 +38,8 @@ namespace Ats {
 	Glib::RefPtr<Gst::Element> background;
 	Glib::RefPtr<Gst::Pad>     background_pad;
 	Glib::RefPtr<Gst::Element> mixer;
+
+	void on_remove_sink(const uint stream, const uint pid);
 
 	void update_config();
 	void validate();

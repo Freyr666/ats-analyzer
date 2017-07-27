@@ -5,50 +5,47 @@
 #include <string>
 #include <vector>
 
+#include "errexpn.hpp"
+#include "pad.hpp"
+
 namespace Ats {
-
-    class Pad {
-    public:
-	enum class Type { Video, Audio, Graph_volume, Unknown };
-	
-	Pad(Glib::RefPtr<Gst::Pad>&);
-	Pad(const Pad&&) = delete;
-	Pad(Pad&) = delete;
-
-	Type                   type() { return _t; }
-	Glib::RefPtr<Gst::Pad> pad()  { return _pad; }
-    private:
-	Type _t;
-	Glib::RefPtr<Gst::Pad> _pad;
-    };
     
     class Branch {
     public:
 	enum class Type { Video, Audio };
 
-	Branch();
 	Branch(Branch&) = delete;
 	Branch(const Branch&&) = delete;
 	virtual ~Branch() {}
 
 	virtual Type                                type() = 0;
 	std::vector< std::shared_ptr<Pad> > pads() { return _pads; }
-	Glib::RefPtr<Gst::Bin>              bin()  { return _bin; }
+	void    add_to_pipe ( const Glib::RefPtr<Gst::Bin>& bin ) { bin->add(_bin); }
+        void    connect_pad ( const Glib::RefPtr<Gst::Pad>& p );
 	
 	template <class PropertyType >
 	void    set_property(const std::string& p, const PropertyType& v) {
-	    _analyser->set_property(p, v);
+	    if (_analyser) _analyser->set_property(p, v);
+	    else throw Error_expn("Branch: set_property - no analyser exists");
 	}
 	template <class PropertyType >
 	void    get_property(const std::string& p, PropertyType& v) {
-	    _analyser->get_property(p, v);
+	    if (_analyser) _analyser->get_property(p, v);
+	    else throw Error_expn("Branch: get_property - no analyser exists");
 	}
 	
-	static std::unique_ptr<Branch> create(std::string);
+	static std::unique_ptr<Branch> create(std::string, uint, uint, uint);
+
+	sigc::signal <void,std::shared_ptr <Pad> > signal_pad_added() { return _pad_added; }
+	
     protected:
+	Branch();
+	
 	std::vector< std::shared_ptr<Pad> > _pads;
 	Glib::RefPtr<Gst::Element> _analyser;
+	Glib::RefPtr<Gst::Element> _decoder;
 	Glib::RefPtr<Gst::Bin> _bin;
+	sigc::signal <void,std::shared_ptr <Pad> > _pad_added;
     };
 
     class Video_branch : Branch {
@@ -63,6 +60,12 @@ namespace Ats {
 	Audio_branch(uint, uint, uint);
 
 	virtual Type   type() { return Branch::Type::Audio; }
+	std::shared_ptr<Pad> get_audio_pad() { return _audio_pad; }
+	sigc::signal <void,std::shared_ptr <Pad> > signal_audio_pad_added() { return _audio_pad_added; }
+	
+    private:
+	std::shared_ptr<Pad> _audio_pad;
+	sigc::signal <void,std::shared_ptr <Pad> > _audio_pad_added;
     };
 }
 

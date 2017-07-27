@@ -15,55 +15,50 @@ Graph::set(const Options& o) {
     
     reset();
 	
-    pipe = Gst::Pipeline::create();
+    _pipe = Gst::Pipeline::create();
 
-    wm.init(pipe);
+    _wm.init(_pipe);
  
     auto output = Gst::ElementFactory::create_element("glimagesink");
-    pipe->add(output);
+    _pipe->add(output);
 
-    wm.get_src()->link(output->get_static_pad("sink"));
+    _wm.get_src()->link(output->get_static_pad("sink"));
 
     for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
-            auto root = create_root(m);
+            auto root = Root::create(_pipe, m);
 
             if (root) {
-                pipe->add(root);
-                root->sync_state_with_parent();
 		
-                root->signal_pad_added().connect([this, m](const RefPtr<Gst::Pad>& p) {
-			auto pname = p->get_name();
-                        
-			vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
-			auto type    = name_toks[1];
+                root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
 
-			if (type == "video") {
+			if (p->type() == Pad::Type::Video) {
 			    //auto channel = strtoul(name_toks[3].c_str(), NULL, 10);
-			    auto pid     = strtoul(name_toks[4].c_str(), NULL, 10);
+			    // auto pid   = 
 
-			    this->wm.add_sink(m.stream, pid, type, *m.find_pid(pid), p);
+			    // this->_wm.add_sink(m.stream, pid, type, *m.find_pid(pid), p);
 			}
 			
 		    });
+		_roots.push_back(std::move(root));
             }
         });
 
-    bus = pipe->get_bus();
+    _bus = _pipe->get_bus();
 
-    bus->add_watch(sigc::mem_fun(this, &Graph::on_bus_message));
+    _bus->add_watch(sigc::mem_fun(this, &Graph::on_bus_message));
    
-    pipe->set_state(Gst::STATE_PLAYING);
+    _pipe->set_state(Gst::STATE_PLAYING);
 
     // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
 }
 
 void
 Graph::reset() {
-    if (bus)   bus.reset();
-    if (pipe)  {
+    if (_bus)   _bus.reset();
+    if (_pipe)  {
 	set_state(Gst::STATE_PAUSED);
 	set_state(Gst::STATE_NULL);
-        pipe.reset();
+        _pipe.reset();
     }
 }
 
@@ -79,16 +74,16 @@ Graph::apply_settings(const Settings& s) {
 
 void
 Graph::set_state(Gst::State s) {
-    if (pipe)
-	pipe->set_state(s);
+    if (_pipe)
+	_pipe->set_state(s);
 }
 
 Gst::State
 Graph::get_state() const {
     Gst::State rval;
     Gst::State pend;
-    if (pipe) {
-	pipe->get_state(rval, pend, Gst::MICRO_SECOND);
+    if (_pipe) {
+	_pipe->get_state(rval, pend, Gst::MICRO_SECOND);
     } else {
 	rval = Gst::STATE_NULL;
     }
@@ -98,60 +93,6 @@ Graph::get_state() const {
 void
 Graph::set_settings(const Settings&) {
     
-}
-
-RefPtr<Gst::Bin>
-Graph::create_root(const Metadata& m) {
-    if (! m.to_be_analyzed()) return RefPtr<Gst::Bin>(nullptr);
-
-    auto bin   = Gst::Bin::create();
-    auto src   = Gst::ElementFactory::create_element("udpsrc");
-    auto parse = Gst::ElementFactory::create_element("tsparse");
-    auto tee   = Gst::Tee::create();
-
-    src->set_property("uri", m.uri);
-    src->set_property("buffer-size", 2147483647);
-
-    bin->add(src)->add(parse)->add(tee);
-
-    src->link(parse)->link(tee);
-
-    m.for_analyzable ([this,&m,bin,tee](const Meta_channel& c) { build_root(m,bin,tee,c); });
-    return bin;
-}
-
-RefPtr<Gst::Bin>
-Graph::create_branch(const uint stream,
-                     const uint channel,
-                     const uint pid,
-                     const Metadata& m) {
-
-    RefPtr<Gst::Pad> src_pad;
-    
-    auto pidinfo = m.find_pid(channel, pid);
-
-    if ((pidinfo == nullptr) || (!pidinfo->to_be_analyzed)) return RefPtr<Gst::Bin>(nullptr);
-    
-    auto bin     = Gst::Bin::create();
-    auto queue   = Gst::ElementFactory::create_element("queue");
-    auto decoder = Gst::ElementFactory::create_element("decodebin");
-    
-    queue->set_property("max-size-buffers", 20000);
-    queue->set_property("max-size-bytes", 12000000);
-
-    bin->add(queue)->add(decoder);
-    queue->link(decoder);
-
-    decoder->signal_pad_added().connect([this,bin,stream,channel,pid](const RefPtr<Gst::Pad>& pad)
-					{ build_subbranch(bin,stream,channel,pid,pad); });
-
-    auto sink_pad = queue->get_static_pad("sink");
-    auto sink_ghost = Gst::GhostPad::create(sink_pad, "sink");
-
-    sink_ghost->set_active();
-    bin->add_pad(sink_ghost);
-
-    return bin;
 }
 
 bool

@@ -11,9 +11,7 @@
 #include "chatterer.hpp"
 #include "metadata.hpp"
 #include "wm.hpp"
-
-using namespace std;
-using namespace Glib;
+#include "root.hpp"
 
 namespace Ats {
 
@@ -29,7 +27,7 @@ namespace Ats {
         Graph(Graph&&) = delete;
         virtual ~Graph() {}
 
-	Wm&        get_wm() { return wm; };
+	Wm&        get_wm() { return _wm; };
         void       set(const Options&);
         void       reset();
         void       apply_options(const Options&);
@@ -51,19 +49,10 @@ namespace Ats {
         void   deserialize(const json&);
 	
     private:
-	Wm                    wm;
-        RefPtr<Gst::Pipeline> pipe;
-        RefPtr<Gst::Bus>      bus;
-	
-        RefPtr<Gst::Bin> create_root(const Metadata&);
-        RefPtr<Gst::Bin> create_branch(const uint,
-                                       const uint,
-                                       const uint,
-                                       const Metadata&);
-	/* auxilary fun-s */
-	void      build_root(const Metadata&,RefPtr<Gst::Bin>,RefPtr<Gst::Element>,const Meta_channel&);
-        void      build_branch(const Metadata&,RefPtr<Gst::Bin>,uint,const RefPtr<Gst::Pad>&);
-        void      build_subbranch(RefPtr<Gst::Bin>,uint,uint,uint,const RefPtr<Gst::Pad>&);
+	Wm                                 _wm;
+	Glib::RefPtr<Gst::Pipeline>        _pipe;
+	Glib::RefPtr<Gst::Bus>             _bus;
+	std::vector<std::unique_ptr<Root>> _roots;
 
         bool             on_bus_message(const Glib::RefPtr<Gst::Bus>&,
                                         const Glib::RefPtr<Gst::Message>&);
