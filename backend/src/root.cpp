@@ -71,12 +71,12 @@ Root::build_branch (const uint stream,
     auto& type = caps_toks[0];
 		    
     if (type != "video" && type != "audio") return;
-
+    
     auto pid  = strtoul(name_toks[2].data(), NULL, 16);
 
     auto branch = Branch::create(type, stream, num, pid);
 
-    if (! branch) return;
+    if (branch == nullptr) return;
 
     branch->add_to_pipe(_bin);
     branch->connect_src(p);

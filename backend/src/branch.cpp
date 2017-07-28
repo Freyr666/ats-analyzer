@@ -70,7 +70,7 @@ Video_branch::Video_branch(uint stream, uint chan, uint pid) {
 }
 
 Audio_branch::Audio_branch(uint stream, uint chan, uint pid) {
-    
+
 }
 
 
