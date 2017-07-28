@@ -12,6 +12,9 @@ namespace Ats {
 	Wm_element(const Wm_element&) = delete;
 	Wm_element(Wm_element&&) = delete;
 
+	virtual uint stream();
+	virtual uint channel();
+	virtual uint pid();
 	virtual bool is_enabled();
 	virtual void enable();
 	virtual void disable();

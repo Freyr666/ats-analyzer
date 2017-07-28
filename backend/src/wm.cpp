@@ -5,17 +5,17 @@ using namespace Ats;
 
 void /* TODO err */
 Wm::add_to_pipe(Glib::RefPtr<Gst::Bin> b) {
-    bin        = b;
-    mixer      = Gst::ElementFactory::create_element("glvideomixer");
-    background = Gst::ElementFactory::create_element("videotestsrc");
-    background->set_property("is_live", true);
+    _bin        = b;
+    _mixer      = Gst::ElementFactory::create_element("glvideomixer");
+    _background = Gst::ElementFactory::create_element("videotestsrc");
+    _background->set_property("is_live", true);
 
-    bin->add(mixer)->add(background);
+    _bin->add(_mixer)->add(_background);
     
-    background_pad = mixer->get_request_pad("sink_%u");
+    _background_pad = _mixer->get_request_pad("sink_%u");
 
-    auto in_pad = background->get_static_pad("src");
-    in_pad->link(background_pad);
+    auto in_pad = _background->get_static_pad("src");
+    in_pad->link(_background_pad);
 }
 
 void

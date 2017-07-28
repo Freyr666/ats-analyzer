@@ -9,6 +9,7 @@
 #include "chatterer.hpp"
 #include "wm_widget.hpp"
 #include "wm_window.hpp"
+#include "wm_treeview.hpp"
 #include "position.hpp"
 #include "metadata.hpp"
 #include "pad.hpp"
@@ -25,7 +26,7 @@ namespace Ats {
 	void add_to_pipe (Glib::RefPtr<Gst::Bin>);
 	void plug (std::shared_ptr<Pad>);
 
-	Glib::RefPtr<Gst::Pad> get_src_pad() { return mixer->get_static_pad("src"); }
+	Glib::RefPtr<Gst::Pad> get_src_pad() { return _mixer->get_static_pad("src"); }
 
 	// Chatterer
         string to_string() const;
@@ -33,13 +34,14 @@ namespace Ats {
         void   deserialize(const json&);
 
     private:
-	pair<uint,uint> resolution = make_pair(1920, 1080);
-	std::map<std::pair<uint,uint>,Wm_window> windows;
-	std::map<std::pair<uint,uint>,Wm_widget> widgets;
-	Glib::RefPtr<Gst::Bin>     bin;
-	Glib::RefPtr<Gst::Element> background;
-	Glib::RefPtr<Gst::Pad>     background_pad;
-	Glib::RefPtr<Gst::Element> mixer;
+	pair<uint,uint> _resolution = make_pair(1920, 1080);
+	std::map<std::pair<uint,uint>,Wm_window> _windows;
+	std::map<std::pair<uint,uint>,Wm_widget> _widgets;
+	Wm_treeview                _treeview;
+	Glib::RefPtr<Gst::Bin>     _bin;
+	Glib::RefPtr<Gst::Element> _background;
+	Glib::RefPtr<Gst::Pad>     _background_pad;
+	Glib::RefPtr<Gst::Element> _mixer;
 
 	void on_remove_sink(const uint stream, const uint pid);
 
