@@ -4,7 +4,7 @@ using namespace std;
 using namespace Ats;
 
 void /* TODO err */
-Wm::init(Glib::RefPtr<Gst::Bin> b) {
+Wm::add_to_pipe(Glib::RefPtr<Gst::Bin> b) {
     bin        = b;
     mixer      = Gst::ElementFactory::create_element("glvideomixer");
     background = Gst::ElementFactory::create_element("videotestsrc");
@@ -19,16 +19,11 @@ Wm::init(Glib::RefPtr<Gst::Bin> b) {
 }
 
 void
-Wm::add_sink(const uint stream, const uint pid, const string type, const Meta_pid& p, Glib::RefPtr<Gst::Pad> sink) {
+Wm::plug(shared_ptr<Pad> sink) {
     /* create Window and Widgets */
 }
 
 void
 Wm::on_remove_sink(uint stream, uint pid) {
 
-}
-
-Glib::RefPtr<Gst::Pad>
-Wm::get_src() {
-    return mixer->get_static_pad("src");
 }

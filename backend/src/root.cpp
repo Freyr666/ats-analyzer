@@ -60,8 +60,8 @@ Root::build_cb (const uint stream, const Meta_channel& c) {
 
 void
 Root::build_branch (const uint stream,
-	      const uint num,
-	      const Glib::RefPtr<Gst::Pad>& p) {
+		    const uint num,
+		    const Glib::RefPtr<Gst::Pad>& p) {
     auto pname = p->get_name();
     auto pcaps = p->get_current_caps()->get_structure(0).get_name();
 
@@ -79,7 +79,7 @@ Root::build_branch (const uint stream,
     if (! branch) return;
 
     branch->add_to_pipe(_bin);
-    branch->connect_pad(p);
+    branch->connect_src(p);
 
     branch->signal_pad_added().connect([this](std::shared_ptr<Pad> p){ _pad_added.emit(p); });
     if (branch->type() == Branch::Type::Audio) {

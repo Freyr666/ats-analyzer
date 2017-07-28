@@ -26,7 +26,7 @@ Branch::Branch() {
 }
 
 void
-Branch::connect_pad ( const Glib::RefPtr<Gst::Pad>& p ) {
+Branch::connect_src ( const Glib::RefPtr<Gst::Pad>& p ) {
     auto sink_pad  = _bin->get_static_pad("sink");
     p->link(sink_pad);
     _bin->sync_state_with_parent();

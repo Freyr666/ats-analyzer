@@ -12,7 +12,7 @@ SOURCES = main.cpp probe.cpp settings.cpp settings_chatterer.cpp \
           metadata.cpp parser.cpp options.cpp options_chatterer.cpp \
           graph.cpp graph_chatterer.cpp context.cpp control.cpp	\
           position.cpp wm.cpp wm_chatterer.cpp pad.cpp branch.cpp \
-          root.cpp \
+          root.cpp renderer.cpp \
           json-schema-draft4.json.cpp json-uri.cpp json-validator.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)

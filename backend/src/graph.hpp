@@ -12,6 +12,7 @@
 #include "metadata.hpp"
 #include "wm.hpp"
 #include "root.hpp"
+#include "renderer.hpp"
 
 namespace Ats {
 
@@ -50,9 +51,11 @@ namespace Ats {
 	
     private:
 	Wm                                 _wm;
+	Video_renderer                     _vrenderer;
+	std::vector<std::unique_ptr<Audio_renderer>> _arenderers;
+	std::vector<std::unique_ptr<Root>> _roots;
 	Glib::RefPtr<Gst::Pipeline>        _pipe;
 	Glib::RefPtr<Gst::Bus>             _bus;
-	std::vector<std::unique_ptr<Root>> _roots;
 
         bool             on_bus_message(const Glib::RefPtr<Gst::Bus>&,
                                         const Glib::RefPtr<Gst::Message>&);

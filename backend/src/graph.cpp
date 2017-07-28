@@ -17,14 +17,13 @@ Graph::set(const Options& o) {
 	
     _pipe = Gst::Pipeline::create();
 
-    _wm.init(_pipe);
- 
-    auto output = Gst::ElementFactory::create_element("glimagesink");
-    _pipe->add(output);
+    _wm.add_to_pipe(_pipe);
+    _vrenderer.add_to_pipe(_pipe);
 
-    _wm.get_src()->link(output->get_static_pad("sink"));
+    _vrenderer.plug(_wm);
 
     for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
+	    // TODO separate create and add_to_pipe
             auto root = Root::create(_pipe, m);
 
             if (root) {
@@ -32,10 +31,12 @@ Graph::set(const Options& o) {
                 root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
 
 			if (p->type() == Pad::Type::Video) {
-			    //auto channel = strtoul(name_toks[3].c_str(), NULL, 10);
-			    // auto pid   = 
-
-			    // this->_wm.add_sink(m.stream, pid, type, *m.find_pid(pid), p);
+			    _wm.plug(p);
+			} else if (p->type() == Pad::Type::Audio) {
+			    auto ar = unique_ptr<Audio_renderer> (new Audio_renderer ());
+			    ar->add_to_pipe (_pipe);
+			    ar->plug (p);
+			    _arenderers.push_back(std::move(ar));
 			}
 			
 		    });

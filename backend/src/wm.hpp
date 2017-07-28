@@ -11,6 +11,7 @@
 #include "wm_window.hpp"
 #include "position.hpp"
 #include "metadata.hpp"
+#include "pad.hpp"
 
 namespace Ats {
 
@@ -21,9 +22,10 @@ namespace Ats {
 	Wm(const Wm&) = delete;
 	virtual ~Wm() {}
 
-	void init(Glib::RefPtr<Gst::Bin>);
-	void add_sink(const uint stream, const uint pid, const string type, const Meta_pid& p, Glib::RefPtr<Gst::Pad> sink);
-	Glib::RefPtr<Gst::Pad> get_src();
+	void add_to_pipe (Glib::RefPtr<Gst::Bin>);
+	void plug (std::shared_ptr<Pad>);
+
+	Glib::RefPtr<Gst::Pad> get_src_pad() { return mixer->get_static_pad("src"); }
 
 	// Chatterer
         string to_string() const;
