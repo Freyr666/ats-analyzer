@@ -34,8 +34,8 @@ namespace Ats {
 
     private:
 	pair<uint,uint> _resolution = make_pair(1920, 1080);
-	std::map<std::pair<uint,uint>,std::shared_ptr<Wm_window> > _windows;
-	std::map<std::pair<uint,uint>,std::shared_ptr<Wm_widget> > _widgets;
+	std::map<std::string,std::shared_ptr<Wm_window> > _windows;
+	std::map<std::string,std::shared_ptr<Wm_widget> > _widgets;
 	Wm_treeview                _treeview;
 	Glib::RefPtr<Gst::Bin>     _bin;
 	Glib::RefPtr<Gst::Element> _background;

@@ -22,11 +22,10 @@ void
 Wm::plug(shared_ptr<Pad> src) {
     switch (src->type()) {
     case Pad::Type::Video: {
-	auto w = shared_ptr<Wm_window> (new Wm_window ());
+	auto w = shared_ptr<Wm_window> (new Wm_window_video ());
 	// TODO try catch
 	w->plug(src);
-	auto pos  = make_pair(src->stream(),src->pid());
-	auto wres = _windows.try_emplace(pos,w);
+	auto wres = _windows.try_emplace(w->name(), w);
 	if (wres.second) { // inserted
 	    w->add_to_pipe(_bin);
 	    auto sink_pad = _mixer->get_request_pad("sink_%u");

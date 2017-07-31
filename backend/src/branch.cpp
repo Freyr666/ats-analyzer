@@ -1,4 +1,6 @@
 #include <glibmm.h>
+#include <gst/gst.h>
+#include <gst/video/video.h>
 
 #include "branch.hpp"
 
@@ -33,15 +35,20 @@ Branch::connect_src ( const Glib::RefPtr<Gst::Pad>& p ) {
 }
 
 Video_branch::Video_branch(uint stream, uint chan, uint pid) {
+    _stream = stream;
+    _channel = chan;
+    _pid = pid;
 
     _decoder->signal_pad_added().
 	connect([this,stream,chan,pid](const Glib::RefPtr<Gst::Pad>& pad)
-		{
+		{		    
 		    auto pcaps = pad->get_current_caps()->get_structure(0).get_name();
 		    vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
 		    auto& type    = caps_toks[0];
 
 		    if (type != "video") return;
+
+		    pad->connect_property_changed("caps", [this, pad](){ set_video(pad); });
 
 		    auto deint  = Gst::ElementFactory::create_element("deinterlace");
 		    auto _analyser = Gst::ElementFactory::create_element("videoanalysis");
@@ -67,6 +74,30 @@ Video_branch::Video_branch(uint stream, uint chan, uint pid) {
 		    _pad_added.emit(p);
 		});
     
+}
+
+void
+Video_branch::set_video (const Glib::RefPtr<Gst::Pad> p) {
+    Meta_pid::Video_pid v;
+
+    auto vi = gst_video_info_new();
+    auto pcaps = p->get_current_caps();
+    if (! gst_video_info_from_caps(vi, pcaps->gobj())) {
+	gst_video_info_free(vi);
+	return;
+    }
+			
+    v.codec = "h264"; // FIXME not only h264 supported
+    v.width = vi->width;
+    v.height = vi->height;
+    v.aspect_ratio = {vi->par_n,vi->par_d};
+    v.frame_rate = (float)vi->fps_n/vi->fps_d;
+
+    gst_video_info_free(vi);
+
+    Meta_pid::Pid_type rval = v;
+
+    _set_pid.emit(_stream,_channel,_pid,rval);
 }
 
 Audio_branch::Audio_branch(uint stream, uint chan, uint pid) {

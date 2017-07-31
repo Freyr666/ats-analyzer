@@ -1,12 +1,13 @@
 #ifndef BRANCH_H
 #define BRANCH_H
 
+#include "metadata.hpp"
+#include "errexpn.hpp"
+#include "pad.hpp"
+
 #include <gstreamermm.h>
 #include <string>
 #include <vector>
-
-#include "errexpn.hpp"
-#include "pad.hpp"
 
 namespace Ats {
     
@@ -37,15 +38,20 @@ namespace Ats {
 	static std::unique_ptr<Branch> create(std::string, uint, uint, uint);
 
 	sigc::signal <void,std::shared_ptr <Pad> > signal_pad_added() { return _pad_added; }
+	sigc::signal <void,const uint,const uint,const uint,Meta_pid::Pid_type> signal_set_pid() { return _set_pid; }
 	
     protected:
 	Branch();
-	
+
+	uint _stream;
+	uint _channel;
+	uint _pid;
 	std::vector< std::shared_ptr<Pad> > _pads;
 	Glib::RefPtr<Gst::Element> _analyser;
 	Glib::RefPtr<Gst::Element> _decoder;
 	Glib::RefPtr<Gst::Bin> _bin;
 	sigc::signal <void,std::shared_ptr <Pad> > _pad_added;
+	sigc::signal<void,const uint,const uint,const uint,Meta_pid::Pid_type>  _set_pid;
     };
 
     class Video_branch : Branch {
@@ -53,6 +59,9 @@ namespace Ats {
 	Video_branch(uint, uint, uint);
 
 	virtual Type   type() { return Branch::Type::Video; }
+
+    private:
+	void set_video (const Glib::RefPtr<Gst::Pad>);
     };
 
     class Audio_branch : Branch {

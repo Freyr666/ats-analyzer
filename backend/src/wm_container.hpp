@@ -10,18 +10,17 @@ namespace Ats {
 
     class Wm_container {
     public:
-	Wm_container (std::shared_ptr<Wm_window> w) : _stream(w->stream()), _pid(w->pid()), _window(w) { _window->enable(); }
+	Wm_container (std::shared_ptr<Wm_window> w) : _name(w->name()), _window(w) { _window->enable(); }
 	Wm_container (Wm_container&) = delete;
 	Wm_container (const Wm_container&&) = delete;
 	~Wm_container ();
 	
 	void add_widget (shared_ptr<Wm_widget>);
-	void remove_widget (std::tuple<uint,uint>);
+	void remove_widget (std::string);
     private:
-	uint _stream;
-	uint _pid;
-	std::shared_ptr<Wm_window>                                 _window;
-	std::map<std::tuple<uint,uint>,std::shared_ptr<Wm_widget>> _widgets;
+	std::string _name;
+	std::shared_ptr<Wm_window>                       _window;
+	std::map<std::string,std::shared_ptr<Wm_widget>> _widgets;
     };
 	
 }

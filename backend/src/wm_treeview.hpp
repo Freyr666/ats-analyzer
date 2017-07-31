@@ -14,11 +14,11 @@ namespace Ats {
 	Wm_treeview (const Wm_treeview&&) = delete;
 	
 	void add_window (shared_ptr<Wm_window>);
-	void add_widget (std::tuple<uint,uint>, shared_ptr<Wm_widget>);
-	void remove_window (std::tuple<uint,uint>);
-	void remove_widget (std::tuple<uint,uint>, std::tuple<uint,uint>);
+	void add_widget (std::string, shared_ptr<Wm_widget>);
+	void remove_window (std::string);
+	void remove_widget (std::string, std::string);
     private:
-	std::map<std::tuple<uint,uint>,std::shared_ptr<Wm_container>> _containers;
+	std::map<std::string,std::shared_ptr<Wm_container>> _containers;
     };
 };
 
