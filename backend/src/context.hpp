@@ -48,7 +48,7 @@ namespace Ats {
         // Chatterer_proxy
         void forward_talk(const Chatterer&);
         void forward_error(const std::string&);
-        void dispatch(const std::string&);
+        void dispatch(const std::vector<std::uint8_t>&);
     };
 
 };

@@ -87,21 +87,21 @@ Context::forward_error(const std::string& s) {
     send_err.emit(rval);
 }
 void
-Context::dispatch(const std::string& s) {
+Context::dispatch(const std::vector<std::uint8_t>& data) {
     using Df = Chatterer::Deserializer_failure;
 
     json j;
 
     if (msg_type == Msg_type::Msgpack) {
         try {
-            std::vector<uint8_t> msgpack(s.begin(), s.end());
-            j = json::from_msgpack(msgpack);
+            j = json::from_msgpack(data);
         } catch (const std::exception& e) {
             throw Df (std::string("Top-level MsgPack is corrupted: ") + e.what());
         }
     }
     else { /* Debug or Json */
         try {
+            std::string s(data.begin(), data.end());
             j = json::parse(s);
         } catch (const std::exception& e) {
             throw Df (std::string("Top-level JSON is corrupted: ") + e.what());

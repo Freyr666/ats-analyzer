@@ -39,7 +39,7 @@ Options::set_data(const Metadata& m) {
         }
     }
     updated.emit();
-    send.emit(*this);
+    talk();
 }
 
 void
@@ -51,7 +51,7 @@ Options::set_pid(const uint stream,
     auto p = s->find_pid(chan, pid);
     p->set(v);
     updated.emit(); // TODO add validation
-    send.emit(*this);
+    talk();
 }
 
 Metadata*
@@ -169,13 +169,13 @@ Options::deserialize(const json& j) {
         mosaic_resolution.first = j.at(resolution_key).at(0).get<uint>();
         mosaic_resolution.second = j.at(resolution_key).at(1).get<uint>();
         o_set = true;
-    } // TODO maybe add log message at else clause
+    }
 
     /* if multiscreen background color present in json */
     if (j.find(bg_color_key) != j.end()) {
         SET_VALUE_FROM_JSON(j,(*this),mosaic_bg_color,uint,o_set);
-    } // TODO maybe add log message at else clause
+    }
 
-    if (o_destr_set) destructive_set(*this);
+    if (o_destr_set) destructive_set.emit(*this);
     else if (o_set) set.emit(*this);
 }

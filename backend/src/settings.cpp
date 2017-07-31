@@ -272,7 +272,7 @@ Settings::Qoe_settings::to_string() const {
         s += std::to_string(set.peak);
         s += "\n\t\tcont_en: ";
         s += Ats::to_string(set.cont_en);
-        s += "\n\t\tpeak: ";
+        s += "\n\t\tcont: ";
         s += std::to_string(set.cont);
         return s;
     };
