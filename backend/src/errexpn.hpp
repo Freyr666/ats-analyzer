@@ -9,7 +9,7 @@ using namespace std;
 
 namespace Ats {
 
-    class Error_expn : exception {
+    class Error_expn : public std::exception {
         boost::optional<string> _err;
     public:
         Error_expn() noexcept {}

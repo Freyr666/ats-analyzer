@@ -67,9 +67,9 @@ Context::forward_talk(const Chatterer& c) {
     send.emit(rval);
 }
 
-void
-Context::forward_error(const std::string& s) {
-    std::string rval;
+std::string
+Context::make_error(const std::string& s) {
+    std::string rval = "";
 
     switch (msg_type) {
     case Msg_type::Debug:
@@ -85,12 +85,20 @@ Context::forward_error(const std::string& s) {
         else rval = j.dump();
         break;
     }
-    send_err.emit(rval);
+
+    return rval;
+}
+
+void
+Context::forward_error(const std::string& s) {
+    std::string e = make_error(s);
+    send_err.emit(e);
 }
 
 void
 Context::dispatch(const std::vector<std::uint8_t>& data) {
     using Df = Chatterer::Deserializer_failure;
+    using Vf = Chatterer_proxy::Validator_failure;
 
     json j;
 
@@ -98,7 +106,7 @@ Context::dispatch(const std::vector<std::uint8_t>& data) {
         try {
             j = json::from_msgpack(data);
         } catch (const std::exception& e) {
-            throw Df (std::string("Top-level MsgPack is corrupted: ") + e.what());
+            throw Df (make_error(std::string("Top-level MsgPack is corrupted: ") + e.what()));
         }
     }
     else { /* Debug or Json */
@@ -106,22 +114,26 @@ Context::dispatch(const std::vector<std::uint8_t>& data) {
             std::string s(data.begin(), data.end());
             j = json::parse(s);
         } catch (const std::exception& e) {
-            throw Df (std::string("Top-level JSON is corrupted: ") + e.what());
+            throw Df (make_error(std::string("Top-level JSON is corrupted: ") + e.what()));
         }
     }
 
-    /* Validate incoming json.
-       This will throw an exception in case if json is bad */
+    /* Validate incoming json. This will throw an exception in case if json is bad */
     try {
         validate(j, j_schema);
-    } catch (Validator_failure& e) {
-        log(e.what());
-        return;
+    } catch (const std::exception& e) {
+        throw Vf (make_error(e.what()));
     }
 
     for (json::iterator it = j.begin(); it != j.end(); ++it) {
         auto chatterer = get_chatterer(it.key());
-	if (chatterer) chatterer->deserialize(it.value());
+        if (chatterer) {
+            try {
+                chatterer->deserialize(it.value());
+            } catch (const std::exception& e) {
+                throw Df (make_error(e.what()));
+            }
+        }
     }
 }
 

@@ -111,13 +111,13 @@ namespace Ats {
 
             try {
                 validator.set_root_schema(j_schema);
-            } catch (const std::exception &e) {
+            } catch (const std::exception& e) {
                 throw Validator_failure((std::string)Validator_failure::schema_failure + e.what());
             }
 
             try {
                 validator.validate(j);
-            } catch (const std::exception &e) {
+            } catch (const std::exception& e) {
                 throw Validator_failure((std::string)Validator_failure::json_failure + e.what());
             }
         };
