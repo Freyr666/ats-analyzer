@@ -17,8 +17,11 @@ namespace Ats {
 	Pad(const Pad&&) = delete;
 	Pad(Pad&) = delete;
 
-	Type                   type() { return _t; }
-	Glib::RefPtr<Gst::Pad> pad()  { return _pad; }
+	uint                   stream()  { return _stream; }
+	uint                   channel() { return _channel; }
+	uint                   pid()     { return _pid; }
+	Type                   type()    { return _t; }
+	Glib::RefPtr<Gst::Pad> pad()     { return _pad; }
     private:
 	uint _stream;
 	uint _channel;

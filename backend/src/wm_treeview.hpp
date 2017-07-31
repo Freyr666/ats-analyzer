@@ -18,7 +18,7 @@ namespace Ats {
 	void remove_window (std::tuple<uint,uint>);
 	void remove_widget (std::tuple<uint,uint>, std::tuple<uint,uint>);
     private:
-	std::map<std::tuple<uint,uint>,std::unique_ptr<Wm_container>> _containers;
+	std::map<std::tuple<uint,uint>,std::shared_ptr<Wm_container>> _containers;
     };
 };
 
