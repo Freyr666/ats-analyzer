@@ -23,21 +23,21 @@ Graph::set(const Options& o) {
     _vrenderer.plug(_wm);
 
     for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
-	    // TODO separate create and add_to_pipe
+            // TODO separate create and add_to_pipe
             auto root = Root::create(_pipe, m);
 
             if (root) {
 		
                 root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
-			_wm.plug(p);
-		    });
-		root->signal_audio_pad_added().connect([this, m](std::shared_ptr<Pad> p) {	
-			auto ar = unique_ptr<Audio_renderer> (new Audio_renderer ());
-			ar->add_to_pipe (_pipe);
-			ar->plug (p);
-			_arenderers.push_back(std::move(ar));
-		    });
-		_roots.push_back(std::move(root));
+                        _wm.plug(p);
+                    });
+                root->signal_audio_pad_added().connect([this, m](std::shared_ptr<Pad> p) {	
+                        auto ar = unique_ptr<Audio_renderer> (new Audio_renderer ());
+                        ar->add_to_pipe (_pipe);
+                        ar->plug (p);
+                        _arenderers.push_back(std::move(ar));
+                    });
+                _roots.push_back(std::move(root));
             }
         });
 
@@ -62,7 +62,7 @@ Graph::reset() {
 
 void
 Graph::apply_options(const Options&) {
-
+    
 }
 
 void

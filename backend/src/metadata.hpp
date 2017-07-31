@@ -33,9 +33,10 @@ namespace Ats {
             float frame_rate;
         };
         struct Audio_pid {
-            Audio_pid () : sample_rate(0) {}
+            Audio_pid () : channels(0), sample_rate(0) {}
             string codec;
             string bitrate;
+            uint channels;
             uint sample_rate;
         };
         using Pid_type = boost::variant<Audio_pid, Video_pid, Empty_pid>;
