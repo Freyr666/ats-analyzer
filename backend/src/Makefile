@@ -1,6 +1,6 @@
-CC = clang++
+CC = g++
 
-CFLAGS = -Wall -O0 -std=c++1y -g -c
+CFLAGS = -Wall -Wno-deprecated -O0 -std=c++17 -g -c
 CFLAGS += `pkg-config --cflags gstreamermm-1.0 glibmm-2.4 gstreamer-1.0 gstreamer-video-1.0 gstreamer-mpegts-1.0`
 
 LDFLAGS = 
@@ -8,9 +8,11 @@ LDFLAGS += `pkg-config --libs gstreamermm-1.0 glibmm-2.4 gstreamer-1.0 gstreamer
 
 HEADERS = chatterer.hpp
 
-SOURCES = main.cpp probe.cpp settings.cpp \
-          metadata.cpp parser.cpp options.cpp \
-          graph.cpp context.cpp control.cpp	\
+SOURCES = main.cpp probe.cpp settings.cpp settings_chatterer.cpp \
+          metadata.cpp parser.cpp options.cpp options_chatterer.cpp \
+          graph.cpp graph_chatterer.cpp context.cpp control.cpp	\
+          wm.cpp wm_chatterer.cpp wm_container.cpp wm_treeview.cpp \
+          pad.cpp branch.cpp root.cpp renderer.cpp position.cpp\
           json-schema-draft4.json.cpp json-uri.cpp json-validator.cpp
 
 OBJECTS=$(SOURCES:.cpp=.o)

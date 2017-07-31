@@ -5,51 +5,7 @@
 using namespace std;
 using namespace Ats;
 
-// --------- Position -------------------
 
-bool
-Position::operator== (const Position& a) {
-    return ((a.x == x) && (a.y == y) &&
-            (a.width == width) && (a.height == height));
-}
-
-bool
-Position::operator!= (const Position& a) {
-    return !(*this == a);
-}
-
-bool
-Position::is_overlap (const Position& a) {
-    return ((a.x < (width + x)) && ((a.width + a.x) > x) &&
-            (a.y < (height + y)) && ((a.height + a.y) > y));
-}
-
-string
-Position::to_string () const {
-    string rval = "X: ";
-    rval += std::to_string(x);
-    rval += " Y: ";
-    rval += std::to_string(y);
-    rval += " Width: ";
-    rval += std::to_string(width);
-    rval += " Height: ";
-    rval += std::to_string(height);
-    return rval;
-}
-
-void
-Ats::to_json (json& j, const Position& p) {
-    j = json{{"x", p.x}, {"y", p.y},
-             {"width", p.width}, {"height", p.height}};
-}
-
-void
-Ats::from_json(const json& j, Position& p) {
-    p.x = j.at("x").get<uint>();
-    p.y = j.at("y").get<uint>();
-    p.width = j.at("width").get<uint>();
-    p.height = j.at("height").get<uint>();
-}
 // --------- Meta_pid -------------------
 
 Meta_pid::Type
@@ -151,8 +107,6 @@ Meta_pid::to_string () const {
     rval += stream_type_name;
     rval += "\nTo be analyzed: ";
     rval += Ats::to_string(to_be_analyzed);
-    rval += "\nPosition: ";
-    rval += position.to_string();
     return rval;
 }
 
@@ -173,8 +127,7 @@ Ats::to_json (json& j, const Meta_pid& p) {
                    "empty")},
          {"stream_type", p.stream_type},
          {"stream_type_name", p.stream_type_name},
-         {"description", j_description},
-         {"position", p.position}};
+         {"description", j_description}};
 }
 
 // --------- Meta_channel  ---------------
@@ -334,55 +287,4 @@ Metadata::for_analyzable (std::function<void(const Meta_channel&)> fun) const {
     for_each(channels.begin(),channels.end(),[&fun](const Meta_channel& c){
             if (c.to_be_analyzed()) fun(c);
         });
-}
-
-bool
-Metadata::validate_grid (uint width, uint height) const {
-
-    bool failure = false;
-
-    for (auto channel = channels.begin(); channel != channels.end(); channel++) {
-
-        for (auto pid = (*channel).pids.begin(); pid != (*channel).pids.end(); pid++) {
-
-            auto cur_pid = *pid;
-
-            /* check current program pids */
-            auto rval_inner = find_if ((pid+1), (*channel).pids.end(),
-                                       [&cur_pid](const Meta_pid& p) {
-                                           if (cur_pid.position != p.position) {
-                                               if ((cur_pid.type == p.type) &&
-                                                   (cur_pid.type == Meta_pid::Type::Video))
-                                                   return false;
-                                               else
-                                                   return cur_pid.position.is_overlap(p.position);
-                                           }
-                                           else return true;
-                                       });
-
-            /* compare with other programs pids */
-            auto rval_outer = find_if ((channel+1),channels.end(),[this,&cur_pid](const Meta_channel& c){
-                    auto rval = find_if(c.pids.begin(), c.pids.end(),
-                                        [&cur_pid](const Meta_pid &p) {
-                                            return cur_pid.position.is_overlap(p.position);
-                                        });
-
-                    return rval != c.pids.end();
-                });
-
-            /* decide if there is a problem in a grid */
-            if ((cur_pid.position.width > width) ||
-                (cur_pid.position.height > height) ||
-                (rval_inner != (*channel).pids.end()) ||
-                (rval_outer != channels.end())) {
-                failure = true;
-                break;
-            }
-
-        }
-
-        if (failure) break;
-    }
-
-    return !failure;
 }
