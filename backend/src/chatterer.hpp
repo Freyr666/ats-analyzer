@@ -7,6 +7,8 @@
 #include "json-schema.hpp"
 #include "errexpn.hpp"
 
+#include <map>
+
 /* sets the value of *type* and *name* (if present),
    taken from the root of json object,
    to variable 'obj.name'.
@@ -123,8 +125,18 @@ namespace Ats {
         void connect(Chatterer& c) {
             c.send.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_talk));
             c.send_err.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_error));
+	    chatterers[c.name] = std::shared_ptr<Chatterer>(&c);
         }
-	
+
+    private:
+	std::map<std::string, std::shared_ptr<Chatterer>> chatterers;
+
+    protected:
+	std::shared_ptr<Chatterer> get_chatterer(const std::string& name) {
+	    auto chats = chatterers.find(name);
+	    if (chats == chatterers.end()) return nullptr;
+	    else return chats->second;
+	}
     };
 
 }

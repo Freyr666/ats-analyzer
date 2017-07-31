@@ -10,9 +10,9 @@
 
 #include "chatterer.hpp"
 #include "metadata.hpp"
-
-using namespace std;
-using namespace Glib;
+#include "wm.hpp"
+#include "root.hpp"
+#include "renderer.hpp"
 
 namespace Ats {
 
@@ -27,7 +27,8 @@ namespace Ats {
         Graph(const Graph&) = delete;
         Graph(Graph&&) = delete;
         virtual ~Graph() {}
-	
+
+	Wm&        get_wm() { return _wm; };
         void       set(const Options&);
         void       reset();
         void       apply_options(const Options&);
@@ -36,8 +37,6 @@ namespace Ats {
         void       set_state(Gst::State);
         Gst::State get_state() const;
 
-        void   set_resolution(const pair<uint,uint>);
-        void   set_position(uint, uint, uint, const Position&);
         void   set_settings(const Settings&);
 
         void   connect(Options& o);
@@ -51,32 +50,12 @@ namespace Ats {
         void   deserialize(const json&);
 	
     private:
-        struct Node {
-            string               type;
-            RefPtr<Gst::Element> analysis;
-            RefPtr<Gst::Pad>     connected;
-        };
-        class Tree {
-            map<tuple<uint,uint,uint>,Node> _tree;
-        public:
-            bool  empty() {return _tree.empty();}
-            void  reset();
-            void  add(uint, uint, uint, Node);
-            Node* get(uint, uint, uint);
-        };
-	
-        Tree                  elms;
-        RefPtr<Gst::Element>  bg;
-        RefPtr<Gst::Pad>      bg_pad;
-	
-        RefPtr<Gst::Pipeline> pipe;
-        RefPtr<Gst::Bus>      bus;
-	
-        RefPtr<Gst::Bin> create_root(const Metadata&);
-        RefPtr<Gst::Bin> create_branch(const uint,
-                                       const uint,
-                                       const uint,
-                                       const Metadata&);
+	Wm                                 _wm;
+	Video_renderer                     _vrenderer;
+	std::vector<std::unique_ptr<Audio_renderer>> _arenderers;
+	std::vector<std::unique_ptr<Root>> _roots;
+	Glib::RefPtr<Gst::Pipeline>        _pipe;
+	Glib::RefPtr<Gst::Bus>             _bus;
 
         bool             on_bus_message(const Glib::RefPtr<Gst::Bus>&,
                                         const Glib::RefPtr<Gst::Message>&);
