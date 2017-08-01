@@ -89,6 +89,7 @@ Root::build_branch (const uint stream,
 	}
 
 	_branches.push_back(std::move(branch));
+        _bin->set_state(Gst::State::STATE_PLAYING);
     }
 
 /*

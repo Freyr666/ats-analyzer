@@ -22,7 +22,7 @@ namespace Ats {
 
 	virtual Type                                type() = 0;
 	std::vector< std::shared_ptr<Pad> > pads() { return _pads; }
-	void    add_to_pipe ( const Glib::RefPtr<Gst::Bin>& bin ) { bin->add(_bin); }
+	void    add_to_pipe ( const Glib::RefPtr<Gst::Bin>& bin ) { bin->add(_bin); _bin->sync_state_with_parent(); }
         void    plug ( const Glib::RefPtr<Gst::Pad>& p );
 	
 	template <class PropertyType >

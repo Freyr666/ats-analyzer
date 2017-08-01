@@ -63,7 +63,8 @@ Video_branch::Video_branch(uint stream, uint chan, uint pid) : Branch () {
 		    _bin->add(deint)->add(_analyser);
 		    deint->link(_analyser);
 
-		    _bin->sync_state_with_parent();
+                    deint->sync_state_with_parent();
+                    _analyser->sync_state_with_parent();
 
 		    pad->link(sink_pad);
 

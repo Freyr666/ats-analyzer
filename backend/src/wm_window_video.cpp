@@ -19,7 +19,7 @@ Wm_window_video::add_to_pipe (Glib::RefPtr<Gst::Bin> pipe) {
 
 void
 Wm_window_video::plug(shared_ptr<Ats::Pad> src) {
-    //if (_plugged) return;
+    if (_plugged) return;
     _stream = src->stream();
     _channel = src->channel();
     _pid = src->pid();
