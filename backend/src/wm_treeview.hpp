@@ -3,6 +3,7 @@
 
 #include "wm_container.hpp"
 
+#include <functional>
 #include <map>
 
 namespace Ats {
@@ -17,6 +18,10 @@ namespace Ats {
 	void add_widget (std::string, shared_ptr<Wm_widget>);
 	void remove_window (std::string);
 	void remove_widget (std::string, std::string);
+
+        void validate () {}
+
+        void for_each (std::function<void(const std::string&,Wm_container&)>&);
     private:
 	std::map<std::string,std::shared_ptr<Wm_container>> _containers;
     };
