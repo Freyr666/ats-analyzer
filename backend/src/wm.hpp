@@ -33,9 +33,10 @@ namespace Ats {
         void   deserialize(const json&);
 
     private:
+
         pair<uint,uint> _resolution = make_pair(1920, 1080);
-        std::map<std::pair<uint,uint>,std::shared_ptr<Wm_window> > _windows;
-        std::map<std::pair<uint,uint>,std::shared_ptr<Wm_widget> > _widgets;
+        std::map<std::string,std::shared_ptr<Wm_window> > _windows;
+        std::map<std::string,std::shared_ptr<Wm_widget> > _widgets;
         Wm_treeview                _treeview;
         Glib::RefPtr<Gst::Bin>     _bin;
         Glib::RefPtr<Gst::Element> _background;
@@ -51,9 +52,12 @@ namespace Ats {
         void   set_position(uint, uint, const Position&);
     };
 
-    void to_json(json&, const Wm_window&);
-    void to_json(json&, const Wm_widget&);
-    void to_json(json&, const Wm_treeview&);
+    template<class T>
+    void to_json(json& j, const pair<std::string,shared_ptr<T>> p) { j = {p.first,p.second}; }
+    void to_json(json& j, const shared_ptr<Wm_window>);
+    void to_json(json& j, const shared_ptr<Wm_widget>);
+    void to_json(json& j, const shared_ptr<Wm_container>);
+    void to_json(json& j, const Wm_treeview&);
 }
 
 #endif /* WM_H */

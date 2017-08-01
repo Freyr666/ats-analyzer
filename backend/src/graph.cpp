@@ -27,9 +27,11 @@ Graph::set(const Options& o) {
             auto root = Root::create(_pipe, m);
 
             if (root) {
+		cout << "Root is ok!" << endl; 
 		
                 root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
                         _wm.plug(p);
+			GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
                     });
                 root->signal_audio_pad_added().connect([this, m](std::shared_ptr<Pad> p) {	
                         auto ar = unique_ptr<Audio_renderer> (new Audio_renderer ());
@@ -47,17 +49,17 @@ Graph::set(const Options& o) {
    
     _pipe->set_state(Gst::STATE_PLAYING);
 
-    // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+    // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
 }
 
 void
 Graph::reset() {
-    if (_bus)   _bus.reset();
     if (_pipe)  {
 	set_state(Gst::STATE_PAUSED);
 	set_state(Gst::STATE_NULL);
         _pipe.reset();
     }
+    if (_bus)   _bus.reset();
 }
 
 void

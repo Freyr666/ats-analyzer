@@ -10,13 +10,15 @@ Wm::to_string() const {
 
 json
 Wm::serialize() const {
-    json j_windows(_windows);
-    json j_widgets(_widgets);
+    std::vector<pair<std::string,shared_ptr<Wm_window>>> windows_v(_windows.begin(), _windows.end());
+    std::vector<pair<std::string,shared_ptr<Wm_widget>>> widgets_v(_widgets.begin(), _widgets.end());
+    json j_windows(windows_v);
+    json j_widgets(widgets_v);
     json j = json{{"background",{}},
                   {"resolution",{_resolution.first,_resolution.second}},
-                  {"windows",j_windows,
-                  {"widgets",j_widgets,
-                  {"layout",_treeview};
+                  {"windows",j_windows},
+                  {"widgets",j_widgets},
+                  {"layout",_treeview.serialize()}};
     return j;
 }
 
@@ -26,20 +28,30 @@ Wm::deserialize(const json&) {
 }
 
 void
-Ats::to_json(json& j, const Wm_window& w) {
-    j = {{"stream",w.stream()},
-         {"channel",w.channel()},
-         {"pid",w.pid()},
-         {"enabled",w.is_enabled()},
-         {"position",{}}};
+Ats::to_json(json& j, const shared_ptr<Wm_window> w) {
+    Wm_window::Type t = w->type();
+    if (t == Wm_window::Type::Video) {
+        Wm_window_video* wv = dynamic_cast<Wm_window_video*> (w.get());
+        j = {{"stream",wv->stream()},
+             {"channel",wv->channel()},
+             {"pid",wv->pid()},
+             {"enabled",wv->is_enabled()},
+             {"position",{}}};
+    }
+    else {
+        j = {};
+    }
 }
 
 void
-Ats::to_json(json& j, const Wm_widget& w) {
+Ats::to_json(json& j, const shared_ptr<Wm_widget> w) {
+    /* TODO */
     j = {};
 }
 
 void
-Ats::to_json(json& j, const Wm_treeview& tw) {
-    j = {};
+Ats::to_json(json& j, const shared_ptr<Wm_container> c) {
+    json j;
+    j = c->_window;
+    j["widgets"] = c->_widgets;
 }
