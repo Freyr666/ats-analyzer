@@ -99,7 +99,7 @@ namespace Ats {
 	
         virtual void forward_talk(const Chatterer&) = 0;
         virtual void forward_error(const std::string&) = 0;
-        virtual void dispatch(const std::vector<std::uint8_t>&) = 0;
+        virtual std::string dispatch(const std::vector<std::uint8_t>&) = 0;
 
         static void validate(const json& j, const json& j_schema) {
 

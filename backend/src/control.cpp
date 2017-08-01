@@ -35,13 +35,9 @@ Control::recv () {
                 if (in_socket.recv(&m) && (m.size() > 0)) {
                     uint8_t* mptr = static_cast<uint8_t*>(m.data());
                     std::vector<std::uint8_t> data(mptr, mptr + m.size());
-                    try {
-                        received.emit(data);
-                    } catch (const std::exception& e) {
-                        std::string e_msg = e.what();
-                        zmq::message_t reply (e_msg.data(), e_msg.length());
-                        in_socket.send(reply);
-                    }
+                    std::string s = received.emit(data);
+                    zmq::message_t reply (s.data(), s.length());
+                    in_socket.send(reply);
                 }
             } catch (const std::exception& e) {
                 log(std::string("Exception while receiving a message: ") + e.what());

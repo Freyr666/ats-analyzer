@@ -33,7 +33,7 @@ namespace Ats {
         Control (const Control&) = delete;
         Control (Control&&) = delete;
 
-        sigc::signal<void,const vector<std::uint8_t>&> received;
+        sigc::signal<std::string,const vector<std::uint8_t>&> received;
 
         void init ();
         void recv ();

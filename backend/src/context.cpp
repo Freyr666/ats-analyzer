@@ -95,18 +95,17 @@ Context::forward_error(const std::string& s) {
     send_err.emit(e);
 }
 
-void
+std::string
 Context::dispatch(const std::vector<std::uint8_t>& data) {
-    using Df = Chatterer::Deserializer_failure;
-    using Vf = Chatterer_proxy::Validator_failure;
 
     json j;
+    json j_success = json::array();
 
     if (msg_type == Msg_type::Msgpack) {
         try {
             j = json::from_msgpack(data);
         } catch (const std::exception& e) {
-            throw Df (make_error(std::string("Top-level MsgPack is corrupted: ") + e.what()));
+            return (make_error(std::string("Top-level MsgPack is corrupted: ") + e.what()));
         }
     }
     else { /* Debug or Json */
@@ -114,7 +113,7 @@ Context::dispatch(const std::vector<std::uint8_t>& data) {
             std::string s(data.begin(), data.end());
             j = json::parse(s);
         } catch (const std::exception& e) {
-            throw Df (make_error(std::string("Top-level JSON is corrupted: ") + e.what()));
+            return (make_error(std::string("Top-level JSON is corrupted: ") + e.what()));
         }
     }
 
@@ -122,7 +121,7 @@ Context::dispatch(const std::vector<std::uint8_t>& data) {
     try {
         validate(j, j_schema);
     } catch (const std::exception& e) {
-        throw Vf (make_error(e.what()));
+        return (make_error(e.what()));
     }
 
     for (json::iterator it = j.begin(); it != j.end(); ++it) {
@@ -130,10 +129,14 @@ Context::dispatch(const std::vector<std::uint8_t>& data) {
         if (chatterer) {
             try {
                 chatterer->deserialize(it.value());
+                j_success.push_back(it.key());
             } catch (const std::exception& e) {
-                throw Df (make_error(e.what()));
+                return (make_error(e.what()));
             }
         }
     }
+
+    json j_result = {{"ok",j_success}};
+    return j_result.dump();
 }
 
