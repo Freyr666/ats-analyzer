@@ -21,16 +21,17 @@ Wm::add_to_pipe(Glib::RefPtr<Gst::Bin> b) {
 void
 Wm::plug(shared_ptr<Pad> src) {
     switch (src->type()) {
-    case Pad::Type::Video: {
+    case Pad::Type::Video: {							  
 	auto w = shared_ptr<Wm_window> (new Wm_window_video ());
 	// TODO try catch
+	w->add_to_pipe(_bin);
 	w->plug(src);
 	auto wres = _windows.try_emplace(w->name(), w);
 	if (wres.second) { // inserted
-	    w->add_to_pipe(_bin);
 	    auto sink_pad = _mixer->get_request_pad("sink_%u");
 	    w->plug(sink_pad);
 	}
+	//_bin->set_state(Gst::State::STATE_PLAYING);
 	break;
     }
     case Pad::Type::Graph_volume:
@@ -38,6 +39,8 @@ Wm::plug(shared_ptr<Pad> src) {
     case Pad::Type::Unknown:
 	break;
     }
+
+    // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_bin->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
 }
 
 void

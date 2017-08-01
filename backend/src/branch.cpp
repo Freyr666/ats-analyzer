@@ -9,7 +9,6 @@ using namespace Ats;
 
 unique_ptr<Branch>
 Branch::create(std::string type, uint stream, uint chan, uint pid) {
-
     if (type == "video") return unique_ptr<Branch>((Branch*) new Video_branch(stream, chan, pid));
     else if (type == "audio") return unique_ptr<Branch>((Branch*) new Audio_branch(stream, chan, pid));
     else return unique_ptr<Branch>(nullptr);
@@ -25,26 +24,31 @@ Branch::Branch() {
 
     _bin->add(queue)->add(_decoder);
     queue->link(_decoder);
+
+    auto p = queue->get_static_pad("sink");
+    auto sink_ghost = Gst::GhostPad::create(p, "sink");
+    sink_ghost->set_active();
+    _bin->add_pad(sink_ghost);
 }
 
 void
-Branch::connect_src ( const Glib::RefPtr<Gst::Pad>& p ) {
+Branch::plug ( const Glib::RefPtr<Gst::Pad>& p ) {
     auto sink_pad  = _bin->get_static_pad("sink");
     p->link(sink_pad);
     _bin->sync_state_with_parent();
 }
 
-Video_branch::Video_branch(uint stream, uint chan, uint pid) {
+Video_branch::Video_branch(uint stream, uint chan, uint pid) : Branch () {
     _stream = stream;
     _channel = chan;
     _pid = pid;
 
     _decoder->signal_pad_added().
 	connect([this,stream,chan,pid](const Glib::RefPtr<Gst::Pad>& pad)
-		{		    
+		{
 		    auto pcaps = pad->get_current_caps()->get_structure(0).get_name();
 		    vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
-		    auto& type    = caps_toks[0];
+		    auto& type    = caps_toks[0];		    
 
 		    if (type != "video") return;
 
@@ -58,6 +62,8 @@ Video_branch::Video_branch(uint stream, uint chan, uint pid) {
 
 		    _bin->add(deint)->add(_analyser);
 		    deint->link(_analyser);
+
+		    _bin->sync_state_with_parent();
 
 		    pad->link(sink_pad);
 

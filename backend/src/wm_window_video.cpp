@@ -13,11 +13,13 @@ void
 Wm_window_video::add_to_pipe (Glib::RefPtr<Gst::Bin> pipe) {
     pipe->add(_scale)->add(_caps);
     _scale->link(_caps);
+    _scale->sync_state_with_parent();
+    _caps->sync_state_with_parent();
 }
 
 void
 Wm_window_video::plug(shared_ptr<Ats::Pad> src) {
-    if (_plugged) return;
+    //if (_plugged) return;
     _stream = src->stream();
     _channel = src->channel();
     _pid = src->pid();
@@ -27,7 +29,7 @@ Wm_window_video::plug(shared_ptr<Ats::Pad> src) {
 
 void
 Wm_window_video::plug(Glib::RefPtr<Gst::Pad> sink) {
-
+    _caps->get_static_pad("src")->link(sink);
 }
 
 std::string
@@ -40,7 +42,7 @@ Wm_window_video::name() {
 
 bool
 Wm_window_video::is_enabled() {
-
+    return _enabled;
 }
 
 void
@@ -55,5 +57,5 @@ Wm_window_video::disable() {
 
 void
 Wm_window_video::set_position(pair<int, int> luc, pair<int, int> rlc) {
-
+    
 }

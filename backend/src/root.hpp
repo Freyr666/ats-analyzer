@@ -23,6 +23,7 @@ namespace Ats {
 	Root(Glib::RefPtr<Gst::Bin>, const Metadata&);
 	Glib::RefPtr<Gst::Bin> _bin;
 	Glib::RefPtr<Gst::Element> _tee;
+	Glib::RefPtr<Gst::Element> _demux;
 	std::vector<std::unique_ptr<Branch>> _branches;
 	
 	void build_cb (const uint stream, const Meta_channel&);

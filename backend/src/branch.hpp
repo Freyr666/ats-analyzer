@@ -15,6 +15,7 @@ namespace Ats {
     public:
 	enum class Type { Video, Audio };
 
+	Branch();
 	Branch(Branch&) = delete;
 	Branch(const Branch&&) = delete;
 	virtual ~Branch() {}
@@ -22,7 +23,7 @@ namespace Ats {
 	virtual Type                                type() = 0;
 	std::vector< std::shared_ptr<Pad> > pads() { return _pads; }
 	void    add_to_pipe ( const Glib::RefPtr<Gst::Bin>& bin ) { bin->add(_bin); }
-        void    connect_src ( const Glib::RefPtr<Gst::Pad>& p );
+        void    plug ( const Glib::RefPtr<Gst::Pad>& p );
 	
 	template <class PropertyType >
 	void    set_property(const std::string& p, const PropertyType& v) {
@@ -41,7 +42,6 @@ namespace Ats {
 	sigc::signal <void,const uint,const uint,const uint,Meta_pid::Pid_type> signal_set_pid() { return _set_pid; }
 	
     protected:
-	Branch();
 
 	uint _stream;
 	uint _channel;
@@ -54,8 +54,9 @@ namespace Ats {
 	sigc::signal<void,const uint,const uint,const uint,Meta_pid::Pid_type>  _set_pid;
     };
 
-    class Video_branch : Branch {
+    class Video_branch : public Branch {
     public:
+	Video_branch() : Branch () {}
 	Video_branch(uint, uint, uint);
 
 	virtual Type   type() { return Branch::Type::Video; }
@@ -64,7 +65,7 @@ namespace Ats {
 	void set_video (const Glib::RefPtr<Gst::Pad>);
     };
 
-    class Audio_branch : Branch {
+    class Audio_branch : public Branch {
     public:
 	Audio_branch(uint, uint, uint);
 
