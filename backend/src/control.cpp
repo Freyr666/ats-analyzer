@@ -32,7 +32,7 @@ Control::recv () {
         if (ev & ZMQ_POLLIN) {
             zmq::message_t m;
             try {
-                if (in_socket.recv(&m) && (m.size() > 0)) {
+                if (in_socket.recv(&m)) {
                     uint8_t* mptr = static_cast<uint8_t*>(m.data());
                     std::vector<std::uint8_t> data(mptr, mptr + m.size());
                     std::string s = received.emit(data);
