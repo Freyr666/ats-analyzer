@@ -18,7 +18,7 @@ Wm::serialize() const {
                   {"resolution",{_resolution.first,_resolution.second}},
                   {"windows",j_windows},
                   {"widgets",j_widgets},
-                  {"layout",_treeview.serialize()}};
+                  {"layout",{}}};
     return j;
 }
 
@@ -51,7 +51,10 @@ Ats::to_json(json& j, const shared_ptr<Wm_widget> w) {
 
 void
 Ats::to_json(json& j, const shared_ptr<Wm_container> c) {
-    json j;
-    j = c->_window;
-    j["widgets"] = c->_widgets;
+    // json j;
+    // auto f = [&j](Wm_window w) -> {
+    //     j = w;
+    // };
+    // c->apply(f);
+    // j["widgets"] = c->_widgets;
 }

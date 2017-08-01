@@ -26,12 +26,10 @@ Graph::set(const Options& o) {
             // TODO separate create and add_to_pipe
             auto root = Root::create(_pipe, m);
 
-            if (root) {
-		cout << "Root is ok!" << endl; 
-		
+            if (root) {		
                 root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
                         _wm.plug(p);
-			GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+			// GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
                     });
                 root->signal_audio_pad_added().connect([this, m](std::shared_ptr<Pad> p) {	
                         auto ar = unique_ptr<Audio_renderer> (new Audio_renderer ());

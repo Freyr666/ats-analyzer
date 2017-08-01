@@ -6,7 +6,7 @@ using namespace std;
 
 void
 Wm_treeview::add_window(shared_ptr<Ats::Wm_window> w) {
-    _containers.try_emplace(w->name(), unique_ptr<Wm_container>(new Wm_container(w)));
+    _containers.try_emplace(w->gen_name(), unique_ptr<Wm_container>(new Wm_container(w)));
 }
 
 void
@@ -28,9 +28,9 @@ Wm_treeview::remove_widget (std::string pos, std::string wdg_pos) {
     else throw Error_expn("Wm_treeview: add_widget - no such window");
 }
 
-json
-Wm_treeview::serialize () {
-    std::vector<pair<std::string,shared_ptr<Wm_container>>> v(_containers.begin(),_containers.end());
-    json j(v);
-    return j;
+void
+Wm_treeview::for_each (std::function<void(const std::string&, Wm_container&)>& f) {
+    for (auto& nh : _containers) {
+        f (nh.first , *nh.second);
+    }
 }

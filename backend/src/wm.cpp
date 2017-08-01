@@ -26,7 +26,7 @@ Wm::plug(shared_ptr<Pad> src) {
 	// TODO try catch
 	w->add_to_pipe(_bin);
 	w->plug(src);
-	auto wres = _windows.try_emplace(w->name(), w);
+	auto wres = _windows.try_emplace(w->gen_name(), w);
 	if (wres.second) { // inserted
 	    auto sink_pad = _mixer->get_request_pad("sink_%u");
 	    w->plug(sink_pad);

@@ -9,6 +9,7 @@ Video_renderer::Video_renderer() {
 void
 Video_renderer::add_to_pipe(Glib::RefPtr<Gst::Bin> b) {
     b->add(_output);
+    _output->sync_state_with_parent();
 }
 
 void
