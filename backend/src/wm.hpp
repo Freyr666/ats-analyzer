@@ -42,7 +42,7 @@ namespace Ats {
 	Glib::RefPtr<Gst::Pad>     _background_pad;
 	Glib::RefPtr<Gst::Element> _mixer;
 
-	void on_remove_sink(const uint stream, const uint pid);
+	void on_remove_window (std::string);
 
 	void   set_resolution(const pair<uint,uint>);
         void   apply_resolution();

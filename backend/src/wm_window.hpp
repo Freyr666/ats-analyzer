@@ -19,7 +19,7 @@ namespace Ats {
         Wm_window_video ();
         Wm_window_video (const Wm_window_video&) = delete;
         Wm_window_video (Wm_window_video&&) = delete;
-        virtual ~Wm_window_video () {}
+        virtual ~Wm_window_video ();
 
         // Wm_element
         virtual void add_to_pipe (Glib::RefPtr<Gst::Bin>);

@@ -24,15 +24,16 @@ Wm::plug(shared_ptr<Pad> src) {
     switch (src->type()) {
     case Pad::Type::Video: {							  
 	auto w = shared_ptr<Wm_window> (new Wm_window_video ());
+        auto name = w->gen_name();
 	// TODO try catch
 	w->add_to_pipe(_bin);
 	w->plug(src);
-	auto wres = _windows.try_emplace(w->gen_name(), w);
+	auto wres = _windows.try_emplace(name, w);
 	if (wres.second) { // inserted
 	    auto sink_pad = _mixer->get_request_pad("sink_%u");
 	    w->plug(sink_pad);
 	}
-	//_bin->set_state(Gst::State::STATE_PLAYING);
+        w->signal_unlinked().connect([this, name](){ on_remove_window(name); });
 	break;
     }
     case Pad::Type::Graph_volume:
@@ -50,8 +51,9 @@ Wm::plug (Glib::RefPtr<Gst::Pad> sink) {
 }
 
 void
-Wm::on_remove_sink(uint stream, uint pid) {
-
+Wm::on_remove_window(std::string name) {
+    _treeview.remove_window(name);
+    auto nh = _windows.extract(name); // window's destructor do the rest
 }
 
 void

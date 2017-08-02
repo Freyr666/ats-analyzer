@@ -22,6 +22,10 @@ namespace Ats {
 	virtual void disable() = 0;
 	virtual void set_position(const Wm_position&) = 0;
         virtual Wm_position get_position() = 0;
+        sigc::signal <void > signal_unlinked() { return _unlinked; }
+        
+    protected:
+        sigc::signal <void > _unlinked;
     };
     
 }

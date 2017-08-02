@@ -28,6 +28,7 @@ namespace Ats {
 	
 	void build_cb (const uint stream, const Meta_channel&);
 	void build_branch (const uint, const uint, const Glib::RefPtr<Gst::Pad>&);
+        void destroy_branch (const uint, const uint, const Glib::RefPtr<Gst::Pad>&);
 	
 	sigc::signal <void,std::shared_ptr <Pad> > _pad_added;
 	sigc::signal <void,std::shared_ptr <Pad> > _audio_pad_added;

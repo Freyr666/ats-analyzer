@@ -31,6 +31,10 @@ Branch::Branch() {
     _bin->add_pad(sink_ghost);
 }
 
+Branch::~Branch() {
+    _bin->unparent();
+}
+    
 void
 Branch::plug ( const Glib::RefPtr<Gst::Pad>& p ) {
     auto sink_pad  = _bin->get_static_pad("sink");
