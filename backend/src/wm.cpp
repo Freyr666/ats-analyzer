@@ -52,3 +52,32 @@ void
 Wm::on_remove_sink(uint stream, uint pid) {
 
 }
+
+void
+Wm::set_resolution(const resolution_t) {
+    /* TODO */
+}
+
+shared_ptr<Wm_window>
+Wm::find_window (const std::string uid) {
+    return const_pointer_cast<Wm_window>(static_cast<const Wm*>(this)->find_window(uid));
+}
+
+const shared_ptr<Wm_window>
+Wm::find_window (const std::string uid) const {
+    auto it = _windows.find(uid);
+    if (it != _windows.end()) return it->second;
+    throw Error_expn(std::string("Window with uid '") + uid + "' not found");
+}
+
+shared_ptr<Wm_widget>
+Wm::find_widget (const std::string uid) {
+    return const_pointer_cast<Wm_widget>(static_cast<const Wm*>(this)->find_widget(uid));
+}
+
+const shared_ptr<Wm_widget>
+Wm::find_widget (const std::string uid) const {
+    auto it = _widgets.find(uid);
+    if (it != _widgets.end()) return it->second;
+    throw Error_expn(std::string("Widget with uid '") + uid + "' not found");
+}

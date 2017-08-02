@@ -29,7 +29,7 @@ namespace Ats {
         int get_x () const { return _luc.first; }
         int get_y () const { return _luc.second; }
         int get_height () const { return _rlc.second - _luc.second; }
-        int get_width () const { return _rlc.second - _luc.first; }
+        int get_width () const { return _rlc.first - _luc.first; }
 
         operator bool () const { return ! (_rlc == _luc && _rlc == std::make_pair(0,0)); }
         bool operator== (const Wm_position& p) const { return (_rlc == p._rlc) && (_luc == p._luc); }

@@ -17,6 +17,9 @@
 namespace Ats {
 
     class Wm : public Chatterer, public Logger {
+
+        typedef std::pair<uint,uint> resolution_t;
+
     public:
         Wm() : Chatterer ("WM") {}
         Wm(Wm&&) = delete;
@@ -32,9 +35,14 @@ namespace Ats {
         json   serialize() const;
         void   deserialize(const json&);
 
+        shared_ptr<Wm_window>       find_window (const std::string uid);
+        const shared_ptr<Wm_window> find_window (const std::string uid) const;
+        shared_ptr<Wm_widget>       find_widget (const std::string uid);
+        const shared_ptr<Wm_widget> find_widget (const std::string uid) const;
+
     private:
 
-        pair<uint,uint> _resolution = make_pair(1920, 1080);
+        resolution_t _resolution = make_pair(1920, 1080);
         std::map<std::string,std::shared_ptr<Wm_window> > _windows;
         std::map<std::string,std::shared_ptr<Wm_widget> > _widgets;
         Wm_treeview                _treeview;
@@ -47,9 +55,12 @@ namespace Ats {
 
         void update_config();
         void validate();
+        void validate_layout(const json& j);
 
-        void   set_resolution(const pair<uint,uint>);
+        void   set_resolution(const resolution_t);
         void   set_position(uint, uint, const Position&);
+
+        json   filter_json_layout(const json& j);
     };
 
     template<class T>

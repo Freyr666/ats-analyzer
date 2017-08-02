@@ -11,7 +11,8 @@ namespace Ats {
     public:
         enum class Type { Video, Background };
         // Wm_element
-        virtual Type type() const = 0;
+        virtual Type        type() const = 0;
+        virtual std::string type_to_string() const = 0;
     };
 
     class Wm_window_video : public Wm_window {
@@ -36,7 +37,8 @@ namespace Ats {
         uint channel() const { if (_plugged) return _channel; else throw Not_plugged {}; }
         uint pid()     const { if (_plugged) return _pid; else throw Not_plugged {}; }
 
-        virtual Type type() const { return Type::Video; }
+        virtual Type        type() const { return Type::Video; }
+        virtual std::string type_to_string() const { return "video"; }
         
     private:
         bool _plugged = false;

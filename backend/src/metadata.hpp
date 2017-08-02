@@ -106,7 +106,7 @@ namespace Ats {
         bool   is_empty() const { return channels.empty(); }
         bool   to_be_analyzed () const;
         string to_string () const;
-        json to_json() const;
+        json   to_json() const;
 
         void   for_analyzable (std::function<void(const Meta_channel&)>) const;
     };

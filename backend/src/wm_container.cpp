@@ -10,8 +10,12 @@ Wm_container::~Wm_container() {
 }
 
 void
-Wm_container::add_widget(shared_ptr<Wm_widget> wdg) {
-    _widgets.try_emplace(wdg->gen_name(),wdg);
+Wm_container::add_widget(std::string uid, shared_ptr<Wm_widget> wdg) {
+    auto res = _widgets.try_emplace(uid,wdg);
+    if (!res.second) {
+        throw Error_expn(std::string("Wm_container: add_widget - widget with uid '") + uid +
+                         "' was already added");
+    }
     wdg->enable();
 }
 

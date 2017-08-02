@@ -16,7 +16,7 @@ namespace Ats {
         Wm_container (const Wm_container&&) = delete;
         ~Wm_container ();
 	
-        void add_widget (shared_ptr<Wm_widget>);
+        void add_widget (std::string, shared_ptr<Wm_widget>);
         void remove_widget (std::string);
 
         void validate () {}
