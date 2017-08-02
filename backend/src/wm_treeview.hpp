@@ -21,7 +21,8 @@ namespace Ats {
 
         void validate () {}
 
-        void for_each (std::function<void(const std::string&,Wm_container&)>&) const;
+        void for_each (std::function<void(const std::string&,Wm_container&)>&);
+        void for_each (std::function<void(const std::string&,const Wm_container&)>&) const;
 
     private:
         std::map<std::string,std::shared_ptr<Wm_container>> _containers;

@@ -28,7 +28,7 @@ namespace Ats {
         Graph(Graph&&) = delete;
         virtual ~Graph() {}
 
-	Wm&        get_wm() { return _wm; };
+        Wm&        get_wm() { return _wm; };
         void       set(const Options&);
         void       reset();
         void       apply_options(const Options&);
@@ -50,12 +50,12 @@ namespace Ats {
         void   deserialize(const json&);
 	
     private:
-	Wm                                 _wm;
-	Video_renderer                     _vrenderer;
-	std::vector<std::unique_ptr<Audio_renderer>> _arenderers;
-	std::vector<std::unique_ptr<Root>> _roots;
-	Glib::RefPtr<Gst::Pipeline>        _pipe;
-	Glib::RefPtr<Gst::Bus>             _bus;
+        Wm                                 _wm;
+        Video_renderer                     _vrenderer;
+        std::vector<std::unique_ptr<Audio_renderer>> _arenderers;
+        std::vector<std::unique_ptr<Root>> _roots;
+        Glib::RefPtr<Gst::Pipeline>        _pipe;
+        Glib::RefPtr<Gst::Bus>             _bus;
 
         bool             on_bus_message(const Glib::RefPtr<Gst::Bus>&,
                                         const Glib::RefPtr<Gst::Message>&);

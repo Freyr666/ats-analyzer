@@ -54,10 +54,10 @@ namespace Ats {
 
     template<class T>
     void to_json(json& j, const pair<std::string,shared_ptr<T>> p) { j = {p.first,p.second}; }
-    void to_json(json& j, const shared_ptr<Wm_window>);
-    void to_json(json& j, const shared_ptr<Wm_widget>);
-    void to_json(json& j, const shared_ptr<Wm_container>);
-    void to_json(json& j, const Wm_treeview&);
+    void to_json(json& j, const shared_ptr<const Wm_window>);
+    void to_json(json& j, const shared_ptr<const Wm_widget>);
+    void to_json(json& j, const shared_ptr<const Wm_container>);
+    void to_json(json& j, const Wm_position&);
 }
 
 #endif /* WM_H */

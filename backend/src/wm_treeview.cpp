@@ -1,6 +1,8 @@
 #include "wm_treeview.hpp"
 #include "errexpn.hpp"
 
+#include <iostream>
+
 using namespace Ats;
 using namespace std;
 
@@ -29,7 +31,14 @@ Wm_treeview::remove_widget (std::string pos, std::string wdg_pos) {
 }
 
 void
-Wm_treeview::for_each (std::function<void(const std::string&, Wm_container&)>& f) const {
+Wm_treeview::for_each (std::function<void(const std::string&, Wm_container&)>& f) {
+    for (auto& nh : _containers) {
+        f (nh.first , *nh.second);
+    }
+}
+
+void
+Wm_treeview::for_each (std::function<void(const std::string&, const Wm_container&)>& f) const {
     for (auto& nh : _containers) {
         f (nh.first , *nh.second);
     }

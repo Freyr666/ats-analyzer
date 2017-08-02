@@ -27,7 +27,19 @@ Wm_container::apply (std::function<void(Wm_window&)>& f) {
 }
 
 void
-Wm_container::for_each (std::function<void(const std::string&,Wm_widget&)>& f) const {
+Wm_container::apply (std::function<void(const Wm_window&)>& f) const {
+    f(*_window);
+}
+
+void
+Wm_container::for_each (std::function<void(const std::string&,Wm_widget&)>& f) {
+    for (auto& nh : _widgets) {
+        f (nh.first, *nh.second);
+    }
+}
+
+void
+Wm_container::for_each (std::function<void(const std::string&,const Wm_widget&)>& f) const {
     for (auto& nh : _widgets) {
         f (nh.first, *nh.second);
     }

@@ -43,6 +43,8 @@ Context::Context(Initial init) : graph("graph"), options("options"), settings("s
     
     graph.connect(options);
     graph.connect(settings);
+
+    cout << graph.get_wm().serialize().dump(2) << endl;
 }
 
 void

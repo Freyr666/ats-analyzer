@@ -42,7 +42,7 @@ Wm_window_video::gen_name() {
 }
 
 bool
-Wm_window_video::is_enabled() {
+Wm_window_video::is_enabled() const {
     return _enabled;
 }
 
@@ -63,7 +63,7 @@ Wm_window_video::set_position(const Wm_position& pos) {
 }
 
 Wm_position
-Wm_window_video::get_position() {
+Wm_window_video::get_position() const {
     return _position;
 }
 
