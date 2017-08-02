@@ -3,8 +3,18 @@
 using namespace std;
 using namespace Ats;
 
+void
+Wm::reset() {
+    _background_pad.reset();
+    _background.reset();
+    _mixer.reset();
+    _windows.clear();
+    _widgets.clear();
+    _treeview.reset();
+}
+
 void /* TODO err */
-Wm::add_to_pipe(Glib::RefPtr<Gst::Bin> b) {
+Wm::add_to_pipe(const Glib::RefPtr<Gst::Bin> b) {
     _bin        = b;
     _mixer      = Gst::ElementFactory::create_element("glvideomixer");
     _background = Gst::ElementFactory::create_element("videotestsrc");

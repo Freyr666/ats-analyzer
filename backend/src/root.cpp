@@ -2,10 +2,12 @@
 
 #include "root.hpp"
 
+#include <iostream>
+
 using namespace Ats;
 using namespace std;
 
-Root::Root (Glib::RefPtr<Gst::Bin> bin, const Metadata& m) {
+Root::Root (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m) {
     uint stream = m.stream;
     
     _bin   = bin;
@@ -24,7 +26,7 @@ Root::Root (Glib::RefPtr<Gst::Bin> bin, const Metadata& m) {
 }
 
 unique_ptr<Root>
-Root::create (Glib::RefPtr<Gst::Bin> bin, const Metadata& m) {
+Root::create (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m) {
     if (! m.to_be_analyzed()) return unique_ptr<Root>(nullptr);
     else return unique_ptr<Root>(new Root(bin, m));
 }
@@ -56,18 +58,16 @@ Root::build_cb (const uint stream, const Meta_channel& c) {
     // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_bin->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
     _demux->signal_pad_added().connect([this, stream, num](const Glib::RefPtr<Gst::Pad>& p)
 				      { build_branch(stream, num, p); });
-    _demux->signal_pad_removed().connect([this, stream, num](const Glib::RefPtr<Gst::Pad>& p)
-				      { destroy_branch(stream, num, p); });
+    //_demux->signal_pad_removed().connect([this, stream, num](const Glib::RefPtr<Gst::Pad>& p)
+//				      { destroy_branch(stream, num, p); });
 }
 
 void
 Root::build_branch (const uint stream,
 		    const uint num,
 		    const Glib::RefPtr<Gst::Pad>& p) {
-	
     auto pname = p->get_name();
     auto pcaps = p->get_current_caps()->get_structure(0).get_name();
-
     vector<Glib::ustring> name_toks = Glib::Regex::split_simple("_", pname);
     vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
 

@@ -22,7 +22,7 @@ namespace Ats {
         virtual ~Wm_window_video ();
 
         // Wm_element
-        virtual void add_to_pipe (Glib::RefPtr<Gst::Bin>);
+        virtual void add_to_pipe (const Glib::RefPtr<Gst::Bin>);
         virtual void plug(shared_ptr<Pad>); // plug source
         virtual void plug(Glib::RefPtr<Gst::Pad>); // plug sink
         virtual std::string gen_name();

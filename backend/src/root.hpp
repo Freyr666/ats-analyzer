@@ -14,13 +14,13 @@ namespace Ats {
 	Root(Root&) = delete;
 	Root(const Root&&) = delete;
 
-	static unique_ptr<Root> create (Glib::RefPtr<Gst::Bin>, const Metadata&);
+	static unique_ptr<Root> create (const Glib::RefPtr<Gst::Bin>, const Metadata&);
 
 	sigc::signal <void,std::shared_ptr <Pad> > signal_pad_added() { return _pad_added; }
 	sigc::signal <void,std::shared_ptr <Pad> > signal_audio_pad_added() { return _audio_pad_added; }
 
     private:
-	Root(Glib::RefPtr<Gst::Bin>, const Metadata&);
+	Root(const Glib::RefPtr<Gst::Bin>, const Metadata&);
 	Glib::RefPtr<Gst::Bin> _bin;
 	Glib::RefPtr<Gst::Element> _tee;
 	Glib::RefPtr<Gst::Element> _demux;

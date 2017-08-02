@@ -32,7 +32,7 @@ Branch::Branch() {
 }
 
 Branch::~Branch() {
-    _bin->unparent();
+    // _bin->unparent();
 }
     
 void
@@ -91,8 +91,12 @@ void
 Video_branch::set_video (const Glib::RefPtr<Gst::Pad> p) {
     Meta_pid::Video_pid v;
 
+    if (! p) return;
+
     auto vi = gst_video_info_new();
     auto pcaps = p->get_current_caps();
+    if (! pcaps) return;
+    
     if (! gst_video_info_from_caps(vi, pcaps->gobj())) {
 	gst_video_info_free(vi);
 	return;

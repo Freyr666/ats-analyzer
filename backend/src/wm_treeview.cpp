@@ -5,6 +5,11 @@ using namespace Ats;
 using namespace std;
 
 void
+Wm_treeview::reset() {
+    _containers.clear();
+}
+
+void
 Wm_treeview::add_window(shared_ptr<Ats::Wm_window> w) {
     _containers.try_emplace(w->gen_name(), unique_ptr<Wm_container>(new Wm_container(w)));
 }

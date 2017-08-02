@@ -13,7 +13,8 @@ namespace Ats {
 	Wm_treeview () {}
 	Wm_treeview (Wm_treeview&) = delete;
 	Wm_treeview (const Wm_treeview&&) = delete;
-	
+
+        void reset();
 	void add_window (shared_ptr<Wm_window>);
 	void add_widget (std::string, shared_ptr<Wm_widget>);
 	void remove_window (std::string);
