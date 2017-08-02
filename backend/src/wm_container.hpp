@@ -22,7 +22,7 @@ namespace Ats {
         void validate () {}
 
         void apply    (std::function<void(Wm_window&)>&);
-        void for_each (std::function<void(const std::string&,Wm_widget&)>&);
+        void for_each (std::function<void(const std::string&,Wm_widget&)>&) const;
     private:
         std::string _name;
         std::shared_ptr<Wm_window>                       _window;

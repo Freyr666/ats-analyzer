@@ -29,7 +29,7 @@ Wm_treeview::remove_widget (std::string pos, std::string wdg_pos) {
 }
 
 void
-Wm_treeview::for_each (std::function<void(const std::string&, Wm_container&)>& f) {
+Wm_treeview::for_each (std::function<void(const std::string&, Wm_container&)>& f) const {
     for (auto& nh : _containers) {
         f (nh.first , *nh.second);
     }
