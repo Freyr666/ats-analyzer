@@ -19,9 +19,9 @@ namespace Ats {
 	void add_widget (shared_ptr<Wm_widget>);
 	void remove_widget (std::string);
 
-        void validate () {}
+        void validate ();
 
-        void apply    (std::function<void(Wm_window&)>&);
+        std::shared_ptr<Wm_window> get_window () { return _window; }
         void for_each (std::function<void(const std::string&,Wm_widget&)>&);
     private:
 	std::string _name;

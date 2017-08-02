@@ -30,7 +30,7 @@ namespace Ats {
         virtual void enable();
         virtual void disable();
         virtual void set_position(const Wm_position&);
-        virtual Wm_position get_position();
+        virtual Wm_position& get_position();
 
         uint stream()  { if (_plugged) return _stream; else throw Not_plugged {}; }
         uint channel() { if (_plugged) return _channel; else throw Not_plugged {}; }

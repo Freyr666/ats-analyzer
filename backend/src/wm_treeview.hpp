@@ -20,7 +20,7 @@ namespace Ats {
 	void remove_window (std::string);
 	void remove_widget (std::string, std::string);
 
-        void validate () {}
+        void validate (std::pair<uint,uint>);
 
         void for_each (std::function<void(const std::string&,Wm_container&)>&);
     private:

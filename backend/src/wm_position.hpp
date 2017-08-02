@@ -34,7 +34,10 @@ namespace Ats {
         operator bool () const { return ! (_rlc == _luc && _rlc == std::make_pair(0,0)); }
         bool operator== (const Wm_position& p) const { return (_rlc == p._rlc) && (_luc == p._luc); }
         bool operator!= (const Wm_position& p) const { return (_rlc != p._rlc) || (_luc != p._luc); }
-        bool is_overlap (const Wm_position& p) const { return false; }
+        bool is_overlap (const Wm_position& p) const {
+            return (_luc.first < p._rlc.first && _rlc.first > p._luc.first &&
+                    _luc.second > p._rlc.second && _rlc.second < p._luc.second);
+                }
     private:
         std::pair<int,int> _luc; // left-upper corner
         std::pair<int,int> _rlc; // right-lower corner

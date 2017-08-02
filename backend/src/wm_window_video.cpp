@@ -68,7 +68,7 @@ Wm_window_video::set_position(const Wm_position& pos) {
     apply_position ();
 }
 
-Wm_position
+Wm_position&
 Wm_window_video::get_position() {
     return _position;
 }
