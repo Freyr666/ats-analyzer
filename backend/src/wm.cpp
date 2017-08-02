@@ -16,6 +16,7 @@ Wm::add_to_pipe(Glib::RefPtr<Gst::Bin> b) {
 
     auto in_pad = _background->get_static_pad("src");
     in_pad->link(_background_pad);
+    apply_resolution();
 }
 
 void
@@ -51,4 +52,16 @@ Wm::plug (Glib::RefPtr<Gst::Pad> sink) {
 void
 Wm::on_remove_sink(uint stream, uint pid) {
 
+}
+
+void
+Wm::set_resolution(const pair<uint,uint> r) {
+    _resolution = r;
+    apply_resolution();
+}
+
+void
+Wm::apply_resolution() {
+    _background_pad->set_property("height", _resolution.second);
+    _background_pad->set_property("width", _resolution.first);
 }

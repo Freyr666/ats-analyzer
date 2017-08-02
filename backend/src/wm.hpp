@@ -44,11 +44,8 @@ namespace Ats {
 
 	void on_remove_sink(const uint stream, const uint pid);
 
-	void update_config();
-	void validate();
-
 	void   set_resolution(const pair<uint,uint>);
-	void   set_position(uint, uint, const Position&);
+        void   apply_resolution();
     };
     
 }
