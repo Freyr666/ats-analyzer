@@ -43,8 +43,6 @@ Context::Context(Initial init) : graph("graph"), options("options"), settings("s
     
     graph.connect(options);
     graph.connect(settings);
-
-    cout << graph.get_wm().serialize().dump(2) << endl;
 }
 
 void
@@ -123,7 +121,7 @@ Context::dispatch(const std::string& s) {
 
     for (json::iterator it = j.begin(); it != j.end(); ++it) {
         auto chatterer = get_chatterer(it.key());
-	if (chatterer) chatterer->deserialize(it.value());
+        if (chatterer) chatterer->deserialize(it.value());
     }
 }
 

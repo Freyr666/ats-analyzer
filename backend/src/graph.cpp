@@ -14,13 +14,13 @@ Graph::set(const Options& o) {
     if (o.is_empty()) return;
     
     reset();
-	
+    
     _pipe = Gst::Pipeline::create();
-
+    
     _wm.add_to_pipe(_pipe);
-    _vrenderer.add_to_pipe(_pipe);
+    _vrenderer->add_to_pipe(_pipe);
 
-    _vrenderer.plug(_wm);
+    _vrenderer->plug(_wm);
 
     for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
             // TODO separate create and add_to_pipe
@@ -52,11 +52,18 @@ Graph::set(const Options& o) {
 
 void
 Graph::reset() {
+    // if (_pipe) GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
     if (_pipe)  {
-	set_state(Gst::STATE_PAUSED);
-	set_state(Gst::STATE_NULL);
+        cout << "resetting\n";
+	set_state(Gst::State::STATE_PAUSED);
+	set_state(Gst::State::STATE_NULL);
+        _wm.reset();
+        _vrenderer.reset(new Video_renderer());
+        _arenderers.clear();
+        _roots.clear();
+        //GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
         _pipe.reset();
-    }
+    }   
     if (_bus)   _bus.reset();
 }
 

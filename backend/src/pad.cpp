@@ -17,4 +17,6 @@ Pad::Pad(uint stream,
     _stream = stream;
     _channel = chan;
     _pid = pid;
+
+    //_pad->signal_unlinked().connect ([this](const Glib::RefPtr<Gst::Pad> p){ if (p) _unlinked.emit(); });
 }

@@ -9,8 +9,13 @@ Wm_window_video::Wm_window_video() : _position (make_pair(0,0), make_pair(0,0)) 
     _caps->set_property("caps", Gst::Caps::create_from_string("video/x-raw,pixel-aspect-ratio=1/1"));
 }
 
+Wm_window_video::~Wm_window_video () {
+    //_scale->unparent();
+    //_caps->unparent();
+}
+
 void
-Wm_window_video::add_to_pipe (Glib::RefPtr<Gst::Bin> pipe) {
+Wm_window_video::add_to_pipe (const Glib::RefPtr<Gst::Bin> pipe) {
     pipe->add(_scale)->add(_caps);
     _scale->link(_caps);
     _scale->sync_state_with_parent();
@@ -25,6 +30,7 @@ Wm_window_video::plug(shared_ptr<Ats::Pad> src) {
     _pid = src->pid();
     _plugged = true;
     src->pad()->link(_scale->get_static_pad("sink"));
+    src->signal_unlinked().connect([this](){ _unlinked.emit(); });
 }
 
 void
@@ -62,7 +68,7 @@ Wm_window_video::set_position(const Wm_position& pos) {
     apply_position ();
 }
 
-Wm_position
+const Wm_position&
 Wm_window_video::get_position() const {
     return _position;
 }

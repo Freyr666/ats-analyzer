@@ -18,7 +18,10 @@ namespace Ats {
 	Branch();
 	Branch(Branch&) = delete;
 	Branch(const Branch&&) = delete;
-	virtual ~Branch() {}
+	virtual ~Branch();
+
+        bool operator==(const std::tuple<uint,uint,uint>& t)
+            { return (get<0>(t) == _stream) && (get<1>(t) == _channel) && (get<2>(t) == _pid); }
 
 	virtual Type                                type() = 0;
 	std::vector< std::shared_ptr<Pad> > pads() { return _pads; }
@@ -58,6 +61,7 @@ namespace Ats {
     public:
 	Video_branch() : Branch () {}
 	Video_branch(uint, uint, uint);
+        virtual ~Video_branch() {}
 
 	virtual Type   type() { return Branch::Type::Video; }
 
@@ -68,6 +72,7 @@ namespace Ats {
     class Audio_branch : public Branch {
     public:
 	Audio_branch(uint, uint, uint);
+        virtual ~Audio_branch() {}
 
 	virtual Type   type() { return Branch::Type::Audio; }
 	std::shared_ptr<Pad> get_audio_pad() { return _audio_pad; }

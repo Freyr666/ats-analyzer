@@ -1,5 +1,7 @@
 #include "wm_container.hpp"
 
+#include <algorithm>
+
 using namespace Ats;
 using namespace std;
 
@@ -11,11 +13,7 @@ Wm_container::~Wm_container() {
 
 void
 Wm_container::add_widget(std::string uid, shared_ptr<Wm_widget> wdg) {
-    auto res = _widgets.try_emplace(uid,wdg);
-    if (!res.second) {
-        throw Error_expn(std::string("Wm_container: add_widget - widget with uid '") + uid +
-                         "' was already added");
-    }
+    _widgets.try_emplace(uid,wdg);
     wdg->enable();
 }
 
@@ -23,16 +21,6 @@ void
 Wm_container::remove_widget (string pos) {
     auto nh = _widgets.extract(pos);
     if (nh) nh.mapped()->disable();
-}
-
-void
-Wm_container::apply (std::function<void(Wm_window&)>& f) {
-    f(*_window);
-}
-
-void
-Wm_container::apply (std::function<void(const Wm_window&)>& f) const {
-    f(*_window);
 }
 
 void
@@ -46,5 +34,27 @@ void
 Wm_container::for_each (std::function<void(const std::string&,const Wm_widget&)>& f) const {
     for (auto& nh : _widgets) {
         f (nh.first, *nh.second);
+    }
+}
+
+void
+Wm_container::validate () {
+    Wm_position win_pos = _window->get_position();
+    
+    for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
+        Wm_position pos = it->second->get_position();
+        if (pos.get_luc().first  < win_pos.get_luc().first  ||
+            pos.get_luc().second < win_pos.get_luc().second ||
+            pos.get_rlc().first  > win_pos.get_rlc().first  ||
+            pos.get_rlc().second > win_pos.get_rlc().second ) {
+            throw Error_expn("Widget layout: part of the widget " + it->first + " is located beyond win borders");
+        }
+        // Widgets' intersections
+        if (any_of(it++, _widgets.end(), [&pos](auto& cont_it) {
+                    Wm_position opos = cont_it.second->get_position();
+                    return pos.is_overlap(opos);
+                }) ) {
+            throw Error_expn("Widget layout: widget " + it->first + " is overlapping with another widget");
+        }
     }
 }

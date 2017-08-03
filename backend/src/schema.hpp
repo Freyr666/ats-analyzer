@@ -170,39 +170,20 @@ compose_schema() {
 
     const json j_basic_window_or_widget = {
         {"type","object"},
-        {"properties",{{"uid",{{"type","string"}}},
-                       {"enabled",{{"type","boolean"}}},
+        {"properties",{{"type",{{"type","string"}}},
                        {"position",{{"$ref","#/definitions/position"}}}}},
     };
 
-    const json j_video_window_props = {
+    const json j_window_props = {
         {"type","object"},
-        {"properties",{{"type",{{"type","string"},
-                                {"enum",{"video"}}}},
-                       {"stream",{{"type","integer"},
-                                  {"minimum",0}}},
-                       {"channel",{{"type","integer"},
-                                   {"minimum",0}}},
-                       {"pid",{{"$ref","#/definitions/pid"}}}}},
-        {"required",{"uid","type","stream","channel","pid"}}
+        {"properties",{{"widgets",{{"type","array"},
+                                   {"items",j_basic_window_or_widget},
+                                   {"uniqueItems",true}}}}}
     };
 
-    const json j_arbitrary_window_props = {
-        {"type","object"},
-        {"properties",{{"type",{{"type","string"},
-                                {"enum",{"arbitrary"}}}},
-                       {"background",{{"type","integer"}}}}},
-        {"required",{"uid","type"}}
-    };
+    /* NOTE: should be extended to check various window and widgets types */
 
-    const json j_layout_window = {
-        {"oneOf",{j_video_window_props,
-                  j_arbitrary_window_props}},
-        {"properties",{"widgets",{{"type","array"},
-                                  /* TODO add widgets description */
-                                  {"uniqueItems",true}}}},
-        {"required",{"position","enabled"}}
-    };
+    const json j_window = merge(j_basic_window_or_widget, j_window_props);
 
     const json j_wm = {
         {"comment","JSON schema for WM class"},
@@ -214,20 +195,15 @@ compose_schema() {
                                       {"items",{{{"type","integer"},
                                                  {"minimum",0},
                                                  {"maximum",1920}},
-                                                {{"type","interger"},
+                                                {{"type","integer"},
                                                  {"minimum",0},
                                                  {"maximum",1080}}}},
                                       {"additionalItems",false}}},
-                       {"windows",{{"type","array"},
-                                   {"items",merge(j_basic_window_or_widget,
-                                                  j_video_window_props)},
-                                   {"uniqueItems",true}}},
-                       {"widgets",{{"type","array"},
-                                   /* TODO add widgets description */
-                                   {"uniqueItems",true}}},
                        {"layout",{{"type","array"},
-                                  {"items",j_layout_window},
-                                  {"uniqueItems",true}}}}} /* FIXME unique? */
+                                  {"items",{{"type","array"},
+                                            {"items",{{{"type","string"}},
+                                                      j_window}}}},
+                                  {"uniqueItems",true}}}}}
     };
 
 /* ----------------------- Root ------------------------------ */
@@ -254,11 +230,11 @@ compose_schema() {
         {"coord",{{"type","integer"},
                   {"minimum",0}}},
         {"position",{{"type","object"},
-                     {"properties",{{"left",{{"$ref","#/definitions/coord"}}},
-                                    {"top",{{"$ref","#/definitions/coord"}}},
-                                    {"right",{{"$ref","#/definitions/coord"}}},
-                                    {"bottom",{{"$ref","#/definitions/coord"}}}}},
-                     {"required",{"left","top","right","bottom"}}}},
+                     {"properties",{{"x",{{"$ref","#/definitions/coord"}}},
+                                    {"y",{{"$ref","#/definitions/coord"}}},
+                                    {"width",{{"$ref","#/definitions/coord"}}},
+                                    {"height",{{"$ref","#/definitions/coord"}}}}},
+                     {"required",{"x","y","width","height"}}}},
         {"pid",{{"type","integer"},
                 {"minimum",0},
                 {"maximum",8191}}}
@@ -271,7 +247,7 @@ compose_schema() {
         {"properties",{{"options",j_options},
                        {"settings",j_settings},
                        {"graph",j_graph},
-                       {"wm",j_wm}}},
+                       {"WM",j_wm}}},
         {"definitions",j_definitions}
     };
 

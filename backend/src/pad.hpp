@@ -22,12 +22,15 @@ namespace Ats {
 	uint                   pid()     { return _pid; }
 	Type                   type()    { return _t; }
 	Glib::RefPtr<Gst::Pad> pad()     { return _pad; }
+        sigc::signal<void>     signal_unlinked() { return _unlinked; }
+        
     private:
 	uint _stream;
 	uint _channel;
 	uint _pid;
 	Type _t;
 	Glib::RefPtr<Gst::Pad> _pad;
+        sigc::signal<void>     _unlinked;
     };
 
 }
