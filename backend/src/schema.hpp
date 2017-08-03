@@ -261,7 +261,8 @@ compose_schema() {
         {"comment","JSON schema for data passed to backend"},
         {"type","object"},
         {"additionalProperties",false},
-        {"properties",{{"options",j_options},
+        {"properties",{{"get",{{"type","string"}}},
+                       {"options",j_options},
                        {"settings",j_settings},
                        {"graph",j_graph}}},
         {"definitions",j_definitions}
