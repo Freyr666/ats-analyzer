@@ -93,6 +93,7 @@ Context::dispatch(const std::string& s) {
     using Df = Chatterer::Deserializer_failure;
 
     json j;
+    json rval;
 
     if (msg_type == Msg_type::Msgpack) {
         try {
@@ -121,7 +122,16 @@ Context::dispatch(const std::string& s) {
 
     for (json::iterator it = j.begin(); it != j.end(); ++it) {
         auto chatterer = get_chatterer(it.key());
-	if (chatterer) chatterer->deserialize(it.value());
+        if (chatterer) chatterer->deserialize(it.value());
+        // get request
+        else if ((it.key() == "get") && it.value().is_string()) {
+            auto chatterer = get_chatterer(it.value().get<std::string>());
+            if (chatterer) {
+                rval[chatterer->name] = chatterer->serialize();
+            }
+        }
     }
+    // send reply if rval is not emply
+    if (! rval.empty()) send.emit(rval);
 }
 

@@ -32,24 +32,25 @@ Wm::add_to_pipe(const Glib::RefPtr<Gst::Bin> b) {
 void
 Wm::plug(shared_ptr<Pad> src) {
     switch (src->type()) {
-    case Pad::Type::Video: {							  
-	auto w = shared_ptr<Wm_window> (new Wm_window_video ());
+    case Pad::Type::Video: {                                                      
+        auto w = shared_ptr<Wm_window> (new Wm_window_video ());
         auto name = w->gen_name();
-	// TODO try catch
-	w->add_to_pipe(_bin);
-	w->plug(src);
-	auto wres = _windows.try_emplace(name, w);
-	if (wres.second) { // inserted
-	    auto sink_pad = _mixer->get_request_pad("sink_%u");
-	    w->plug(sink_pad);
-	}
+        // TODO try catch
+        w->add_to_pipe(_bin);
+        w->plug(src);
+        auto wres = _windows.try_emplace(name, w);
+        if (wres.second) { // inserted
+            auto sink_pad = _mixer->get_request_pad("sink_%u");
+            w->plug(sink_pad);
+        }
         w->signal_unlinked().connect([this, name](){ on_remove_window(name); });
-	break;
+        talk();
+        break;
     }
     case Pad::Type::Graph_volume:
     case Pad::Type::Audio:
     case Pad::Type::Unknown:
-	break;
+        break;
     }
 
     // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_bin->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");

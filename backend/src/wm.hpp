@@ -18,7 +18,7 @@ namespace Ats {
 
     class Wm : public Chatterer, public Logger {
     public:
-	Wm() : Chatterer ("WM") {}
+	Wm() : Chatterer ("layout") {}
 	Wm(Wm&&) = delete;
 	Wm(const Wm&) = delete;
 	virtual ~Wm() {}

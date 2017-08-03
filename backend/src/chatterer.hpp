@@ -73,8 +73,6 @@ namespace Ats {
         void talk ()                     { send.emit(*this); }
         void error(const std::string& s) { send_err.emit(s); }
 
-        
-
         virtual std::string to_string()    const = 0;
         virtual json        serialize()    const = 0;
         virtual void        deserialize(const json&) = 0;
