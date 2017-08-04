@@ -35,7 +35,6 @@ namespace Ats {
 
         sigc::signal<std::string,const vector<std::uint8_t>&> received;
 
-        void init ();
         void recv ();
         void send (const std::string&);
         void error(const std::string&);
