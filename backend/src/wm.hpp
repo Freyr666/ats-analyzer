@@ -26,6 +26,7 @@ namespace Ats {
         Wm(const Wm&) = delete;
         virtual ~Wm() {}
 
+
         void reset();
         void add_to_pipe (const Glib::RefPtr<Gst::Bin>);
         void plug (std::shared_ptr<Pad>); // plug source

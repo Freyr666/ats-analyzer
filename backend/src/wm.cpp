@@ -39,6 +39,7 @@ Wm::plug(shared_ptr<Pad> src) {
         w->add_to_pipe(_bin);
         w->plug(src);
         auto wres = _windows.try_emplace(uid, w);
+
         if (wres.second) { // inserted
             auto sink_pad = _mixer->get_request_pad("sink_%u");
             w->plug(sink_pad);
