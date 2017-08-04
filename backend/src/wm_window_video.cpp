@@ -40,7 +40,7 @@ Wm_window_video::plug(Glib::RefPtr<Gst::Pad> sink) {
 }
 
 std::string
-Wm_window_video::gen_name() {
+Wm_window_video::gen_uid() {
     string rval = "Vid_";
     rval += to_string(_stream);
     rval += to_string(_pid);
@@ -48,7 +48,7 @@ Wm_window_video::gen_name() {
 }
 
 bool
-Wm_window_video::is_enabled() {
+Wm_window_video::is_enabled() const {
     return _enabled;
 }
 
@@ -68,8 +68,8 @@ Wm_window_video::set_position(const Wm_position& pos) {
     apply_position ();
 }
 
-Wm_position&
-Wm_window_video::get_position() {
+const Wm_position&
+Wm_window_video::get_position() const {
     return _position;
 }
 

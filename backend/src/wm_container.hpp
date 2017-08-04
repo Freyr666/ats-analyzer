@@ -11,22 +11,23 @@ namespace Ats {
 
     class Wm_container {
     public:
-	Wm_container (std::shared_ptr<Wm_window> w) : _name(w->gen_name()), _window(w) { _window->enable(); }
-	Wm_container (Wm_container&) = delete;
-	Wm_container (const Wm_container&&) = delete;
-	~Wm_container ();
+        Wm_container (std::shared_ptr<Wm_window> w) : _name(w->gen_uid()), _window(w) { _window->enable(); }
+        Wm_container (Wm_container&) = delete;
+        Wm_container (const Wm_container&&) = delete;
+        ~Wm_container ();
 	
-	void add_widget (shared_ptr<Wm_widget>);
-	void remove_widget (std::string);
+        void add_widget (std::string, shared_ptr<Wm_widget>);
+        void remove_widget (std::string);
 
-        void validate ();
+        std::shared_ptr<Wm_window> get_window ()        { return _window; }
+        const std::shared_ptr<const Wm_window> get_window () const  { return _window; }
 
-        std::shared_ptr<Wm_window> get_window () { return _window; }
         void for_each (std::function<void(const std::string&,Wm_widget&)>&);
+        void for_each (std::function<void(const std::string&,const Wm_widget&)>& f) const;
     private:
-	std::string _name;
-	std::shared_ptr<Wm_window>                       _window;
-	std::map<std::string,std::shared_ptr<Wm_widget>> _widgets;
+        std::string _name;
+        std::shared_ptr<Wm_window>                       _window;
+        std::map<std::string,std::shared_ptr<Wm_widget>> _widgets;
     };
 	
 }

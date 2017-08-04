@@ -12,8 +12,8 @@ Wm_container::~Wm_container() {
 }
 
 void
-Wm_container::add_widget(shared_ptr<Wm_widget> wdg) {
-    _widgets.try_emplace(wdg->gen_name(),wdg);
+Wm_container::add_widget(std::string uid, shared_ptr<Wm_widget> wdg) {
+    _widgets.try_emplace(uid,wdg);
     wdg->enable();
 }
 
@@ -31,23 +31,8 @@ Wm_container::for_each (std::function<void(const std::string&,Wm_widget&)>& f) {
 }
 
 void
-Wm_container::validate () {
-    Wm_position win_pos = _window->get_position();
-    
-    for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
-        Wm_position pos = it->second->get_position();
-        if (pos.get_luc().first  < win_pos.get_luc().first  ||
-            pos.get_luc().second < win_pos.get_luc().second ||
-            pos.get_rlc().first  > win_pos.get_rlc().first  ||
-            pos.get_rlc().second > win_pos.get_rlc().second ) {
-            throw Error_expn("Widget layout: part of the widget " + it->first + " is located beyond win borders");
-        }
-        // Widgets' intersections
-        if (any_of(it++, _widgets.end(), [&pos](auto& cont_it) {
-                    Wm_position opos = cont_it.second->get_position();
-                    return pos.is_overlap(opos);
-                }) ) {
-            throw Error_expn("Widget layout: widget " + it->first + " is overlapping with another widget");
-        }
+Wm_container::for_each (std::function<void(const std::string&,const Wm_widget&)>& f) const {
+    for (auto& nh : _widgets) {
+        f (nh.first, *nh.second);
     }
 }

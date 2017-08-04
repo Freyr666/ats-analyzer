@@ -32,18 +32,19 @@ Wm::add_to_pipe(const Glib::RefPtr<Gst::Bin> b) {
 void
 Wm::plug(shared_ptr<Pad> src) {
     switch (src->type()) {
-    case Pad::Type::Video: {                                                      
+    case Pad::Type::Video: {							  
         auto w = shared_ptr<Wm_window> (new Wm_window_video ());
-        auto name = w->gen_name();
+        auto uid = w->gen_uid();
         // TODO try catch
         w->add_to_pipe(_bin);
         w->plug(src);
-        auto wres = _windows.try_emplace(name, w);
+        auto wres = _windows.try_emplace(uid, w);
+
         if (wres.second) { // inserted
             auto sink_pad = _mixer->get_request_pad("sink_%u");
             w->plug(sink_pad);
         }
-        w->signal_unlinked().connect([this, name](){ on_remove_window(name); });
+        w->signal_unlinked().connect([this, uid](){ on_remove_window(uid); });
         talk();
         break;
     }
@@ -62,13 +63,13 @@ Wm::plug (Glib::RefPtr<Gst::Pad> sink) {
 }
 
 void
-Wm::on_remove_window(std::string name) {
-    _treeview.remove_window(name);
-    auto nh = _windows.extract(name); // window's destructor do the rest
+Wm::on_remove_window(std::string uid) {
+    _treeview.remove_window(uid);
+    auto nh = _windows.extract(uid); // window's destructor do the rest
 }
 
 void
-Wm::set_resolution(const pair<uint,uint> r) {
+Wm::set_resolution(const resolution_t r) {
     _resolution = r;
     apply_resolution();
 }

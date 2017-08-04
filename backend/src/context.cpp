@@ -122,7 +122,6 @@ Context::dispatch(const std::string& s) {
     for (json::iterator it = j.begin(); it != j.end(); ++it) {
         auto chatterer = get_chatterer(it.key());
         if (chatterer) chatterer->deserialize(it.value());
-        }
     }
 }
 
