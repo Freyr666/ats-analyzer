@@ -30,20 +30,20 @@ namespace Ats {
         class Wm_container_template {
 
         public:
-            Wm_container_template(std::string uid, Wm_window_template w) : _uid(uid), _window(w) {};
+            Wm_container_template(std::string uid,
+                                  Wm_window::Type type,
+                                  Wm_position pos,
+                                  shared_ptr<Wm_window> w) : _window{uid,type,pos,w} {};
 
             void add_widget (std::string,Wm_widget::Type,Wm_position&,shared_ptr<Wm_widget>);
+
             const std::vector<Wm_widget_template>& get_widgets() const { return _widgets; }
-            Wm_window_template&          get_window_template()         { return _window; }
-            const Wm_window_template&    get_window_template()   const { return _window; }
-            shared_ptr<Wm_window>        get_window()                  { return _window.window; }
-            const shared_ptr<Wm_window>  get_window()            const { return _window.window; }
-            void                         validate()              const;
-            const std::string            get_uid()               const { return _uid; }
+            const Wm_window_template&              get_window()  const { return _window; }
+
+            void  validate() const;
 
         private:
-            std::string _uid;
-            Wm_window_template _window;
+            const Wm_window_template        _window;
             std::vector<Wm_widget_template> _widgets;
         };
 
@@ -52,9 +52,9 @@ namespace Ats {
             const json& j,
             const std::map<std::string,shared_ptr<Wm_window>> _windows,
             const std::map<std::string,shared_ptr<Wm_widget>> _widgets);
+        const std::vector<Wm_container_template>&    get_containers() const { return _containers; }
 
         void validate(pair<uint,uint> res) const;
-        const std::vector<Wm_container_template>& get_containers() const { return _containers; }
 
     private:
         static Wm_position parse_position    (const json&);

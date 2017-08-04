@@ -57,19 +57,19 @@ Wm_treeview_template::create (const json& j,
 void
 Wm_treeview_template::validate (pair<uint,uint> res) const {
     for (auto it = _containers.begin(); it != _containers.end(); it++) {
-        Wm_position pos = it->get_window_template().position;
+        Wm_position pos = it->get_window().position;
         if ((uint)pos.get_rlc().first > res.first ||
             (uint)pos.get_rlc().second > res.second) {
-            throw Error_expn(string("Window layout: part of the window '") + it->get_uid() +
+            throw Error_expn(string("Window layout: part of the window '") + it->get_window().uid +
                              "' is located beyond screen borders");
         }
         // Windows' intersections
         if (it == (_containers.end() - 1)) continue;
         if (any_of(it++, _containers.end(), [&pos](auto& cont_it) {
-                    Wm_position opos = cont_it.get_window_template().position;
+                    Wm_position opos = cont_it.get_window().position;
                     return pos.is_overlap(opos);
                 }) ) {
-            throw Error_expn(string("Window layout: window ") + it->get_uid() +
+            throw Error_expn(string("Window layout: window ") + it->get_window().uid +
                              " is overlapping with another window");
         }
         // Widgets' intesections
@@ -81,12 +81,11 @@ void
 Wm_treeview_template::add_window (string uid, Wm_window::Type type,
                                   Wm_position& pos, shared_ptr<Wm_window> window) {
     auto cont_it = find_if(_containers.begin(), _containers.end(), [&uid](Wm_container_template c) {
-            return c.get_uid() == uid;
+            return c.get_window().uid == uid;
         });
     if (cont_it != _containers.end()) throw Error_expn(elt_already_added("Window",uid));
     else {
-        Wm_window_template wnd = {uid,type,pos,window};
-        _containers.push_back(Wm_container_template(uid,wnd));
+        _containers.push_back(Wm_container_template(uid,type,pos,window));
     }
 }
 
@@ -94,7 +93,7 @@ void
 Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid, Wm_widget::Type type,
                                   Wm_position& pos, shared_ptr<Wm_widget> widget) {
     auto cont_it = find_if(_containers.begin(), _containers.end(), [&wnd_uid](Wm_container_template c) {
-            return c.get_uid() == wnd_uid;
+            return c.get_window().uid == wnd_uid;
         });
     if (cont_it != _containers.end()) {
         /* Search if this widget was already added to some window */
@@ -104,12 +103,12 @@ Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid, Wm_widget::Typ
                                           return w.uid == wdg_uid;
                                       });
                 if (wdg_it != c.get_widgets().end())
-                    throw Error_expn(elt_already_added("Widget",wdg_uid,c.get_uid()));
+                    throw Error_expn(elt_already_added("Widget",wdg_uid,c.get_window().uid));
             });
         cont_it->add_widget(wdg_uid,type,pos,widget);
     }
     else
-        throw Error_expn(string("Wm_treeview_template: add_widget") + elt_not_present("Window",wnd_uid));
+        throw Error_expn(string("Wm_treeview_template: add_widget - ") + elt_not_present("Window",wnd_uid));
 }
 
 Wm_position
@@ -154,22 +153,22 @@ Wm_treeview_template::Wm_container_template::add_widget(string uid, Wm_widget::T
     auto wdg_it = find_if(_widgets.begin(), _widgets.end(), [&uid](Wm_widget_template w) {
             return w.uid == uid;
         });
-    if (wdg_it != _widgets.end()) throw Error_expn(elt_already_added("Widget",uid,_uid));
-    Wm_widget_template wdg = {uid,type,pos,widget};
-    _widgets.push_back(wdg);
+    if (wdg_it != _widgets.end()) throw Error_expn(elt_already_added("Widget",uid,_window.uid));
+    _widgets.push_back(Wm_widget_template{uid,type,pos,widget});
 }
 
 void
 Wm_treeview_template::Wm_container_template::validate () const {
     Wm_position win_pos = _window.position;
-    
+
     for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
         Wm_position pos = it->position;
         if (pos.get_luc().first  < win_pos.get_luc().first  ||
             pos.get_luc().second < win_pos.get_luc().second ||
             pos.get_rlc().first  > win_pos.get_rlc().first  ||
             pos.get_rlc().second > win_pos.get_rlc().second ) {
-            throw Error_expn(string("Widget layout: part of the widget '") + it->uid + "' is located beyond win borders");
+            throw Error_expn(string("Widget layout: part of the widget '") + it->uid +
+                             "' is located beyond win borders");
         }
         // Widgets' intersections
         if (it == (_widgets.end() - 1)) continue;

@@ -14,10 +14,10 @@ void
 Wm_treeview::reset_from_template(Wm_treeview_template* t) {
     reset();
     for (auto& wnd_it : t->get_containers()) {
-        add_window(wnd_it.get_uid(), wnd_it.get_window());
-        wnd_it.get_window()->set_position(wnd_it.get_window_template().position);
+        add_window(wnd_it.get_window().uid, wnd_it.get_window().window);
+        wnd_it.get_window().window->set_position(wnd_it.get_window().position);
         for (auto& wdg_it : wnd_it.get_widgets()) {
-            add_widget(wnd_it.get_uid(), wdg_it.uid, wdg_it.widget);
+            add_widget(wnd_it.get_window().uid, wdg_it.uid, wdg_it.widget);
             wdg_it.widget->set_position(wdg_it.position);
         }
     }
