@@ -110,14 +110,14 @@ Wm::serialize() const {
     json j_windows(windows_v);
     json j_widgets(widgets_v);
 
-    json j_treeview;
+    json j_treeview = json::array();
     f_containers_t f = [&j_treeview](const std::string& s,const Wm_container& c) {
         json j_container = {s,c};
         j_treeview.push_back(j_container);
     };
     _treeview.for_each(f);
 
-    json j = json{{"background",{}},
+    json j = json{{"background",json::object()}, // FIXME
                   {"resolution",{_resolution.first,_resolution.second}},
                   {"windows",j_windows},
                   {"widgets",j_widgets},

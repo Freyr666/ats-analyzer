@@ -21,7 +21,7 @@ namespace Ats {
         typedef std::pair<uint,uint> resolution_t;
 
     public:
-        Wm() : Chatterer ("WM") {}
+        Wm() : Chatterer ("wm") {}
         Wm(Wm&&) = delete;
         Wm(const Wm&) = delete;
         virtual ~Wm() {}
