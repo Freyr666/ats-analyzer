@@ -16,7 +16,7 @@ namespace Ats {
         virtual void add_to_pipe (const Glib::RefPtr<Gst::Bin>) = 0;
         virtual void plug(shared_ptr<Pad>) = 0; // plug source
         virtual void plug(Glib::RefPtr<Gst::Pad>) = 0; // plug sink
-        virtual std::string gen_name() = 0;
+        virtual std::string gen_uid() = 0;
         virtual std::string get_type_string() const = 0;
         virtual bool is_enabled() const = 0;
         virtual void enable() = 0;

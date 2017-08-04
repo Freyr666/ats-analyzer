@@ -34,16 +34,16 @@ Wm::plug(shared_ptr<Pad> src) {
     switch (src->type()) {
     case Pad::Type::Video: {							  
         auto w = shared_ptr<Wm_window> (new Wm_window_video ());
-        auto name = w->gen_name();
+        auto uid = w->gen_uid();
         // TODO try catch
         w->add_to_pipe(_bin);
         w->plug(src);
-        auto wres = _windows.try_emplace(name, w);
+        auto wres = _windows.try_emplace(uid, w);
         if (wres.second) { // inserted
             auto sink_pad = _mixer->get_request_pad("sink_%u");
             w->plug(sink_pad);
         }
-        w->signal_unlinked().connect([this, name](){ on_remove_window(name); });
+        w->signal_unlinked().connect([this, uid](){ on_remove_window(uid); });
         talk();
         break;
     }
@@ -62,9 +62,9 @@ Wm::plug (Glib::RefPtr<Gst::Pad> sink) {
 }
 
 void
-Wm::on_remove_window(std::string name) {
-    _treeview.remove_window(name);
-    auto nh = _windows.extract(name); // window's destructor do the rest
+Wm::on_remove_window(std::string uid) {
+    _treeview.remove_window(uid);
+    auto nh = _windows.extract(uid); // window's destructor do the rest
 }
 
 void
@@ -77,28 +77,4 @@ void
 Wm::apply_resolution() {
     _background_pad->set_property("height", _resolution.second);
     _background_pad->set_property("width", _resolution.first);
-}
-
-shared_ptr<Wm_window>
-Wm::find_window (const std::string uid) {
-    return const_pointer_cast<Wm_window>(static_cast<const Wm*>(this)->find_window(uid));
-}
-
-const shared_ptr<Wm_window>
-Wm::find_window (const std::string uid) const {
-    auto it = _windows.find(uid);
-    if (it != _windows.end()) return it->second;
-    throw Error_expn(std::string("Window with uid '") + uid + "' not found");
-}
-
-shared_ptr<Wm_widget>
-Wm::find_widget (const std::string uid) {
-    return const_pointer_cast<Wm_widget>(static_cast<const Wm*>(this)->find_widget(uid));
-}
-
-const shared_ptr<Wm_widget>
-Wm::find_widget (const std::string uid) const {
-    auto it = _widgets.find(uid);
-    if (it != _widgets.end()) return it->second;
-    throw Error_expn(std::string("Widget with uid '") + uid + "' not found");
 }

@@ -60,23 +60,3 @@ Wm_treeview::for_each (std::function<void(const std::string&, const Wm_container
         f (nh.first , *nh.second);
     }
 }
-
-void
-Wm_treeview::validate (pair<uint,uint> res) {
-    for (auto it = _containers.begin(); it != _containers.end(); it++) {
-        Wm_position pos = it->second->get_window()->get_position();
-        if ((uint)pos.get_rlc().first > res.first ||
-            (uint)pos.get_rlc().second > res.second) {
-            throw Error_expn("Window layout: part of the window " + it->first + " is located beyond screen borders");
-        }
-        // Windows' intersections
-        if (any_of(it++, _containers.end(), [&pos](auto& cont_it) {
-                    Wm_position opos = cont_it.second->get_window()->get_position();
-                    return pos.is_overlap(opos);
-                }) ) {
-            throw Error_expn("Window layout: window " + it->first + " is overlapping with another window");
-        }
-        // Widgets' intesections
-        it->second->validate();
-    }
-}

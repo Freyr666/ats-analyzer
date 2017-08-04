@@ -40,7 +40,7 @@ Wm_window_video::plug(Glib::RefPtr<Gst::Pad> sink) {
 }
 
 std::string
-Wm_window_video::gen_name() {
+Wm_window_video::gen_uid() {
     string rval = "Vid_";
     rval += to_string(_stream);
     rval += to_string(_pid);

@@ -36,11 +36,6 @@ namespace Ats {
         json   serialize() const;
         void   deserialize(const json&);
 
-        shared_ptr<Wm_window>       find_window (const std::string uid);
-        const shared_ptr<Wm_window> find_window (const std::string uid) const;
-        shared_ptr<Wm_widget>       find_widget (const std::string uid);
-        const shared_ptr<Wm_widget> find_widget (const std::string uid) const;
-
     private:
         pair<uint,uint> _resolution = make_pair(1920, 1080);
         std::map<std::string,std::shared_ptr<Wm_window> > _windows;
@@ -61,7 +56,7 @@ namespace Ats {
     void to_json(json& j, const pair<std::string,shared_ptr<T>> p) { j = {p.first,p.second}; }
     void to_json(json& j, const shared_ptr<const Wm_window>);
     void to_json(json& j, const shared_ptr<const Wm_widget>);
-    void to_json(json& j, const shared_ptr<const Wm_container>);
+    void to_json(json& j, const Wm_container&);
     void to_json(json& j, const Wm_position&);
 }
 
