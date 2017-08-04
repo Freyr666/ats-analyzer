@@ -9,14 +9,14 @@ Wm::to_string() const {
     auto position_to_string = [](const Wm_position& p) {
         std::string rval;
         rval += "\nPosition: ";
-        rval += "x: ";
-        rval += std::to_string(p.get_x());
-        rval += ", y: ";
-        rval += std::to_string(p.get_y());
-        rval += ", width: ";
-        rval += std::to_string(p.get_width());
-        rval += ", height: ";
-        rval += std::to_string(p.get_height());
+        rval += "left: ";
+        rval += std::to_string(p.get_left());
+        rval += ", top: ";
+        rval += std::to_string(p.get_top());
+        rval += ", right: ";
+        rval += std::to_string(p.get_right());
+        rval += ", bottom: ";
+        rval += std::to_string(p.get_bottom());
         return rval;
     };
     auto window_to_string = [&position_to_string](const Wm_window* w){
@@ -197,8 +197,8 @@ Ats::to_json(json& j, const Wm_container& c) {
 
 void
 Ats::to_json(json& j, const Wm_position& p) {
-    j = {{"x",p.get_x()},
-         {"y",p.get_y()},
-         {"width",p.get_width()},
-         {"height",p.get_height()}};
+    j = {{"left",p.get_left()},
+         {"top",p.get_top()},
+         {"right",p.get_right()},
+         {"bottom",p.get_bottom()}};
 }

@@ -26,10 +26,15 @@ namespace Ats {
             else _rlc = rlc;
         }
 
-        int get_x () const { return _luc.first; }
-        int get_y () const { return _luc.second; }
+        int get_x      () const { return _luc.first; }
+        int get_y      () const { return _luc.second; }
         int get_height () const { return _rlc.second - _luc.second; }
-        int get_width () const { return _rlc.first - _luc.first; }
+        int get_width  () const { return _rlc.first - _luc.first; }
+
+        int get_left   () const { return get_x(); }
+        int get_top    () const { return get_y(); }
+        int get_right  () const { return _rlc.first; }
+        int get_bottom () const { return _rlc.second; }
 
         operator bool () const { return ! (_rlc == _luc && _rlc == std::make_pair(0,0)); }
         bool operator== (const Wm_position& p) const { return (_rlc == p._rlc) && (_luc == p._luc); }

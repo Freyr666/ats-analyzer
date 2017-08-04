@@ -113,12 +113,12 @@ Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid, Wm_widget::Typ
 
 Wm_position
 Wm_treeview_template::parse_position (const json& j) {
-    int x      = j.at("x");
-    int y      = j.at("y");
-    int width  = j.at("width");
-    int height = j.at("height");
-    std::pair<int,int> luc(x,y);
-    std::pair<int,int> rlc(x+width,y+height);
+    int left   = j.at("left");
+    int top    = j.at("top");
+    int right  = j.at("right");
+    int bottom = j.at("bottom");
+    std::pair<int,int> luc(left,top);
+    std::pair<int,int> rlc(right,bottom);
     Wm_position pos(luc,rlc);
     return pos;
 }
