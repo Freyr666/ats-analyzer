@@ -19,11 +19,11 @@ namespace Ats {
     class Options;
     class Settings;
     
-    class Graph : public Chatterer, public Logger {
+    class Graph : public Chatterer_data, public Logger {
 	
     public:
-
-        Graph(const std::string& n) : Chatterer(n) { _vrenderer = unique_ptr<Video_renderer>(new Video_renderer()); }
+        
+        Graph(const std::string& n) : Chatterer_data(n) { _vrenderer = unique_ptr<Video_renderer>(new Video_renderer()); }
         Graph(const Graph&) = delete;
         Graph(Graph&&) = delete;
         virtual ~Graph() {}

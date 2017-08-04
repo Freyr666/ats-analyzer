@@ -47,6 +47,7 @@ namespace Ats {
 
         // Chatterer_proxy
         void forward_talk(const Chatterer&);
+        void forward_talk_data(const json&);
         void forward_error(const std::string&);
         std::string dispatch(const std::vector<std::uint8_t>&);
 

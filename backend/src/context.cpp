@@ -60,8 +60,32 @@ Context::forward_talk(const Chatterer& c) {
         if (msg_type == Msg_type::Msgpack) {
             std::vector<uint8_t> msgpack = json::to_msgpack(j);
             rval = std::string(msgpack.begin(), msgpack.end());
+        } else {
+            rval = j.dump();
         }
-        else rval = j.dump();
+        break;
+    }
+    send.emit(rval);
+}
+
+void
+Context::forward_talk_data(const json& js) {
+    std::string rval = "";
+
+    switch (msg_type) {
+    case Msg_type::Debug:
+        rval = "Data : ";
+        rval += js.dump();
+        break;
+    case Msg_type::Json:
+    case Msg_type::Msgpack:
+        json j = json{{"data", js}};
+        if (msg_type == Msg_type::Msgpack) {
+            std::vector<uint8_t> msgpack = json::to_msgpack(j);
+            rval = std::string(msgpack.begin(), msgpack.end());
+        } else {
+            rval = j.dump();
+        }
         break;
     }
     send.emit(rval);
