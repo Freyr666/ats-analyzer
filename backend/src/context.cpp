@@ -99,13 +99,20 @@ std::string
 Context::dispatch(const std::vector<std::uint8_t>& data) {
 
     json j;
-    json j_success = json::array();
+    json j_reply;
+    auto f_get = [this](std::string& chatterer_name) {
+        auto chatterer = get_chatterer(chatterer_name);
+        if (chatterer != nullptr) {
+            json j_get_reply = chatterer->serialize();
+            return j_get_reply;
+        } else throw Error_expn(string("object with name '") + chatterer_name + "' not found");
+    };
 
     if (msg_type == Msg_type::Msgpack) {
         try {
             j = json::from_msgpack(data);
         } catch (const std::exception& e) {
-            return (make_error(std::string("Top-level MsgPack is corrupted: ") + e.what()));
+            return make_error(std::string("top-level MsgPack is corrupted: ") + e.what());
         }
     }
     else { /* Debug or Json */
@@ -113,7 +120,7 @@ Context::dispatch(const std::vector<std::uint8_t>& data) {
             std::string s(data.begin(), data.end());
             j = json::parse(s);
         } catch (const std::exception& e) {
-            return (make_error(std::string("Top-level JSON is corrupted: ") + e.what()));
+            return make_error(std::string("Top-level JSON is corrupted: ") + e.what());
         }
     }
 
@@ -121,22 +128,54 @@ Context::dispatch(const std::vector<std::uint8_t>& data) {
     try {
         validate(j, j_schema);
     } catch (const std::exception& e) {
-        return (make_error(e.what()));
+        return make_error(e.what());
     }
 
-    for (json::iterator it = j.begin(); it != j.end(); ++it) {
-        auto chatterer = get_chatterer(it.key());
-        if (chatterer) {
+    if (j.find("get") != j.end()) {
+        json j_get = j.at("get");
+        j_reply = json::object();
+
+        if(j_get.is_string()) {
+            std::string chatterer_name = j_get.get<std::string>();
             try {
-                chatterer->deserialize(it.value());
-                j_success.push_back(it.key());
+                j_reply[chatterer_name] = f_get(chatterer_name);
             } catch (const std::exception& e) {
-                return (make_error(e.what()));
+                return make_error(string("Get request error: ") + e.what());
+            }
+        }
+        else if (j_get.is_array()) {
+            for (json::iterator it = j_get.begin(); it != j_get.end(); ++it) {
+                std::string chatterer_name = it.value().get<std::string>();
+                try {
+                    j_reply[chatterer_name] = f_get(chatterer_name);
+                } catch (const std::exception& e) {
+                    return make_error(string("Get request error: ") + e.what());
+                }
             }
         }
     }
+    else if (j.find("set") != j.end()) {
+        json j_set = j.at("set");
+        j_reply = json::array();
 
-    json j_result = {{"ok",j_success}};
+        for (json::iterator it = j_set.begin(); it != j_set.end(); ++it) {
+            auto chatterer = get_chatterer(it.key());
+            if (chatterer != nullptr) {
+                try {
+                    chatterer->deserialize(it.value());
+                    j_reply.push_back(it.key());
+                } catch (const std::exception& e) {
+                    return make_error(e.what());
+                }
+            }
+            else return make_error(string("Set request error: object with name '") + it.key() + "' not found");
+        }
+    }
+    else {
+        return make_error("Neither 'set' nor 'get' request received");
+    }
+
+    json j_result = {{"ok",j_reply}};
     return j_result.dump();
 }
 
