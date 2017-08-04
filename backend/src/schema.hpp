@@ -230,7 +230,7 @@ compose_schema() {
         {"properties",{{"options",j_options},
                        {"settings",j_settings},
                        {"graph",j_graph},
-                       {"WM",j_wm}}}
+                       {"wm",j_wm}}}
     };
 
 /* ----------------------- Root ------------------------------ */
