@@ -24,7 +24,7 @@ namespace Ats {
 	Video_renderer ();
 	~Video_renderer () {}
 	void plug (Wm&);
-        virtual void add_to_pipe (Glib::RefPtr<Gst::Bin>);
+        virtual void add_to_pipe (const Glib::RefPtr<Gst::Bin>);
     private:
 	Glib::RefPtr<Gst::Element> _output;
     };
@@ -34,7 +34,7 @@ namespace Ats {
 	Audio_renderer ();
 	~Audio_renderer () {}
 	void plug (std::shared_ptr<Pad>);
-	virtual void add_to_pipe (Glib::RefPtr<Gst::Bin>);
+	virtual void add_to_pipe (const Glib::RefPtr<Gst::Bin>);
     };
 }
 

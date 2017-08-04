@@ -14,14 +14,14 @@
    to variable 'obj.name'.
    Also sets flag indicating changes */
 #define typeof __typeof__
-#define SET_VALUE_FROM_JSON(json,obj,name,type,flag) do{      \
-        typeof(json)& _json = (json);                         \
-        typeof(obj)& _obj = (obj);                            \
-        typeof(flag)& _flag = (flag);                         \
-        if ((_json).find(#name) != (_json).end()) {           \
-            (_obj).name = (_json).at(#name).get<type>();      \
-            (_flag) = true;                                   \
-        }                                                     \
+#define SET_VALUE_FROM_JSON(json,obj,name,type,flag) do{  \
+        typeof(json)& _json = (json);                     \
+        typeof(obj)& _obj = (obj);                        \
+        typeof(flag)& _flag = (flag);                     \
+        if ((_json).find(#name) != (_json).end()) {       \
+            (_obj).name = (_json).at(#name).get<type>();  \
+            (_flag) = true;                               \
+        }                                                 \
     } while (0)
 
 namespace Ats {
@@ -73,8 +73,6 @@ namespace Ats {
         void talk ()                     { send.emit(*this); }
         void error(const std::string& s) { send_err.emit(s); }
 
-        
-
         virtual std::string to_string()    const = 0;
         virtual json        serialize()    const = 0;
         virtual void        deserialize(const json&) = 0;
@@ -125,18 +123,18 @@ namespace Ats {
         void connect(Chatterer& c) {
             c.send.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_talk));
             c.send_err.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_error));
-	    chatterers[c.name] = std::shared_ptr<Chatterer>(&c);
+            chatterers[c.name] = std::shared_ptr<Chatterer>(&c);
         }
 
     private:
-	std::map<std::string, std::shared_ptr<Chatterer>> chatterers;
+        std::map<std::string, std::shared_ptr<Chatterer>> chatterers;
 
     protected:
-	std::shared_ptr<Chatterer> get_chatterer(const std::string& name) {
-	    auto chats = chatterers.find(name);
-	    if (chats == chatterers.end()) return nullptr;
-	    else return chats->second;
-	}
+        std::shared_ptr<Chatterer> get_chatterer(const std::string& name) {
+            auto chats = chatterers.find(name);
+            if (chats == chatterers.end()) return nullptr;
+            else return chats->second;
+        }
     };
 
 }

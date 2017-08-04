@@ -10,6 +10,14 @@
 using namespace std;
 using json = nlohmann::json;
 
+json merge (const json &a, const json &b) {
+    json result = a.flatten();
+    json tmp = b.flatten();
+    for ( auto it = tmp.begin(); it != tmp.end(); ++it )
+        result[it.key()] = it.value();
+    return result.unflatten();
+}
+
 const json
 compose_schema() {
 /* ----------------------- Graph ----------------------------- */
@@ -19,57 +27,6 @@ compose_schema() {
         {"type","object"},
         {"properties",{{"state",{{"type","string"},
                                  {"enum",{"null","pause","play","stop"}}}}}}
-    };
-
-/* ----------------------- Channel settings------------------- */
-
-
-    const json j_error_overlay = {
-        {"type","object"},
-        {"properties",{{"enabled",{{"type","boolean"}}},
-                       {"error_color",{{"$ref","#/definitions/color"}}}}}
-    };
-
-    const json j_channel_name = {
-        {"type","object"},
-        {"properties",{{"enabled",{{"type","boolean"}}},
-                       {"font_size",{{"type","integer"}}},
-                       {"fmt",{{"type","string"},
-                               {"maxLength",200}}}}}
-    };
-
-    const json j_audio_meter = {
-        {"type","object"},
-        {"properties",{{"enabled",{{"type","boolean"}}},
-                       {"position",{{"type","string"},
-                                    {"enum",{"left","right"}}}}}}
-    };
-
-    const json j_status_bar = {
-        {"type","object"},
-        {"properties",{{"enabled",{{"type","boolean"}}},
-                       {"position",{{"type","string"},
-                                    {"enum",{"top_left","top_right",
-                                             "left","right",
-                                             "bottom_left","bottom_right"}}}},
-                       {"aspect",{{"type","boolean"}}},
-                       {"subtitles",{{"type","boolean"}}},
-                       {"teletext",{{"type","boolean"}}},
-                       {"eit",{{"type","boolean"}}},
-                       {"qos",{{"type","boolean"}}},
-                       {"scte35",{{"type","boolean"}}}}}
-    };
-
-    const json j_channel_settings = {
-        {"type","object"},
-        {"properties",{{"show_border",{{"type","boolean"}}},
-                       {"border_color",{{"$ref","#/definitions/color"}}},
-                       {"show_aspect_border",{{"type","boolean"}}},
-                       {"aspect_border_color",{{"$ref","#/definitions/color"}}},
-                       {"error_overlay",j_error_overlay},
-                       {"channel_name",j_channel_name},
-                       {"audio_meter",j_audio_meter},
-                       {"status_bar",j_status_bar}}}
     };
 
 /* ----------------------- Qoe settings----------------------- */
@@ -121,7 +78,7 @@ compose_schema() {
     const json j_silence = {
         {"type","object"},
         {"properties",{{"silence",get_j_qoe_setting("#/definitions/lufs")},
-                       {"time",{{"$ref","#/definitions/time"}}}}}
+                       {"timebool _plugged = false;",{{"$ref","#/definitions/time"}}}}}
     };
 
     const json j_loudness = {
@@ -156,29 +113,15 @@ compose_schema() {
     const json j_settings = {
         {"comment","JSON schema for Settings class"},
         {"type","object"},
-        {"properties",{{"qoe_settings",j_qoe},
-                       {"channel_settings",j_channel_settings}}}
+        {"properties",{{"qoe_settings",j_qoe}}}
     };
 
 /* ----------------------- Metadata -------------------------- */
-
-    const json j_position = {
-        {"type","object"},
-        {"properties",{{"x",{{"$ref","#/definitions/coord"}}},
-                       {"y",{{"$ref","#/definitions/coord"}}},
-                       {"width",{{"$ref","#/definitions/coord"}}},
-                       {"height",{{"$ref","#/definitions/coord"}}}}},
-        {"required",{"x","y","width","height"}}
-    };
-
     const json j_metapid = {
         {"type","object"},
-        {"properties",{{"pid",{{"type","integer"},
-                               {"minimum",0},
-                               {"maximum",8191}}},
+        {"properties",{{"pid",{{"$ref","#/definitions/pid"}}},
                        {"to_be_analyzed", {{"type", "boolean"}}},
-                       {"position",j_position},
-                       {"required",{"pid","to_be_analyzed","position"}}}}
+                       {"required",{"pid","to_be_analyzed"}}}}
     };
 
     const json j_metachannel = {
@@ -220,16 +163,47 @@ compose_schema() {
     const json j_options = {
         {"comment","JSON schema for Options class"},
         {"type","object"},
-        {"properties",{{"prog_list",j_metadata},
-                       {"mosaic_resolution",{{"type","array"},
-                                             {"items",{{{"type","integer"},
-                                                        {"minimum",0},
-                                                        {"maximum",1920}},
-                                                       {{"type","integer"},
-                                                        {"minimum",0},
-                                                        {"maximum",1080}}}},
-                                             {"additionalItems",false}}},
-                       {"mosaic_bg_color",{{"$ref","#/definitions/color"}}}}}
+        {"properties",{{"prog_list",j_metadata}}}
+    };
+
+/* ---------------------- WM --------------------------------- */
+
+    const json j_basic_window_or_widget = {
+        {"type","object"},
+        {"properties",{{"type",{{"type","string"}}},
+                       {"position",{{"$ref","#/definitions/position"}}}}},
+    };
+
+    const json j_window_props = {
+        {"type","object"},
+        {"properties",{{"widgets",{{"type","array"},
+                                   {"items",j_basic_window_or_widget},
+                                   {"uniqueItems",true}}}}}
+    };
+
+    /* NOTE: should be extended to check various window and widgets types */
+
+    const json j_window = merge(j_basic_window_or_widget, j_window_props);
+
+    const json j_wm = {
+        {"comment","JSON schema for WM class"},
+        {"type","object"},
+        {"properties",{{"background",{{"type","object"},
+                                      /* FIXME add properties */
+                                      {"properties",{{"color",{{"$ref","#/definitions/color"}}}}}}},
+                       {"resolution",{{"type","array"},
+                                      {"items",{{{"type","integer"},
+                                                 {"minimum",0},
+                                                 {"maximum",1920}},
+                                                {{"type","integer"},
+                                                 {"minimum",0},
+                                                 {"maximum",1080}}}},
+                                      {"additionalItems",false}}},
+                       {"layout",{{"type","array"},
+                                  {"items",{{"type","array"},
+                                            {"items",{{{"type","string"}},
+                                                      j_window}}}},
+                                  {"uniqueItems",true}}}}}
     };
 
 /* ----------------------- Root ------------------------------ */
@@ -254,16 +228,27 @@ compose_schema() {
                   {"minimum",0},
                   {"maximum",16777215}}},
         {"coord",{{"type","integer"},
-                  {"minimum",0}}}
+                  {"minimum",0}}},
+        {"position",{{"type","object"},
+                     {"properties",{{"left",{{"$ref","#/definitions/coord"}}},
+                                    {"top",{{"$ref","#/definitions/coord"}}},
+                                    {"right",{{"$ref","#/definitions/coord"}}},
+                                    {"bottom",{{"$ref","#/definitions/coord"}}}}},
+                     {"required",{"left","top","right","bottom"}}}},
+        {"pid",{{"type","integer"},
+                {"minimum",0},
+                {"maximum",8191}}}
     };
 
     const json j_root = {
         {"comment","JSON schema for data passed to backend"},
         {"type","object"},
         {"additionalProperties",false},
-        {"properties",{{"options",j_options},
+        {"properties",{{"get",{{"type","string"}}},
+                       {"options",j_options},
                        {"settings",j_settings},
-                       {"graph",j_graph}}},
+                       {"graph",j_graph},
+                       {"WM",j_wm}}},
         {"definitions",j_definitions}
     };
 

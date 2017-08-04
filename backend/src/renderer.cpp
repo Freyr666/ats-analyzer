@@ -7,13 +7,14 @@ Video_renderer::Video_renderer() {
 }
 
 void
-Video_renderer::add_to_pipe(Glib::RefPtr<Gst::Bin> b) {
+Video_renderer::add_to_pipe(const Glib::RefPtr<Gst::Bin> b) {
     b->add(_output);
+    _output->sync_state_with_parent();
 }
 
 void
 Video_renderer::plug(Wm & wm) {
-    wm.get_src_pad()->link(_output->get_static_pad("sink"));
+    wm.plug(_output->get_static_pad("sink"));
 }
 
 Audio_renderer::Audio_renderer () {
@@ -21,7 +22,7 @@ Audio_renderer::Audio_renderer () {
 }
 
 void
-Audio_renderer::add_to_pipe(Glib::RefPtr<Gst::Bin> b) {
+Audio_renderer::add_to_pipe(const Glib::RefPtr<Gst::Bin> b) {
 
 }
 

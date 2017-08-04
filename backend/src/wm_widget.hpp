@@ -6,7 +6,10 @@
 namespace Ats {
 
     class Wm_widget : public Wm_element {
-	enum class Type {Error};
+    public:
+        enum class Type {Error};
+
+        virtual Type        type() const = 0;
     };
 
     class Wm_error_widget : public Wm_widget {};

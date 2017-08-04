@@ -14,22 +14,22 @@ Graph::set(const Options& o) {
     if (o.is_empty()) return;
     
     reset();
-	
+    
     _pipe = Gst::Pipeline::create();
-
+    
     _wm.add_to_pipe(_pipe);
-    _vrenderer.add_to_pipe(_pipe);
+    _vrenderer->add_to_pipe(_pipe);
 
-    _vrenderer.plug(_wm);
+    _vrenderer->plug(_wm);
 
     for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
             // TODO separate create and add_to_pipe
             auto root = Root::create(_pipe, m);
 
-            if (root) {
-		
+            if (root) {		
                 root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
                         _wm.plug(p);
+			// GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
                     });
                 root->signal_audio_pad_added().connect([this, m](std::shared_ptr<Pad> p) {	
                         auto ar = unique_ptr<Audio_renderer> (new Audio_renderer ());
@@ -47,17 +47,24 @@ Graph::set(const Options& o) {
    
     _pipe->set_state(Gst::STATE_PLAYING);
 
-    // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+    // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
 }
 
 void
 Graph::reset() {
-    if (_bus)   _bus.reset();
+    // if (_pipe) GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
     if (_pipe)  {
-	set_state(Gst::STATE_PAUSED);
-	set_state(Gst::STATE_NULL);
+        cout << "resetting\n";
+	set_state(Gst::State::STATE_PAUSED);
+	set_state(Gst::State::STATE_NULL);
+        _wm.reset();
+        _vrenderer.reset(new Video_renderer());
+        _arenderers.clear();
+        _roots.clear();
+        //GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
         _pipe.reset();
-    }
+    }   
+    if (_bus)   _bus.reset();
 }
 
 void
