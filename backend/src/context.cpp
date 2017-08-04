@@ -67,9 +67,9 @@ Context::forward_talk(const Chatterer& c) {
     send.emit(rval);
 }
 
-void
-Context::forward_error(const std::string& s) {
-    std::string rval;
+std::string
+Context::make_error(const std::string& s) {
+    std::string rval = "";
 
     switch (msg_type) {
     case Msg_type::Debug:
@@ -85,43 +85,58 @@ Context::forward_error(const std::string& s) {
         else rval = j.dump();
         break;
     }
-    send_err.emit(rval);
+
+    return rval;
 }
 
 void
-Context::dispatch(const std::string& s) {
-    using Df = Chatterer::Deserializer_failure;
+Context::forward_error(const std::string& s) {
+    std::string e = make_error(s);
+    send_err.emit(e);
+}
+
+std::string
+Context::dispatch(const std::vector<std::uint8_t>& data) {
 
     json j;
+    json j_success = json::array();
 
     if (msg_type == Msg_type::Msgpack) {
         try {
-            std::vector<uint8_t> msgpack(s.begin(), s.end());
-            j = json::from_msgpack(msgpack);
+            j = json::from_msgpack(data);
         } catch (const std::exception& e) {
-            throw Df (std::string("Top-level MsgPack is corrupted: ") + e.what());
+            return (make_error(std::string("Top-level MsgPack is corrupted: ") + e.what()));
         }
     }
     else { /* Debug or Json */
         try {
+            std::string s(data.begin(), data.end());
             j = json::parse(s);
         } catch (const std::exception& e) {
-            throw Df (std::string("Top-level JSON is corrupted: ") + e.what());
+            return (make_error(std::string("Top-level JSON is corrupted: ") + e.what()));
         }
     }
 
-    /* Validate incoming json.
-       This will throw an exception in case if json is bad */
+    /* Validate incoming json. This will throw an exception in case if json is bad */
     try {
         validate(j, j_schema);
-    } catch (Validator_failure& e) {
-        log(e.what());
-        return;
+    } catch (const std::exception& e) {
+        return (make_error(e.what()));
     }
 
     for (json::iterator it = j.begin(); it != j.end(); ++it) {
         auto chatterer = get_chatterer(it.key());
-        if (chatterer) chatterer->deserialize(it.value());
+        if (chatterer) {
+            try {
+                chatterer->deserialize(it.value());
+                j_success.push_back(it.key());
+            } catch (const std::exception& e) {
+                return (make_error(e.what()));
+            }
+        }
     }
+
+    json j_result = {{"ok",j_success}};
+    return j_result.dump();
 }
 

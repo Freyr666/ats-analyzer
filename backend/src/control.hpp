@@ -4,6 +4,7 @@
 #include <gstreamermm.h>
 #include <glibmm.h>
 #include <exception>
+#include <zmq.hpp>
 
 #include "options.hpp"
 // #include "graph.hpp"
@@ -21,15 +22,18 @@ namespace Ats {
 	
     private:
         RefPtr<IOChannel> in;
-        RefPtr<IOChannel> out;
         RefPtr<IOChannel> out_log;
-	
+
+        zmq::context_t context;
+        zmq::socket_t  in_socket;
+        zmq::socket_t  out_socket;
+
     public:
         Control ();
         Control (const Control&) = delete;
         Control (Control&&) = delete;
 
-        sigc::signal<void,const string&> received;
+        sigc::signal<std::string,const vector<std::uint8_t>&> received;
 
         void recv ();
         void send (const std::string&);
@@ -40,7 +44,7 @@ namespace Ats {
             c.send.connect(sigc::mem_fun(this, &Control::send));
             c.send_err.connect(sigc::mem_fun(this, &Control::error));
         }
-	void   connect(Logger& c) {
+        void   connect(Logger& c) {
             c.send_log.connect(sigc::mem_fun(this, &Control::log));
         }
     };

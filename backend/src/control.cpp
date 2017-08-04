@@ -2,44 +2,62 @@
 
 using namespace Ats;
 
-Control::Control () {
-    in      = IOChannel::create_from_fd(0);
-    out     = IOChannel::create_from_fd(1);
+Control::Control () : context(1),
+                      in_socket(context, ZMQ_REP),
+                      out_socket(context, ZMQ_PUB) {
+
     out_log = IOChannel::create_from_fd(2);
+    out_log->set_encoding("");
 
-    in->set_encoding("");
-    out->set_encoding("");
+    /* NOTE: almost all cppzmq calls can throw an exception */
 
-    const auto read_in = [this](Glib::IOCondition c) -> bool {
+    in_socket.bind("ipc:///tmp/ats_qoe_in");
+    out_socket.bind("ipc:///tmp/ats_qoe_out");
+
+    auto read_in = [this](Glib::IOCondition c) -> bool {
         recv();
         return true;
     };
 
-    Glib::signal_io().connect(read_in,
-                              in, Glib::IO_IN);
-	
+    int in_fd  = in_socket.getsockopt<int>(ZMQ_FD);
+    in  = IOChannel::create_from_fd(in_fd);
+
+    Glib::signal_io().connect(read_in, in, Glib::IO_IN);
 }
 
 void
 Control::recv () {
-    Glib::ustring s;
-    in->read_line(s);
-    in->flush();
-    received.emit(s);
+    int ev = in_socket.getsockopt<int>(ZMQ_EVENTS);
+    do {
+        if (ev & ZMQ_POLLIN) {
+            zmq::message_t m;
+            try {
+                if (in_socket.recv(&m)) {
+                    uint8_t* mptr = static_cast<uint8_t*>(m.data());
+                    std::vector<std::uint8_t> data(mptr, mptr + m.size());
+                    std::string s = received.emit(data);
+                    zmq::message_t reply (s.data(), s.length());
+                    in_socket.send(reply);
+                }
+            } catch (const std::exception& e) {
+                log(std::string("Exception while receiving a message: ") + e.what());
+            }
+        }
+        else break;
+        ev = in_socket.getsockopt<int>(ZMQ_EVENTS);
+
+    } while (ev & ZMQ_POLLIN);
 }
 
 void
 Control::send (const string& s) {
-    out->write(s);
-    out->write("\n");
-    out->flush();
+    zmq::message_t m(s.data(), s.length());
+    out_socket.send(m);
 }
 
 void
 Control::error (const string& s) {
-    out->write(s);
-    out->write("\n");
-    out->flush();
+    send(s); // FIXME?
 }
 
 void

@@ -97,7 +97,7 @@ namespace Ats {
 	
         virtual void forward_talk(const Chatterer&) = 0;
         virtual void forward_error(const std::string&) = 0;
-        virtual void dispatch(const std::string&) = 0;
+        virtual std::string dispatch(const std::vector<std::uint8_t>&) = 0;
 
         static void validate(const json& j, const json& j_schema) {
 
@@ -109,13 +109,13 @@ namespace Ats {
 
             try {
                 validator.set_root_schema(j_schema);
-            } catch (const std::exception &e) {
+            } catch (const std::exception& e) {
                 throw Validator_failure((std::string)Validator_failure::schema_failure + e.what());
             }
 
             try {
                 validator.validate(j);
-            } catch (const std::exception &e) {
+            } catch (const std::exception& e) {
                 throw Validator_failure((std::string)Validator_failure::json_failure + e.what());
             }
         };

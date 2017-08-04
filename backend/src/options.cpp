@@ -39,7 +39,7 @@ Options::set_data(const Metadata& m) {
         }
     }
     updated.emit();
-    send.emit(*this);
+    talk();
 }
 
 void
@@ -51,7 +51,7 @@ Options::set_pid(const uint stream,
     auto p = s->find_pid(chan, pid);
     p->set(v);
     updated.emit(); // TODO add validation
-    send.emit(*this);
+    talk();
 }
 
 Metadata*
