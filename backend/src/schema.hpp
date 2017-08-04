@@ -206,6 +206,33 @@ compose_schema() {
                                   {"uniqueItems",true}}}}}
     };
 
+/* ----------------------- Get request ----------------------- */
+
+    const json j_get_requests = {
+        {{"type","string"},
+         {"enum",{{"options","settings","WM","graph"}}}}
+    };
+
+    const json j_get = {
+        {"comment","JSON schema for get requests"},
+        {"oneOf",{j_get_requests,
+                  {{"type","array"},
+                   {"uniqueItems",true},
+                   {"items",j_get_requests}}}}
+    };
+
+/* ----------------------- Set request ----------------------- */
+
+    const json j_set = {
+        {"comment","JSON schema for set requests"},
+        {"type","object"},
+        {"additionalProperties",false},
+        {"properties",{{"options",j_options},
+                       {"settings",j_settings},
+                       {"graph",j_graph},
+                       {"wm",j_wm}}}
+    };
+
 /* ----------------------- Root ------------------------------ */
 
     const json j_definitions = {
@@ -244,11 +271,10 @@ compose_schema() {
         {"comment","JSON schema for data passed to backend"},
         {"type","object"},
         {"additionalProperties",false},
-        {"properties",{{"get",{{"type","string"}}},
-                       {"options",j_options},
-                       {"settings",j_settings},
-                       {"graph",j_graph},
-                       {"WM",j_wm}}},
+        {"maxProperties",1},
+        {"minProperties",1},
+        {"properties",{{"get",j_get},
+                       {"set",j_set}}},
         {"definitions",j_definitions}
     };
 
