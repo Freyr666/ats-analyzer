@@ -9,7 +9,7 @@
 #include "control.hpp"
 #include "chatterer.hpp"
 #include "probe.hpp"
-#include "options.hpp"
+#include "streams.hpp"
 #include "settings.hpp"
 #include "graph.hpp"
 #include "msgtype.hpp"
@@ -28,7 +28,7 @@ namespace Ats {
         Graph         graph;
         vector< unique_ptr<Probe> > probes;
         Control       control;
-        Options       options;
+        Streams       streams;
         Settings      settings;
 
         const json    j_schema;

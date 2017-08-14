@@ -4,7 +4,7 @@
 using namespace Glib;
 using namespace Ats;
 
-Context::Context(Initial init) : graph("graph"), options("options"), settings("settings"),
+Context::Context(Initial init) : graph("graph"), streams("streams"), settings("settings"),
                                  j_schema(compose_schema()) {
     uint size = init.uris.size();
 
@@ -18,7 +18,7 @@ Context::Context(Initial init) : graph("graph"), options("options"), settings("s
     
     for (uint i = 0; i < size; i++) {
         probes.push_back(unique_ptr<Probe>(new Probe(i,init.uris[i])));
-        options.connect(*probes[i]);
+        streams.connect(*probes[i]);
         probes[i]->set_state(Gst::STATE_PLAYING);
     }
 
@@ -26,22 +26,22 @@ Context::Context(Initial init) : graph("graph"), options("options"), settings("s
     graph.apply_settings(settings);
 
     control.connect (settings);
-    control.connect (options);
+    control.connect (streams);
     control.connect (graph);
     control.connect ((Logger&) *this);
 
     control.connect ((Chatterer_proxy&) *this);
 
     connect (settings);
-    connect (options);
+    connect (streams);
     connect (graph);
     connect (graph.get_wm());
 
     control.received.connect(sigc::mem_fun(this,&Chatterer_proxy::dispatch));
     
-    options.connect(graph);
+    streams.connect(graph);
     
-    graph.connect(options);
+    graph.connect(streams);
     graph.connect(settings);
 }
 

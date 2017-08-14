@@ -154,8 +154,7 @@ Wm::deserialize(const json& j) {
 void
 Ats::to_json(json& j, const shared_ptr<const Wm_window> w) {
     /* Window type-independent fields */
-    j = {{"enabled",w->is_enabled()},
-         {"position",w->get_position()}};
+    j = {{"position",w->get_position()}};
 
     /* Window type-dependent fields */
     Wm_window::Type t = w->type();
@@ -174,8 +173,7 @@ Ats::to_json(json& j, const shared_ptr<const Wm_window> w) {
 void
 Ats::to_json(json& j, const shared_ptr<const Wm_widget> w) {
     /* Widget type-independent fields */
-    j = {{"enabled",w->is_enabled()},
-         {"position",w->get_position()}};
+    j = {{"position",w->get_position()}};
 
     /* Widget type-dependent fields */
     /* TODO */

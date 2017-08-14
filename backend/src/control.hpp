@@ -6,12 +6,11 @@
 #include <exception>
 #include <zmq.hpp>
 
-#include "options.hpp"
-// #include "graph.hpp"
 #include "chatterer.hpp"
 #include "msgtype.hpp"
 
 using namespace std;
+using namespace Glib;
 
 namespace Ats {
 

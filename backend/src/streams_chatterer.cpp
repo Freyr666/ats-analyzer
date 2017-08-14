@@ -1,10 +1,10 @@
-#include "options.hpp"
+#include "streams.hpp"
 
 using namespace std;
 using namespace Ats;
 
 string
-Options::to_string() const {
+Streams::to_string() const {
     string streams = "";
     for_each(data.begin(),data.end(),[&streams](const Metadata& m){
             streams += m.to_string();
@@ -18,13 +18,13 @@ Options::to_string() const {
 }
 
 json
-Options::serialize() const {
+Streams::serialize() const {
     json j = json{{"prog_list", data}};
     return j;
 }
 
 void
-Options::deserialize(const json& j) {
+Streams::deserialize(const json& j) {
     constexpr const char* metadata_key = "prog_list";
 
     bool o_set = false;
