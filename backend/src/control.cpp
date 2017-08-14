@@ -1,6 +1,8 @@
 #include "control.hpp"
 
 using namespace Ats;
+using namespace std;
+using namespace Glib;
 
 Control::Control () : context(1),
                       in_socket(context, ZMQ_REP),

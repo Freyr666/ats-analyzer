@@ -16,7 +16,7 @@
 
 namespace Ats {
 
-    class Options;
+    class Streams;
     class Settings;
     
     class Graph : public Chatterer_data, public Logger {
@@ -29,9 +29,9 @@ namespace Ats {
         virtual ~Graph() {}
 
         Wm&        get_wm() { return _wm; };
-        void       set(const Options&);
+        void       set(const Streams&);
         void       reset();
-        void       apply_options(const Options&);
+        void       apply_options(const Streams&);
         void       apply_settings(const Settings&);
 	
         void       set_state(Gst::State);
@@ -39,7 +39,7 @@ namespace Ats {
 
         void   set_settings(const Settings&);
 
-        void   connect(Options& o);
+        void   connect(Streams& o);
         void   connect(Settings& o);
 
         sigc::signal<void,const uint,const uint,const uint,Meta_pid::Pid_type>   set_pid;

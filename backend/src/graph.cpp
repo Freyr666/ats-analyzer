@@ -3,14 +3,14 @@
 #include <gstreamermm/tee.h>
 
 #include "graph.hpp"
-#include "options.hpp"
+#include "streams.hpp"
 #include "settings.hpp"
 
 using namespace std;
 using namespace Ats; 
 
 void
-Graph::set(const Options& o) {
+Graph::set(const Streams& o) {
     if (o.is_empty()) return;
     
     reset();
@@ -68,7 +68,7 @@ Graph::reset() {
 }
 
 void
-Graph::apply_options(const Options&) {
+Graph::apply_options(const Streams&) {
     
 }
 
@@ -107,7 +107,7 @@ Graph::on_bus_message(const Glib::RefPtr<Gst::Bus>& bus,
 }
 
 void
-Graph::connect(Options& o) {
+Graph::connect(Streams& o) {
     o.destructive_set.connect(sigc::mem_fun(this, &Graph::set));
     o.set.connect(sigc::mem_fun(this, &Graph::apply_options));
 }

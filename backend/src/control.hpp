@@ -6,12 +6,9 @@
 #include <exception>
 #include <zmq.hpp>
 
-#include "options.hpp"
 // #include "graph.hpp"
 #include "chatterer.hpp"
 #include "msgtype.hpp"
-
-using namespace std;
 
 namespace Ats {
 
@@ -21,8 +18,8 @@ namespace Ats {
         class Wrong_msg : exception {};
 	
     private:
-        RefPtr<IOChannel> in;
-        RefPtr<IOChannel> out_log;
+        Glib::RefPtr<Glib::IOChannel> in;
+        Glib::RefPtr<Glib::IOChannel> out_log;
 
         zmq::context_t context;
         zmq::socket_t  in_socket;

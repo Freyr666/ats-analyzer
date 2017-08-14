@@ -1,5 +1,5 @@
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef STREAMS_H
+#define STREAMS_H
 
 #include <vector>
 #include <string>
@@ -18,18 +18,18 @@ namespace Ats {
     class Graph;
     class Probe;
 
-    class Options : public Chatterer, public Logger {
+    class Streams : public Chatterer, public Logger {
 
     public:
         /* ------- Prog list -------------------- */
         vector<Metadata> data;
 
-        sigc::signal<void,const Options&>   set;
-        sigc::signal<void,const Options&>   destructive_set;
+        sigc::signal<void,const Streams&>   set;
+        sigc::signal<void,const Streams&>   destructive_set;
         sigc::signal<void>                  updated;
         
-        Options(const std::string& n) : Chatterer(n) {}
-        virtual ~Options() {}
+        Streams(const std::string& n) : Chatterer(n) {}
+        virtual ~Streams() {}
 
         bool   is_empty () const;
         void   set_data(const Metadata&);
@@ -49,4 +49,4 @@ namespace Ats {
     };
 };
 
-#endif /* OPTIONS_H */
+#endif /* STREAMS_H */

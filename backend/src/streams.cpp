@@ -1,4 +1,4 @@
-#include "options.hpp"
+#include "streams.hpp"
 #include "graph.hpp"
 #include "probe.hpp"
 
@@ -11,10 +11,10 @@
 using namespace std;
 using namespace Ats;
 
-/* ---------- Options -------------------- */
+/* ---------- Streams -------------------- */
 
 bool
-Options::is_empty () const {
+Streams::is_empty () const {
     if (data.empty()) return true;
 
     auto v = find_if (data.begin(), data.end(), [](const Metadata& m){
@@ -24,7 +24,7 @@ Options::is_empty () const {
 }
 
 void
-Options::set_data(const Metadata& m) {
+Streams::set_data(const Metadata& m) {
     if (data.empty()) {
         data.push_back(Metadata(m));
     } else {
@@ -43,7 +43,7 @@ Options::set_data(const Metadata& m) {
 }
 
 void
-Options::set_pid(const uint stream,
+Streams::set_pid(const uint stream,
                  const uint chan,
                  const uint pid,
                  Meta_pid::Pid_type v) {
@@ -55,7 +55,7 @@ Options::set_pid(const uint stream,
 }
 
 Metadata*
-Options::find_stream (uint stream) {
+Streams::find_stream (uint stream) {
     for (Metadata& m : data) {
         if (m.stream == stream) return &m;
     }
@@ -63,7 +63,7 @@ Options::find_stream (uint stream) {
 }
 
 const Metadata*
-Options::find_stream (uint stream) const {
+Streams::find_stream (uint stream) const {
     for (const Metadata& m : data) {
         if (m.stream == stream) return &m;
     }
@@ -73,11 +73,11 @@ Options::find_stream (uint stream) const {
 // Connections
 
 void
-Options::connect(Probe& p) { p.updated.connect(
-	sigc::mem_fun(this, &Options::set_data));
+Streams::connect(Probe& p) { p.updated.connect(
+	sigc::mem_fun(this, &Streams::set_data));
 }
 
 void
-Options::connect(Graph& g) { g.set_pid.connect(
-	sigc::mem_fun(this, &Options::set_pid));
+Streams::connect(Graph& g) { g.set_pid.connect(
+	sigc::mem_fun(this, &Streams::set_pid));
 }
