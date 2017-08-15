@@ -2,9 +2,7 @@
 #include <algorithm>
 #include <gst/mpegts/gstmpegtssection.h>
 
-using namespace std;
 using namespace Ats;
-
 
 // --------- Meta_pid -------------------
 
@@ -41,8 +39,8 @@ Meta_pid::get_type_string () const {
     else return "Empty";
 }
 
-Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
-                                                 stream_type(t), stream_type_name(tn) {
+Meta_pid::Meta_pid (uint p, uint t, std::string tn) : pid(p), to_be_analyzed(false),
+                                                      stream_type(t), stream_type_name(tn) {
     type = get_type (t);
     if (type == Type::Empty) throw Wrong_type ();
     else if (type == Type::Video) data = Video_pid ();
@@ -78,30 +76,30 @@ Meta_pid::get_video () const {
     else throw Wrong_type();
 }
 
-string
+std::string
 Meta_pid::to_string () const {
-    string rval = "Pid: ";
+    std::string rval = "Pid: ";
     rval += std::to_string(pid);
     rval += "\nType: ";
     rval += get_type_string();
     if (type == Meta_pid::Type::Video) {
         Meta_pid::Video_pid vp = get_video();
         rval += "\nVideo info: ";
-        rval += string("Codec: ") + vp.codec + ", ";
-        rval += string("Resolution: ") + std::to_string(vp.resolution.first) + "x" +
+        rval += std::string("Codec: ") + vp.codec + ", ";
+        rval += std::string("Resolution: ") + std::to_string(vp.resolution.first) + "x" +
             std::to_string(vp.resolution.second) + ", ";
-        rval += string("Aspect ratio: ") + std::to_string(vp.aspect_ratio.first) + \
+        rval += std::string("Aspect ratio: ") + std::to_string(vp.aspect_ratio.first) + \
             ":" + std::to_string(vp.aspect_ratio.second) + ", ";
-        rval += string("Interlaced: ") + vp.interlaced + ", ";
-        rval += string("Frame rate: ") + std::to_string(vp.frame_rate);
+        rval += std::string("Interlaced: ") + vp.interlaced + ", ";
+        rval += std::string("Frame rate: ") + std::to_string(vp.frame_rate);
     }
     else if (type == Meta_pid::Type::Audio) {
         Meta_pid::Audio_pid ap = get_audio();
         rval += "\nAudio info: ";
-        rval += string("Codec: ") + ap.codec + ", ";
-        rval += string("Bitrate: ") + ap.bitrate + ", ";
-        rval += string("Channels: ") + std::to_string(ap.channels) + ", ";
-        rval += string("Sample rate: ") + std::to_string(ap.sample_rate);
+        rval += std::string("Codec: ") + ap.codec + ", ";
+        rval += std::string("Bitrate: ") + ap.bitrate + ", ";
+        rval += std::string("Channels: ") + std::to_string(ap.channels) + ", ";
+        rval += std::string("Sample rate: ") + std::to_string(ap.sample_rate);
     }
     rval += "\nStream type: ";
     rval += std::to_string(stream_type);
@@ -145,9 +143,9 @@ Meta_channel::find_pid (uint pid) const {
     return nullptr;
 }
 
-string
+std::string
 Meta_channel::to_string () const {
-    string rval = "PMT PID: ";
+    std::string rval = "PMT PID: ";
     rval += std::to_string(number);
     rval += "\nService name: ";
     rval += service_name;
@@ -244,12 +242,12 @@ Metadata::find_channel (uint chan) const {
     return nullptr;
 }
 
-string
+std::string
 Metadata::to_string () const {
-    string rval = "Stream: ";
+    std::string rval = "Stream: ";
     rval += std::to_string(stream);
     rval += "\n";
-    string channels_str = "\tChannels:";
+    std::string channels_str = "\tChannels:";
     for (auto it = channels.begin(); it != channels.end(); ++it) {
             channels_str += "\n";
             if ( it == channels.begin())
