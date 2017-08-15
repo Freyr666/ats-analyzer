@@ -2,9 +2,7 @@
 #include <algorithm>
 #include <gst/mpegts/gstmpegtssection.h>
 
-using namespace std;
 using namespace Ats;
-
 
 // --------- Meta_pid -------------------
 
@@ -34,8 +32,15 @@ Meta_pid::get_type (uint stream_type) {
     }
 }
 
-Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
-                                                 stream_type(t), stream_type_name(tn) {
+std::string
+Meta_pid::get_type_string () const {
+    if (type == Type::Video) return "Video";
+    else if (type == Type::Audio) return "Audio";
+    else return "Empty";
+}
+
+Meta_pid::Meta_pid (uint p, uint t, std::string tn) : pid(p), to_be_analyzed(false),
+                                                      stream_type(t), stream_type_name(tn) {
     type = get_type (t);
     if (type == Type::Empty) throw Wrong_type ();
     else if (type == Type::Video) data = Video_pid ();
@@ -44,13 +49,11 @@ Meta_pid::Meta_pid (uint p, uint t, string tn) : pid(p), to_be_analyzed(false),
 
 void
 Ats::to_json (json& j, const Meta_pid::Video_pid& vp) {
-    j = json{{"codec", vp.codec},
-             {"width", vp.width},
-             {"height", vp.height},
-             {"aspect_ratio", {{"x", vp.aspect_ratio.first},
-                               {"y", vp.aspect_ratio.second}}},
-             {"interlaced", vp.interlaced},
-             {"frame_rate", vp.frame_rate}};
+    j = json{{"codec",vp.codec},
+             {"resolution",{vp.resolution.first,vp.resolution.second}},
+             {"aspect_ratio",{vp.aspect_ratio.first,vp.aspect_ratio.second}},
+             {"interlaced",vp.interlaced},
+             {"frame_rate",vp.frame_rate}};
 }
 
 void
@@ -73,21 +76,18 @@ Meta_pid::get_video () const {
     else throw Wrong_type();
 }
 
-string
+std::string
 Meta_pid::to_string () const {
-    string rval = "Pid: ";
+    std::string rval = "Pid: ";
     rval += std::to_string(pid);
     rval += "\nType: ";
-    rval += (type == Meta_pid::Type::Video) ? "Video" : \
-        (type == Meta_pid::Type::Audio) ? "Audio" : \
-        (type == Meta_pid::Type::Subtitles) ? "Subtitles" : \
-        "Unknown";
+    rval += get_type_string();
     if (type == Meta_pid::Type::Video) {
         Meta_pid::Video_pid vp = get_video();
         rval += "\nVideo info: ";
         rval += std::string("Codec: ") + vp.codec + ", ";
-        rval += std::string("Width: ") + std::to_string(vp.width) + ", ";
-        rval += std::string("Height: ") + std::to_string(vp.height) + ", ";
+        rval += std::string("Resolution: ") + std::to_string(vp.resolution.first) + "x" +
+            std::to_string(vp.resolution.second) + ", ";
         rval += std::string("Aspect ratio: ") + std::to_string(vp.aspect_ratio.first) + \
             ":" + std::to_string(vp.aspect_ratio.second) + ", ";
         rval += std::string("Interlaced: ") + vp.interlaced + ", ";
@@ -112,22 +112,17 @@ Meta_pid::to_string () const {
 
 void
 Ats::to_json (json& j, const Meta_pid& p) {
-    json j_description = json::object();
-    if (p.type == Meta_pid::Type::Video)
-        j_description = p.get_video();
-    else if (p.type == Meta_pid::Type::Audio)
-        j_description = p.get_audio();
-
     j = {{"pid", p.pid},
          {"to_be_analyzed", p.to_be_analyzed},
-         {"type", (p.type == Meta_pid::Type::Video ? "video" :
-                   p.type == Meta_pid::Type::Audio ? "audio" :
-                   p.type == Meta_pid::Type::Subtitles ? "subtitles" :
-                   p.type == Meta_pid::Type::Teletext ? "teletext" :
-                   "empty")},
          {"stream_type", p.stream_type},
-         {"stream_type_name", p.stream_type_name},
-         {"description", j_description}};
+         {"stream_type_name", p.stream_type_name}};
+
+    if (p.type == Meta_pid::Type::Video)
+        j["content"] = {p.get_type_string(),p.get_video()};
+    else if (p.type == Meta_pid::Type::Audio)
+        j["content"] = {p.get_type_string(),p.get_audio()};
+    else
+        j["content"] = {p.get_type_string()};
 }
 
 // --------- Meta_channel  ---------------
@@ -148,9 +143,9 @@ Meta_channel::find_pid (uint pid) const {
     return nullptr;
 }
 
-string
+std::string
 Meta_channel::to_string () const {
-    string rval = "PMT PID: ";
+    std::string rval = "PMT PID: ";
     rval += std::to_string(number);
     rval += "\nService name: ";
     rval += service_name;
@@ -247,12 +242,12 @@ Metadata::find_channel (uint chan) const {
     return nullptr;
 }
 
-string
+std::string
 Metadata::to_string () const {
-    string rval = "Stream: ";
+    std::string rval = "Stream: ";
     rval += std::to_string(stream);
     rval += "\n";
-    string channels_str = "\tChannels:";
+    std::string channels_str = "\tChannels:";
     for (auto it = channels.begin(); it != channels.end(); ++it) {
             channels_str += "\n";
             if ( it == channels.begin())

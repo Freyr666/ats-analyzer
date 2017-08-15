@@ -19,15 +19,14 @@ namespace Ats {
 
     struct Meta_pid {
         class Wrong_type : std::exception {};
-        enum class Type {Video, Audio, Subtitles, Teletext, Empty};
+        enum class Type {Video, Audio, Empty};
 
         struct Empty_pid {};
 
         struct Video_pid {
-            Video_pid () : width(0), height(0), aspect_ratio({0,0}), frame_rate(0.)  {}
+            Video_pid () : resolution({0,0}), aspect_ratio({0,0}), frame_rate(0.)  {}
             string codec;
-            uint width;
-            uint height;
+            pair<uint, uint> resolution;
             pair<uint, uint> aspect_ratio;
             string interlaced;
             float frame_rate;
@@ -55,6 +54,7 @@ namespace Ats {
         void        set (Video_pid v) { data = v; }
         void        set (Audio_pid a) { data = a; }
         void        set (Pid_type p)  { data = p; }
+        string      get_type_string() const;
         string      to_string () const;
 
     private:

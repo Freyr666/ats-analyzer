@@ -6,7 +6,6 @@
 #include <exception>
 #include <zmq.hpp>
 
-// #include "graph.hpp"
 #include "chatterer.hpp"
 #include "msgtype.hpp"
 

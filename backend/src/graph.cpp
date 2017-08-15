@@ -68,8 +68,8 @@ Graph::reset() {
 }
 
 void
-Graph::apply_options(const Streams&) {
-    
+Graph::apply_streams(const Streams&) {
+
 }
 
 void
@@ -109,7 +109,7 @@ Graph::on_bus_message(const Glib::RefPtr<Gst::Bus>& bus,
 void
 Graph::connect(Streams& o) {
     o.destructive_set.connect(sigc::mem_fun(this, &Graph::set));
-    o.set.connect(sigc::mem_fun(this, &Graph::apply_options));
+    o.set.connect(sigc::mem_fun(this, &Graph::apply_streams));
 }
 
 void

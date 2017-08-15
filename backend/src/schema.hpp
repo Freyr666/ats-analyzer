@@ -128,8 +128,6 @@ compose_schema() {
         {"type","object"},
         {"properties",{{"number",{{"type","integer"},
                                   {"minimum",0}}},
-                       {"service_name",{{"type","string"}}},
-                       {"provider_name",{{"type","string"}}},
                        {"pids",{{"type","array"},
                                 {"uniqueItems",true},
                                 {"items",j_metapid}}}}},
@@ -158,12 +156,13 @@ compose_schema() {
         {"items",j_metastream}
     };
 
-/* ----------------------- Options --------------------------- */
+/* ----------------------- Streams --------------------------- */
 
-    const json j_options = {
-        {"comment","JSON schema for Options class"},
-        {"type","object"},
-        {"properties",{{"prog_list",j_metadata}}}
+    const json j_streams = {
+        {"comment","JSON schema for Streams class"},
+        {"type","array"},
+        {"uniqueItems",true},
+        {"items",j_metastream}
     };
 
 /* ---------------------- WM --------------------------------- */
@@ -227,7 +226,7 @@ compose_schema() {
         {"comment","JSON schema for set requests"},
         {"type","object"},
         {"additionalProperties",false},
-        {"properties",{{"options",j_options},
+        {"properties",{{"streams",j_streams},
                        {"settings",j_settings},
                        {"graph",j_graph},
                        {"wm",j_wm}}}

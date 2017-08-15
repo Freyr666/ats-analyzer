@@ -31,7 +31,8 @@ namespace Ats {
         Wm&        get_wm() { return _wm; };
         void       set(const Streams&);
         void       reset();
-        void       apply_options(const Streams&);
+        
+        void       apply_streams(const Streams&);
         void       apply_settings(const Settings&);
 	
         void       set_state(Gst::State);
