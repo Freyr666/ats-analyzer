@@ -98,13 +98,12 @@ Video_branch::set_video (const Glib::RefPtr<Gst::Pad> p) {
     if (! pcaps) return;
     
     if (! gst_video_info_from_caps(vi, pcaps->gobj())) {
-	gst_video_info_free(vi);
-	return;
+        gst_video_info_free(vi);
+        return;
     }
 			
     v.codec = "h264"; // FIXME not only h264 supported
-    v.width = vi->width;
-    v.height = vi->height;
+    v.resolution = {vi->width,vi->height};
     v.aspect_ratio = {vi->par_n,vi->par_d};
     v.frame_rate = (float)vi->fps_n/vi->fps_d;
 
