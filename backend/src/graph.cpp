@@ -69,7 +69,7 @@ Graph::reset() {
 
 void
 Graph::apply_streams(const Streams&) {
-    
+
 }
 
 void

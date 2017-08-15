@@ -10,7 +10,6 @@
 #include "wm_widget.hpp"
 #include "wm_window.hpp"
 #include "wm_treeview.hpp"
-#include "position.hpp"
 #include "metadata.hpp"
 #include "pad.hpp"
 
