@@ -226,7 +226,7 @@ compose_schema() {
         {"comment","JSON schema for set requests"},
         {"type","object"},
         {"additionalProperties",false},
-        {"properties",{{"options",j_streams},
+        {"properties",{{"streams",j_streams},
                        {"settings",j_settings},
                        {"graph",j_graph},
                        {"wm",j_wm}}}
