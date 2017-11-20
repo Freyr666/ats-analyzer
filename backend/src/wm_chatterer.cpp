@@ -19,34 +19,14 @@ Wm::to_string() const {
         rval += std::to_string(p.get_bottom());
         return rval;
     };
-    auto window_to_string = [&position_to_string](const Wm_window* w){
-        std::string rval;
-        rval += "\nType: ";
-        rval += w->get_type_string();
-        rval += "\nIs enabled: ";
-        rval += Ats::to_string(w->is_enabled());
-        if (w->type() == Wm_window::Type::Video) {
-            const Wm_window_video* vw = dynamic_cast<const Wm_window_video*>(w);
-            rval += "\nStream: ";
-            rval += std::to_string(vw->stream());
-            rval += "\nChannel: ";
-            rval += std::to_string(vw->channel());
-            rval += "\nPID: ";
-            rval += std::to_string(vw->pid());
-        }
-        else {
-            /* TODO */
-        }
-        rval += position_to_string(w->get_position());
-        return rval;
-    };
     auto widget_to_string = [&position_to_string](const Wm_widget* w) {
         std::string rval;
         rval += "\nType: ";
         rval += w->get_type_string();
         rval += "\nIs enabled: ";
         rval += Ats::to_string(w->is_enabled());
-        /* TODO type dependent things */
+        rval += "\n";
+        rval += w->to_string();
         rval += position_to_string(w->get_position());
         return rval;
     };
@@ -56,18 +36,6 @@ Wm::to_string() const {
     rval += std::to_string(_resolution.first);
     rval += "x";
     rval += std::to_string(_resolution.second);
-    // windows
-    rval += "\n\n-------------- Windows ---------------";
-    std::string windows;
-    for (auto it = _windows.begin(); it != _windows.end(); ++it) {
-        windows += "\n\nUID: ";
-        windows += it->first;
-        windows += window_to_string(it->second.get());
-        auto end_it = _windows.end();
-        -- end_it;
-        if (it != end_it) windows += "\n";
-    }
-    rval += Ats::add_indent(windows,1);
     // widgets
     rval += "\n\n-------------- Widgets ---------------";
     std::string widgets;
@@ -81,10 +49,10 @@ Wm::to_string() const {
     rval += "\n\n-------------- Layout ----------------";
     std::string layout;
     std::function<void(const std::string&,const Wm_container&)> f =
-        [&layout,&window_to_string,&widget_to_string](const std::string& s, const Wm_container& c) {
+        [&layout,&widget_to_string](const std::string& s, const Wm_container& c) {
         layout += "\n\nUID: ";
         layout += s;
-        layout += window_to_string(c.get_window().get());
+        layout += "\nPosition: \n";
         layout += "\nWidgets: ";
         std::string layout_widgets;
         std::function<void(const std::string&,const Wm_widget&)> f_wdg =
@@ -104,10 +72,8 @@ Wm::to_string() const {
 json
 Wm::serialize() const {
     typedef std::function<void(const std::string&,const Wm_container&)> f_containers_t;
-
-    std::vector<pair<std::string,shared_ptr<const Wm_window>>> windows_v(_windows.begin(), _windows.end());
+    
     std::vector<pair<std::string,shared_ptr<const Wm_widget>>> widgets_v(_widgets.begin(), _widgets.end());
-    json j_windows(windows_v);
     json j_widgets(widgets_v);
 
     json j_treeview = json::array();
@@ -119,7 +85,6 @@ Wm::serialize() const {
 
     json j = json{{"background",json::object()}, // FIXME
                   {"resolution",{_resolution.first,_resolution.second}},
-                  {"windows",j_windows},
                   {"widgets",j_widgets},
                   {"layout",j_treeview}};
     return j;
@@ -144,19 +109,19 @@ Wm::deserialize(const json& j) {
     }
     if (j.find(wm_layout_key) != j.end()) {
         const json j_layout = j.at(wm_layout_key);
-        unique_ptr<Wm_treeview_template> tw_template = Wm_treeview_template::create(j_layout,_windows,_widgets);
+        unique_ptr<Wm_treeview_template> tw_template = Wm_treeview_template::create(j_layout,_widgets);
         tw_template->validate(_resolution);
         _treeview.reset_from_template(tw_template.get());
     }
 
 }
-
+/*
 void
 Ats::to_json(json& j, const shared_ptr<const Wm_window> w) {
-    /* Window type-independent fields */
+    // Window type-independent fields
     j = {{"position",w->get_position()}};
 
-    /* Window type-dependent fields */
+    // Window type-dependent fields 
     Wm_window::Type t = w->type();
     if (t == Wm_window::Type::Video) {
         const Wm_window_video* wv = dynamic_cast<const Wm_window_video*> (w.get());
@@ -169,7 +134,7 @@ Ats::to_json(json& j, const shared_ptr<const Wm_window> w) {
         j["type"]    = "background";
     }
 }
-
+*/
 void
 Ats::to_json(json& j, const shared_ptr<const Wm_widget> w) {
     /* Widget type-independent fields */
@@ -188,7 +153,8 @@ Ats::to_json(json& j, const Wm_container& c) {
         j_widgets.push_back(j_widget);
     };
 
-    j = c.get_window();
+    j = {{"uid", c.get_uid()},
+         {"position",c.get_position()}};
     c.for_each(f_widgets);
     j["widgets"] = j_widgets;
 }

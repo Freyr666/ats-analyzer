@@ -5,31 +5,20 @@ using namespace std;
 
 unique_ptr<Wm_treeview_template>
 Wm_treeview_template::create (const json& j,
-                              const std::map<std::string,shared_ptr<Wm_window>> _windows,
                               const std::map<std::string,shared_ptr<Wm_widget>> _widgets) {
 
     unique_ptr<Wm_treeview_template> tw(new Wm_treeview_template());
 
     for (json::const_iterator j_it = j.cbegin(); j_it != j.cend(); ++j_it) {
-        const json j_window    = j_it.value().at(1);
+        const json j_container    = j_it.value().at(1);
 
         std::string uid  = j_it.value().at(0).get<std::string>();
-        std::string type = j_window.at("type").get<std::string>();
 
-        auto wnd_it = _windows.find(uid);
-        if (wnd_it == _windows.end())
-            throw Error_expn(elt_not_present("Window",uid));
-        if (wnd_it->second->get_type_string() != type)
-            throw Error_expn(elt_wrong_type("Window",uid,type,wnd_it->second->get_type_string()));
-
-        Wm_position pos = parse_position(j_window.at("position"));
-        tw->add_window(uid,
-                       wnd_it->second->type(),
-                       pos,
-                       wnd_it->second);
+        Wm_position pos = parse_position(j_container.at("position"));
+        tw->add_container(uid, pos);
 
         if (j.find("widgets") == j.end()) continue;
-        const json j_widgets   = j_window.at("widgets");
+        const json j_widgets   = j_container.at("widgets");
         for (json::const_iterator j_wdg_it = j_widgets.begin(); j_wdg_it != j_widgets.end(); ++ j_wdg_it) {
             const json j_widget   = j_wdg_it.value().at(1);
 
@@ -43,11 +32,7 @@ Wm_treeview_template::create (const json& j,
                 throw Error_expn(elt_wrong_type("Widget",wdg_uid,wdg_type,wdg_it->second->get_type_string()));
 
             Wm_position wdg_pos = parse_position(j_widget.at("position"));
-            tw->add_widget(uid,
-                           wdg_uid,
-                           wdg_it->second->type(),
-                           wdg_pos,
-                           wdg_it->second);
+            tw->add_widget(uid, wdg_uid, wdg_pos, wdg_it->second);
         }
     }
 
@@ -57,19 +42,19 @@ Wm_treeview_template::create (const json& j,
 void
 Wm_treeview_template::validate (pair<uint,uint> res) const {
     for (auto it = _containers.begin(); it != _containers.end(); it++) {
-        Wm_position pos = it->get_window().position;
+        Wm_position pos = it->position;
         if ((uint)pos.get_rlc().first > res.first ||
             (uint)pos.get_rlc().second > res.second) {
-            throw Error_expn(string("Window layout: part of the window '") + it->get_window().uid +
+            throw Error_expn(string("Window layout: part of the window '") + it->name +
                              "' is located beyond screen borders");
         }
         // Windows' intersections
         if (it == (_containers.end() - 1)) continue;
         if (any_of(it++, _containers.end(), [&pos](auto& cont_it) {
-                    Wm_position opos = cont_it.get_window().position;
+                    Wm_position opos = cont_it.position;
                     return pos.is_overlap(opos);
                 }) ) {
-            throw Error_expn(string("Window layout: window ") + it->get_window().uid +
+            throw Error_expn(string("Window layout: window ") + it->name +
                              " is overlapping with another window");
         }
         // Widgets' intesections
@@ -78,22 +63,23 @@ Wm_treeview_template::validate (pair<uint,uint> res) const {
 }
 
 void
-Wm_treeview_template::add_window (string uid, Wm_window::Type type,
-                                  Wm_position& pos, shared_ptr<Wm_window> window) {
-    auto cont_it = find_if(_containers.begin(), _containers.end(), [&uid](Wm_container_template c) {
-            return c.get_window().uid == uid;
+Wm_treeview_template::add_container (string wnd_uid, Wm_position& pos) {
+    auto cont_it = find_if(_containers.begin(), _containers.end(), [&wnd_uid](Wm_container_template c) {
+            return c.name == wnd_uid;
         });
-    if (cont_it != _containers.end()) throw Error_expn(elt_already_added("Window",uid));
-    else {
-        _containers.push_back(Wm_container_template(uid,type,pos,window));
+    if (cont_it == _containers.end()) {
+        /* Search if this widget was already added to some window */
+        _containers.push_back(Wm_container_template(wnd_uid, pos));
     }
+    else
+        throw Error_expn(string("Wm_treeview_template: add_container - ") + elt_not_present("Window",wnd_uid));
 }
 
 void
-Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid, Wm_widget::Type type,
+Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid,
                                   Wm_position& pos, shared_ptr<Wm_widget> widget) {
     auto cont_it = find_if(_containers.begin(), _containers.end(), [&wnd_uid](Wm_container_template c) {
-            return c.get_window().uid == wnd_uid;
+            return c.name == wnd_uid;
         });
     if (cont_it != _containers.end()) {
         /* Search if this widget was already added to some window */
@@ -103,9 +89,9 @@ Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid, Wm_widget::Typ
                                           return w.uid == wdg_uid;
                                       });
                 if (wdg_it != c.get_widgets().end())
-                    throw Error_expn(elt_already_added("Widget",wdg_uid,c.get_window().uid));
+                    throw Error_expn(elt_already_added("Widget",wdg_uid,c.name));
             });
-        cont_it->add_widget(wdg_uid,type,pos,widget);
+        cont_it->add_widget(wdg_uid,pos,widget);
     }
     else
         throw Error_expn(string("Wm_treeview_template: add_widget - ") + elt_not_present("Window",wnd_uid));
@@ -148,18 +134,19 @@ Wm_treeview_template::elt_already_added (string elt, string uid, string wnd_uid)
 /* Wm_container_template */
 
 void
-Wm_treeview_template::Wm_container_template::add_widget(string uid, Wm_widget::Type type,
-                                                        Wm_position& pos, shared_ptr<Wm_widget> widget) {
+Wm_treeview_template::Wm_container_template::add_widget(string uid,
+                                                        Wm_position& pos,
+                                                        shared_ptr<Wm_widget> widget) {
     auto wdg_it = find_if(_widgets.begin(), _widgets.end(), [&uid](Wm_widget_template w) {
             return w.uid == uid;
         });
-    if (wdg_it != _widgets.end()) throw Error_expn(elt_already_added("Widget",uid,_window.uid));
-    _widgets.push_back(Wm_widget_template{uid,type,pos,widget});
+    if (wdg_it != _widgets.end()) throw Error_expn(elt_already_added("Widget",uid,name));
+    _widgets.push_back(Wm_widget_template{uid,pos,widget});
 }
 
 void
 Wm_treeview_template::Wm_container_template::validate () const {
-    Wm_position win_pos = _window.position;
+    Wm_position win_pos = position;
 
     for (auto it = _widgets.begin(); it != _widgets.end(); it++) {
         Wm_position pos = it->position;

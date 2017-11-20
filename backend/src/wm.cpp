@@ -8,7 +8,6 @@ Wm::reset() {
     _background_pad.reset();
     _background.reset();
     _mixer.reset();
-    _windows.clear();
     _widgets.clear();
     _treeview.reset();
 }
@@ -33,18 +32,18 @@ void
 Wm::plug(shared_ptr<Pad> src) {
     switch (src->type()) {
     case Pad::Type::Video: {							  
-        auto w = shared_ptr<Wm_window> (new Wm_window_video ());
-        auto uid = w->gen_uid();
+        auto w = shared_ptr<Wm_widget> (new Wm_widget_video ());
         // TODO try catch
         w->add_to_pipe(_bin);
         w->plug(src);
-        auto wres = _windows.try_emplace(uid, w);
+        auto uid = w->gen_uid();
+        auto wres = _widgets.try_emplace(uid, w);
 
         if (wres.second) { // inserted
             auto sink_pad = _mixer->get_request_pad("sink_%u");
             w->plug(sink_pad);
         }
-        w->signal_unlinked().connect([this, uid](){ on_remove_window(uid); });
+        w->signal_unlinked().connect([this, uid](){ on_remove_widget(uid); });
         talk();
         break;
     }
@@ -63,9 +62,9 @@ Wm::plug (Glib::RefPtr<Gst::Pad> sink) {
 }
 
 void
-Wm::on_remove_window(std::string uid) {
-    _treeview.remove_window(uid);
-    auto nh = _windows.extract(uid); // window's destructor do the rest
+Wm::on_remove_widget(std::string uid) {
+    _treeview.remove_widget(uid);
+    auto nh = _widgets.extract(uid); // window's destructor do the rest
 }
 
 void

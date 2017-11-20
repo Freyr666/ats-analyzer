@@ -6,7 +6,6 @@ using namespace Ats;
 using namespace std;
 
 Wm_container::~Wm_container() {
-    _window->disable();
     std::for_each(_widgets.begin(), _widgets.end(), [](pair<const string,std::shared_ptr<Wm_widget>>& wp)
                   {  wp.second->disable(); });
 }

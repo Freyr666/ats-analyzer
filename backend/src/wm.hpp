@@ -8,7 +8,7 @@
 
 #include "chatterer.hpp"
 #include "wm_widget.hpp"
-#include "wm_window.hpp"
+#include "wm_widget_video.hpp"
 #include "wm_treeview.hpp"
 #include "metadata.hpp"
 #include "pad.hpp"
@@ -38,7 +38,6 @@ namespace Ats {
 
     private:
         pair<uint,uint> _resolution = make_pair(1920, 1080);
-        std::map<std::string,std::shared_ptr<Wm_window> > _windows;
         std::map<std::string,std::shared_ptr<Wm_widget> > _widgets;
         Wm_treeview                _treeview;
         Glib::RefPtr<Gst::Bin>     _bin;
@@ -46,7 +45,7 @@ namespace Ats {
         Glib::RefPtr<Gst::Pad>     _background_pad;
         Glib::RefPtr<Gst::Element> _mixer;
 
-        void   on_remove_window (std::string);
+        void   on_remove_widget (std::string);
 
         void   set_resolution(const resolution_t);
         void   apply_resolution();
@@ -54,7 +53,6 @@ namespace Ats {
 
     template<class T>
     void to_json(json& j, const pair<std::string,shared_ptr<T>> p) { j = {p.first,p.second}; }
-    void to_json(json& j, const shared_ptr<const Wm_window>);
     void to_json(json& j, const shared_ptr<const Wm_widget>);
     void to_json(json& j, const Wm_container&);
     void to_json(json& j, const Wm_position&);
