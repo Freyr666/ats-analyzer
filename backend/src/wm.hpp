@@ -23,8 +23,7 @@ namespace Ats {
         Wm() : Chatterer ("wm") {}
         Wm(Wm&&) = delete;
         Wm(const Wm&) = delete;
-        virtual ~Wm() {}
-
+        virtual ~Wm() = default;
 
         void reset();
         void add_to_pipe (const Glib::RefPtr<Gst::Bin>);

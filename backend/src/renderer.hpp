@@ -22,7 +22,7 @@ namespace Ats {
     class Video_renderer : public Renderer {
     public:
 	Video_renderer ();
-	~Video_renderer () {}
+	~Video_renderer () = default;
 	void plug (Wm&);
         virtual void add_to_pipe (const Glib::RefPtr<Gst::Bin>);
     private:
@@ -32,7 +32,7 @@ namespace Ats {
     class Audio_renderer : public Renderer {
     public:
 	Audio_renderer ();
-	~Audio_renderer () {}
+	~Audio_renderer () = default;
 	void plug (std::shared_ptr<Pad>);
 	virtual void add_to_pipe (const Glib::RefPtr<Gst::Bin>);
     };

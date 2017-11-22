@@ -21,6 +21,8 @@ namespace Ats {
         virtual void disable() = 0;
         virtual void set_position(const Wm_position&) = 0;
         virtual const Wm_position& get_position() const = 0;
+        virtual void set_layer(const uint) = 0;
+        virtual uint get_layer() = 0;
         sigc::signal <void > signal_unlinked() { return _unlinked; }
 
         virtual std::string to_string() const = 0;

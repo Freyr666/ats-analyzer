@@ -22,6 +22,8 @@ namespace Ats {
         void disable();
         void set_position(const Wm_position&);
         const Wm_position& get_position() const;
+        void set_layer(const uint);
+        uint get_layer();
 
         uint stream()  const { if (_plugged) return _stream; else throw Not_plugged {}; }
         uint channel() const { if (_plugged) return _channel; else throw Not_plugged {}; }

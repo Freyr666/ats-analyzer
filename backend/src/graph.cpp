@@ -9,17 +9,21 @@
 using namespace std;
 using namespace Ats; 
 
+
+
 void
-Graph::set(const Streams& o) {
-    if (o.is_empty()) return;
-    
+Graph::set(const Streams& o) {   
     reset();
     
+    if (o.is_empty()) {      
+        return;
+    }
+
     _pipe = Gst::Pipeline::create();
-    
+    _vrenderer.reset(new Video_renderer());
+   
     _wm.add_to_pipe(_pipe);
     _vrenderer->add_to_pipe(_pipe);
-
     _vrenderer->plug(_wm);
 
     for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
@@ -52,19 +56,17 @@ Graph::set(const Streams& o) {
 
 void
 Graph::reset() {
-    // if (_pipe) GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+    if (_bus)   _bus.reset();
     if (_pipe)  {
-        cout << "resetting\n";
 	set_state(Gst::State::STATE_PAUSED);
 	set_state(Gst::State::STATE_NULL);
         _wm.reset();
-        _vrenderer.reset(new Video_renderer());
-        _arenderers.clear();
+        _vrenderer.reset();
+        _arenderers.clear();        
         _roots.clear();
         //GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
         _pipe.reset();
     }   
-    if (_bus)   _bus.reset();
 }
 
 void

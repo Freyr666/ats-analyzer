@@ -10,6 +10,7 @@ Wm::reset() {
     _mixer.reset();
     _widgets.clear();
     _treeview.reset();
+    _bin.reset();
 }
 
 void /* TODO err */

@@ -25,6 +25,10 @@ Root::Root (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m) {
     m.for_analyzable ([this,stream](const Meta_channel& c) { build_cb(stream,c); });
 }
 
+Root::~Root() {
+    _bin.reset();
+}
+
 unique_ptr<Root>
 Root::create (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m) {
     if (! m.to_be_analyzed()) return unique_ptr<Root>(nullptr);

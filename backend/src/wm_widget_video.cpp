@@ -83,6 +83,22 @@ Wm_widget_video::apply_position () {
     }
 }
 
+void
+Wm_widget_video::set_layer (uint layer) {
+    if (_mixer_pad) {
+        _mixer_pad->set_property("zorder", layer);
+    }
+}
+
+uint
+Wm_widget_video::get_layer () {
+    uint layer = 0;
+    if (_mixer_pad) {
+        _mixer_pad->get_property("zorder", layer);
+    }
+    return layer;
+}
+
 std::string
 Wm_widget_video::to_string() const {
     std::string rval = "Stream: ";

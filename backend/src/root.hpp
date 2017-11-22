@@ -13,6 +13,7 @@ namespace Ats {
     public:
 	Root(Root&) = delete;
 	Root(const Root&&) = delete;
+        ~Root();
 
 	static unique_ptr<Root> create (const Glib::RefPtr<Gst::Bin>, const Metadata&);
 
