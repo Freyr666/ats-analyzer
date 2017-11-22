@@ -149,11 +149,11 @@ Context::dispatch(const std::vector<std::uint8_t>& data) {
     }
 
     /* Validate incoming json. This will throw an exception in case if json is bad */
-    try {
+    /*try {
         validate(j, j_schema);
     } catch (const std::exception& e) {
         return make_error(e.what());
-    }
+        }*/
 
     if (j.find("get") != j.end()) {
         json j_get = j.at("get");

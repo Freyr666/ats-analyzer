@@ -83,7 +83,7 @@ Wm::serialize() const {
     };
     _treeview.for_each(f);
 
-    json j = json{{"background",json::object()}, // FIXME
+    json j = json{/*{"background",json::object()},*/ // FIXME
                   {"resolution",{_resolution.first,_resolution.second}},
                   {"widgets",j_widgets},
                   {"layout",j_treeview}};
@@ -95,7 +95,6 @@ Wm::deserialize(const json& j) {
     constexpr const char* wm_bg_key         = "background";
     constexpr const char* wm_resolution_key = "resolution";
     constexpr const char* wm_layout_key     = "layout";
-
     if (j.find(wm_bg_key) != j.end()) {
         const json j_background = j.at(wm_bg_key);
         /* TODO */
@@ -138,7 +137,8 @@ Ats::to_json(json& j, const shared_ptr<const Wm_window> w) {
 void
 Ats::to_json(json& j, const shared_ptr<const Wm_widget> w) {
     /* Widget type-independent fields */
-    j = {{"position",w->get_position()}};
+    j = {{"type", w->get_type_string()},
+         {"position",w->get_position()}};
 
     /* Widget type-dependent fields */
     /* TODO */

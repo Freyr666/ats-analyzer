@@ -13,20 +13,19 @@ Wm_treeview_template::create (const json& j,
         const json j_container    = j_it.value().at(1);
 
         std::string uid  = j_it.value().at(0).get<std::string>();
-
+        
         Wm_position pos = parse_position(j_container.at("position"));
         tw->add_container(uid, pos);
-
-        if (j.find("widgets") == j.end()) continue;
+        
+        if (j_container.find("widgets") == j_container.end()) continue;
         const json j_widgets   = j_container.at("widgets");
         for (json::const_iterator j_wdg_it = j_widgets.begin(); j_wdg_it != j_widgets.end(); ++ j_wdg_it) {
             const json j_widget   = j_wdg_it.value().at(1);
-
             std::string wdg_uid   = j_wdg_it.value().at(0).get<std::string>();
             std::string wdg_type  = j_widget.at("type").get<std::string>();
 
             auto wdg_it = _widgets.find(wdg_uid);
-            if (wdg_it != _widgets.end())
+            if (wdg_it == _widgets.end())
                 throw Error_expn(elt_not_present("Widget",wdg_uid));
             if (wdg_it->second->get_type_string() != wdg_type)
                 throw Error_expn(elt_wrong_type("Widget",wdg_uid,wdg_type,wdg_it->second->get_type_string()));
@@ -81,7 +80,7 @@ Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid,
     auto cont_it = find_if(_containers.begin(), _containers.end(), [&wnd_uid](Wm_container_template c) {
             return c.name == wnd_uid;
         });
-    if (cont_it != _containers.end()) {
+    if (cont_it != _containers.end()) {    
         /* Search if this widget was already added to some window */
         for_each(_containers.begin(), _containers.end(), [&wdg_uid](Wm_container_template c) {
                 auto wdg_it = find_if(c.get_widgets().begin(), c.get_widgets().end(),

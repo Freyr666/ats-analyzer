@@ -18,6 +18,7 @@ Wm::add_to_pipe(const Glib::RefPtr<Gst::Bin> b) {
     _mixer      = Gst::ElementFactory::create_element("glvideomixer");
     _background = Gst::ElementFactory::create_element("videotestsrc");
     _background->set_property("is_live", true);
+    _background->set_property("pattern", 2);
 
     _bin->add(_mixer)->add(_background);
     
