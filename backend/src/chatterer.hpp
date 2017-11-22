@@ -2,7 +2,6 @@
 #define CHATTERER_H
 
 #include <glibmm.h>
-#include <giomm.h>
 #include <string>
 #include "json.hpp"
 #include "json-schema.hpp"
