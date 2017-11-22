@@ -4,9 +4,10 @@ using namespace Ats;
 using namespace std;
 using namespace Glib;
 
-Control::Control () : context(1),
-                      in_socket(context, ZMQ_REP),
-                      out_socket(context, ZMQ_PUB) {
+Control::Control (const Logger::level l) : log_level(l),
+                                           context(1),
+                                           in_socket(context, ZMQ_REP),
+                                           out_socket(context, ZMQ_PUB) {
 
     out_log = IOChannel::create_from_fd(2);
     out_log->set_encoding("");
@@ -16,7 +17,7 @@ Control::Control () : context(1),
     in_socket.bind("ipc:///tmp/ats_qoe_in");
     out_socket.bind("ipc:///tmp/ats_qoe_out");
 
-    auto read_in = [this](Glib::IOCondition c) -> bool {
+    auto read_in = [this](Glib::IOCondition) -> bool {
         recv();
         return true;
     };
@@ -42,7 +43,7 @@ Control::recv () {
                     in_socket.send(reply);
                 }
             } catch (const std::exception& e) {
-                log(std::string("Exception while receiving a message: ") + e.what());
+                log(Logger::Error, std::string("Exception while receiving a message: ") + e.what());
             }
         }
         else break;
@@ -63,9 +64,11 @@ Control::error (const string& s) {
 }
 
 void
-Control::log (const string& s) {
-    string tmp = "Log: " + s;  
-    out_log->write(s);
-    out_log->write("\n");
-    out_log->flush();
+Control::log (const Logger::level l, const string& s) {
+    if (l <= log_level && log_level != Logger::None) {
+        string tmp = "Log: " + s;  
+        out_log->write(s);
+        out_log->write("\n");
+        out_log->flush();
+    }
 }

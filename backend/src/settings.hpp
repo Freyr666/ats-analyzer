@@ -20,7 +20,8 @@ namespace Ats {
             Wrong_option() : Error_expn() {}
             Wrong_option(string s) : Error_expn(s) {}
         };
-	
+
+        Logger::level             log_level;
         vector<string>            uris;
         boost::optional<string>   multicast_address;
         boost::optional<Msg_type> msg_type;

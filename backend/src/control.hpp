@@ -17,6 +17,7 @@ namespace Ats {
         class Wrong_msg : exception {};
 	
     private:
+        Logger::level log_level;
         Glib::RefPtr<Glib::IOChannel> in;
         Glib::RefPtr<Glib::IOChannel> out_log;
 
@@ -25,7 +26,7 @@ namespace Ats {
         zmq::socket_t  out_socket;
 
     public:
-        Control ();
+        Control (const Logger::level l);
         Control (const Control&) = delete;
         Control (Control&&) = delete;
 
@@ -34,7 +35,7 @@ namespace Ats {
         void recv ();
         void send (const std::string&);
         void error(const std::string&);
-        void log  (const std::string&);
+        void log  (const Logger::level, const std::string&);
         
         void   connect(Chatterer_proxy& c) {
             c.send.connect(sigc::mem_fun(this, &Control::send));

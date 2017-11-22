@@ -14,8 +14,30 @@ Initial::Initial(int argc, char** argv) {
      * -m msgtype
      * -o output uri
      */
-    if (argc < 2) throw Wrong_option("Too few arguments");
     
+    if (char* lvl = getenv("LOGLEVEL")) {
+        switch (lvl[0]) {
+        case 'E': {
+            log_level = Logger::Error;
+            break;
+        }
+        case 'I': {
+            log_level = Logger::Info;
+            break;
+        }
+        case 'D': {
+            log_level = Logger::Debug;
+            break;
+        }
+        default:
+            log_level = Logger::None;
+            break;
+        }
+    } else {
+        log_level = Logger::Error;
+    }
+    
+    if (argc < 2) throw Wrong_option("Too few arguments");
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] != '-') {
             string uri = argv[i];

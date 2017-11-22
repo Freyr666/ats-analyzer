@@ -25,9 +25,9 @@ namespace Ats {
         struct Size_error : std::exception {};
 	
     private:
+        Control       control;
         Graph         graph;
         vector< unique_ptr<Probe> > probes;
-        Control       control;
         Streams       streams;
         Settings      settings;
 

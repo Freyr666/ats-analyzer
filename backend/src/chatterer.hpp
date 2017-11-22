@@ -2,6 +2,7 @@
 #define CHATTERER_H
 
 #include <glibmm.h>
+#include <giomm.h>
 #include <string>
 #include "json.hpp"
 #include "json-schema.hpp"
@@ -44,8 +45,10 @@ namespace Ats {
 
     class Logger {
     public:
-        sigc::signal<void,const std::string&> send_log;
-        void log  (const std::string& s) { send_log.emit(s); }
+        enum level {None = 0, Error, Info, Debug};
+        
+        sigc::signal<void, const level, const std::string&> send_log;
+        void log (const level l, const std::string& s) { send_log.emit(l,s); }
     };
 
     class Chatterer {

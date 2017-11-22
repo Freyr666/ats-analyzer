@@ -4,7 +4,10 @@
 using namespace Glib;
 using namespace Ats;
 
-Context::Context(Initial init) : graph("graph"), streams("streams"), settings("settings"),
+Context::Context(Initial init) : control(init.log_level),
+                                 graph("graph"),
+                                 streams("streams"),
+                                 settings("settings"),
                                  j_schema(compose_schema()) {
     uint size = init.uris.size();
 
