@@ -63,7 +63,7 @@ Root::build_cb (const uint stream, const Meta_channel& c) {
     _demux->signal_pad_added().connect([this, stream, num](const Glib::RefPtr<Gst::Pad>& p)
 				      { build_branch(stream, num, p); });
     //_demux->signal_pad_removed().connect([this, stream, num](const Glib::RefPtr<Gst::Pad>& p)
-//				      { destroy_branch(stream, num, p); });
+    //				      { destroy_branch(stream, num, p); });
 }
 
 void

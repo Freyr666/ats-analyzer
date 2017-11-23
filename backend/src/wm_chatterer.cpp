@@ -137,8 +137,10 @@ Ats::to_json(json& j, const shared_ptr<const Wm_window> w) {
 void
 Ats::to_json(json& j, const shared_ptr<const Wm_widget> w) {
     /* Widget type-independent fields */
-    j = {{"type", w->get_type_string()},
-         {"position",w->get_position()}};
+    j = {{"type",     w->get_type_string()},
+         {"position", w->get_position()},
+         {"layer",    w->get_layer()},
+         {"aspect",   {w->aspect.first, w->aspect.second} }};
 
     /* Widget type-dependent fields */
     /* TODO */

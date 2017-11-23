@@ -46,7 +46,7 @@ Wm::plug(shared_ptr<Pad> src) {
             w->plug(sink_pad);
         }
         w->signal_unlinked().connect([this, uid](){ on_remove_widget(uid); });
-        talk();
+        w->signal_linked().connect([this](){ talk(); });
         break;
     }
     case Pad::Type::Graph_volume:

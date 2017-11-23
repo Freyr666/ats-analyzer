@@ -29,7 +29,9 @@ Wm_widget_video::plug(shared_ptr<Ats::Pad> src) {
     _channel = src->channel();
     _pid = src->pid();
     _plugged = true;
-    src->pad()->link(_scale->get_static_pad("sink"));
+    _input_pad = _scale->get_static_pad("sink");
+    _input_pad->connect_property_changed("caps", [this]() {retrieve_aspect(_input_pad);});
+    src->pad()->link(_input_pad);
     src->signal_unlinked().connect([this](){ _unlinked.emit(); });
 }
 
@@ -91,7 +93,7 @@ Wm_widget_video::set_layer (uint layer) {
 }
 
 uint
-Wm_widget_video::get_layer () {
+Wm_widget_video::get_layer () const {
     uint layer = 0;
     if (_mixer_pad) {
         _mixer_pad->get_property("zorder", layer);

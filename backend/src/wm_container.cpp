@@ -23,14 +23,14 @@ Wm_container::remove_widget (string pos) {
 }
 
 void
-Wm_container::for_each (std::function<void(const std::string&,Wm_widget&)>& f) {
+Wm_container::for_each (std::function<void(const std::string&,Wm_widget&)> f) {
     for (auto& nh : _widgets) {
         f (nh.first, *nh.second);
     }
 }
 
 void
-Wm_container::for_each (std::function<void(const std::string&,const Wm_widget&)>& f) const {
+Wm_container::for_each (std::function<void(const std::string&,const Wm_widget&)> f) const {
     for (auto& nh : _widgets) {
         f (nh.first, *nh.second);
     }

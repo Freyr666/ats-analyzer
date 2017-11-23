@@ -23,7 +23,8 @@ namespace Ats {
         void set_position(const Wm_position&);
         const Wm_position& get_position() const;
         void set_layer(const uint);
-        uint get_layer();
+        uint get_layer() const;
+        std::pair<uint,uint> get_aspect() const;
 
         uint stream()  const { if (_plugged) return _stream; else throw Not_plugged {}; }
         uint channel() const { if (_plugged) return _channel; else throw Not_plugged {}; }
@@ -41,6 +42,7 @@ namespace Ats {
         Wm_position _position;
         
         Glib::RefPtr<Gst::Pad> _mixer_pad;
+        Glib::RefPtr<Gst::Pad> _input_pad;
         Glib::RefPtr<Gst::Element> _scale;
         Glib::RefPtr<Gst::Element> _caps;
 

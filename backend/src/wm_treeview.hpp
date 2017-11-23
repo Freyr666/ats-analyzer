@@ -17,6 +17,7 @@ namespace Ats {
         struct Wm_widget_template {
             std::string           uid;
             Wm_position           position;
+            uint                  layer;
             shared_ptr<Wm_widget> widget;
         };
 
@@ -26,7 +27,7 @@ namespace Ats {
             Wm_container_template(std::string uid,
                                   Wm_position pos) : name(uid), position(pos) {};
 
-            void add_widget (std::string,Wm_position&,shared_ptr<Wm_widget>);
+            void add_widget (std::string,Wm_position&,uint,shared_ptr<Wm_widget>);
 
             const std::vector<Wm_widget_template>& get_widgets() const { return _widgets; }
 
@@ -51,7 +52,7 @@ namespace Ats {
         static Wm_position parse_position    (const json&);
 
         void add_container (std::string, Wm_position&);
-        void add_widget    (std::string, std::string, Wm_position&, shared_ptr<Wm_widget>);
+        void add_widget    (std::string, std::string, Wm_position&, uint, shared_ptr<Wm_widget>);
 
         static std::string elt_not_present   (std::string, std::string);
         static std::string elt_wrong_type    (std::string, std::string, std::string);
@@ -76,8 +77,8 @@ namespace Ats {
         void remove_widget    (std::string, std::string);
         void remove_widget    (std::string);
 
-        void for_each (std::function<void(const std::string&,Wm_container&)>&);
-        void for_each (std::function<void(const std::string&,const Wm_container&)>&) const;
+        void for_each (std::function<void(const std::string&,Wm_container&)>);
+        void for_each (std::function<void(const std::string&,const Wm_container&)>) const;
 
         // Wm_container*       find_container (std::string uid);
         const Wm_container* find_container (std::string uid) const;

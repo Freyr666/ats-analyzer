@@ -22,8 +22,8 @@ namespace Ats {
         void remove_widget (std::string);
         bool empty () { return _widgets.empty(); }
 
-        void for_each (std::function<void(const std::string&,Wm_widget&)>&);
-        void for_each (std::function<void(const std::string&,const Wm_widget&)>& f) const;
+        void for_each (std::function<void(const std::string&,Wm_widget&)>);
+        void for_each (std::function<void(const std::string&,const Wm_widget&)>) const;
     private:
         std::string _name;
         Wm_position _position;

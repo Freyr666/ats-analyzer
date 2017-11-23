@@ -23,6 +23,7 @@ Wm_treeview_template::create (const json& j,
             const json j_widget   = j_wdg_it.value().at(1);
             std::string wdg_uid   = j_wdg_it.value().at(0).get<std::string>();
             std::string wdg_type  = j_widget.at("type").get<std::string>();
+            uint layer            = j_widget.at("layer").get<uint>();
 
             auto wdg_it = _widgets.find(wdg_uid);
             if (wdg_it == _widgets.end())
@@ -31,7 +32,7 @@ Wm_treeview_template::create (const json& j,
                 throw Error_expn(elt_wrong_type("Widget",wdg_uid,wdg_type,wdg_it->second->get_type_string()));
 
             Wm_position wdg_pos = parse_position(j_widget.at("position"));
-            tw->add_widget(uid, wdg_uid, wdg_pos, wdg_it->second);
+            tw->add_widget(uid, wdg_uid, wdg_pos, layer, wdg_it->second);
         }
     }
 
@@ -75,8 +76,8 @@ Wm_treeview_template::add_container (string wnd_uid, Wm_position& pos) {
 }
 
 void
-Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid,
-                                  Wm_position& pos, shared_ptr<Wm_widget> widget) {
+Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid, Wm_position& pos,
+                                  uint layer, shared_ptr<Wm_widget> widget) {
     auto cont_it = find_if(_containers.begin(), _containers.end(), [&wnd_uid](Wm_container_template c) {
             return c.name == wnd_uid;
         });
@@ -90,7 +91,7 @@ Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid,
                 if (wdg_it != c.get_widgets().end())
                     throw Error_expn(elt_already_added("Widget",wdg_uid,c.name));
             });
-        cont_it->add_widget(wdg_uid,pos,widget);
+        cont_it->add_widget(wdg_uid,pos,layer,widget);
     }
     else
         throw Error_expn(string("Wm_treeview_template: add_widget - ") + elt_not_present("Window",wnd_uid));
@@ -135,12 +136,13 @@ Wm_treeview_template::elt_already_added (string elt, string uid, string wnd_uid)
 void
 Wm_treeview_template::Wm_container_template::add_widget(string uid,
                                                         Wm_position& pos,
+                                                        uint layer,
                                                         shared_ptr<Wm_widget> widget) {
     auto wdg_it = find_if(_widgets.begin(), _widgets.end(), [&uid](Wm_widget_template w) {
             return w.uid == uid;
         });
     if (wdg_it != _widgets.end()) throw Error_expn(elt_already_added("Widget",uid,name));
-    _widgets.push_back(Wm_widget_template{uid,pos,widget});
+    _widgets.push_back(Wm_widget_template{uid,pos,layer,widget});
 }
 
 void
@@ -158,7 +160,9 @@ Wm_treeview_template::Wm_container_template::validate () const {
         }
         // Widgets' intersections
         if (it == (_widgets.end() - 1)) continue;
-        if (any_of(it++, _widgets.end(), [&pos](auto& cont_it) {
+        uint layer = it->layer;
+        if (any_of(it++, _widgets.end(), [&pos,&layer](auto& cont_it) {
+                    if (layer != cont_it.layer) return false;
                     Wm_position opos = cont_it.position;
                     return pos.is_overlap(opos);
                 }) ) {
