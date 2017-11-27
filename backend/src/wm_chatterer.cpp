@@ -114,33 +114,15 @@ Wm::deserialize(const json& j) {
     }
 
 }
-/*
-void
-Ats::to_json(json& j, const shared_ptr<const Wm_window> w) {
-    // Window type-independent fields
-    j = {{"position",w->get_position()}};
 
-    // Window type-dependent fields 
-    Wm_window::Type t = w->type();
-    if (t == Wm_window::Type::Video) {
-        const Wm_window_video* wv = dynamic_cast<const Wm_window_video*> (w.get());
-        j["type"]    = "video";
-        j["stream"]  = wv->stream();
-        j["channel"] = wv->channel();
-        j["pid"]     = wv->pid();
-    }
-    else {
-        j["type"]    = "background";
-    }
-}
-*/
 void
 Ats::to_json(json& j, const shared_ptr<const Wm_widget> w) {
     /* Widget type-independent fields */
     j = {{"type",     w->get_type_string()},
          {"position", w->get_position()},
          {"layer",    w->get_layer()},
-         {"aspect",   {w->aspect.first, w->aspect.second} }};
+         {"aspect",   {w->aspect.first, w->aspect.second}},
+         {"description", w->description()} };
 
     /* Widget type-dependent fields */
     /* TODO */

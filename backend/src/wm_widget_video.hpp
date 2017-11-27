@@ -20,6 +20,7 @@ namespace Ats {
         bool is_enabled() const;
         void enable();
         void disable();
+        std::string description () const { return "video widget"; }
         void set_position(const Wm_position&);
         const Wm_position& get_position() const;
         void set_layer(const uint);
