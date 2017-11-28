@@ -34,18 +34,13 @@ namespace Ats {
 
     public:
 
-        struct Qoe_settings {
-
+        struct QoE {
+        
             struct Setting {
                 bool cont_en;
                 float cont;
                 bool peak_en;
                 float peak;
-            };
-
-            struct Loss {
-                float vloss;
-                float aloss;
             };
 
             struct Black {
@@ -83,22 +78,26 @@ namespace Ats {
                 uint adv_buf;
             };
 
-            Loss loss;
-            Black black;
-            Freeze freeze;
-            Blocky blocky;
-            Silence silence;
-            Loudness loudness;
-            Adv adv;
+            struct Video {
+                float  loss;
+                Black  black;
+                Freeze freeze;
+                Blocky blocky;
+            };
 
-            // FIXME add default constructors?
+            struct Audio {
+                float    loss;
+                Silence  silence;
+                Loudness loudness;
+                Adv      adv;
+            };
 
-            string to_string() const;
+            Video video;
+            Audio audio;
         };
 
-        /* ------- Qoe analysis settings -------- */
-        Qoe_settings qoe_settings;
-
+        QoE qoe;
+        
         sigc::signal<void,const Settings&>   set;
     
         Settings(const std::string& n) : Chatterer(n) {}
@@ -117,15 +116,15 @@ namespace Ats {
 
     // nlohmann json arbitrary types conversions
 
-    void to_json(json& j, const Settings::Qoe_settings::Setting&);
-    void to_json(json& j, const Settings::Qoe_settings::Loss&);
-    void to_json(json& j, const Settings::Qoe_settings::Black&);
-    void to_json(json& j, const Settings::Qoe_settings::Freeze&);
-    void to_json(json& j, const Settings::Qoe_settings::Blocky&);
-    void to_json(json& j, const Settings::Qoe_settings::Loudness&);
-    void to_json(json& j, const Settings::Qoe_settings::Silence&);
-    void to_json(json& j, const Settings::Qoe_settings::Adv&);
-    void to_json(json& j, const Settings::Qoe_settings&);
+    void to_json(json& j, const Settings::QoE::Setting&);
+    void to_json(json& j, const Settings::QoE::Black&);
+    void to_json(json& j, const Settings::QoE::Freeze&);
+    void to_json(json& j, const Settings::QoE::Blocky&);
+    void to_json(json& j, const Settings::QoE::Loudness&);
+    void to_json(json& j, const Settings::QoE::Silence&);
+    void to_json(json& j, const Settings::QoE::Adv&);
+    void to_json(json& j, const Settings::QoE::Video&);
+    void to_json(json& j, const Settings::QoE::Audio&);
 };
 
 #endif /* SETTINGS_H */

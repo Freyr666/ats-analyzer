@@ -38,8 +38,6 @@ namespace Ats {
         void       set_state(Gst::State);
         Gst::State get_state() const;
 
-        void   set_settings(const Settings&);
-
         void   connect(Streams& o);
         void   connect(Settings& o);
 
@@ -51,6 +49,7 @@ namespace Ats {
         void   deserialize(const json&);
 	
     private:
+        Settings::QoE                      _qoe_settings;
         Wm                                 _wm;
         std::unique_ptr<Video_renderer>    _vrenderer;
         std::vector<std::unique_ptr<Audio_renderer>> _arenderers;

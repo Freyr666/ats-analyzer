@@ -28,7 +28,7 @@ Graph::set(const Streams& o) {
 
     for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
             // TODO separate create and add_to_pipe
-            auto root = Root::create(_pipe, m);
+            auto root = Root::create(_pipe, m, _qoe_settings);
 
             if (root) {		
                 root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
@@ -76,7 +76,10 @@ Graph::apply_streams(const Streams&) {
 
 void
 Graph::apply_settings(const Settings& s) {
-    set_settings(s);
+    _qoe_settings = s.qoe;
+    for (auto& root : _roots) {
+        root->apply(_qoe_settings);
+    }
 }
 
 void
@@ -95,11 +98,6 @@ Graph::get_state() const {
 	rval = Gst::STATE_NULL;
     }
     return rval;
-}
-
-void
-Graph::set_settings(const Settings&) {
-    
 }
 
 bool

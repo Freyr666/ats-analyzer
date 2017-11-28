@@ -31,9 +31,7 @@ Branch::Branch() {
     _bin->add_pad(sink_ghost);
 }
 
-Branch::~Branch() {
-    // _bin->unparent();
-}
+Branch::~Branch() {}
     
 void
 Branch::plug ( const Glib::RefPtr<Gst::Pad>& p ) {
@@ -60,6 +58,13 @@ Video_branch::Video_branch(uint stream, uint chan, uint pid) : Branch () {
 
 		    auto deint  = Gst::ElementFactory::create_element("deinterlace");
 		    auto _analyser = Gst::ElementFactory::create_element("videoanalysis");
+
+                    if (! deint) Error_expn("Branch: deinterlace is not found");
+                    if (! _analyser) Error_expn("Branch: videoanalysis is not found");
+                    
+                    _analyser->set_property("stream-id", _stream);
+                    _analyser->set_property("program", _channel);
+                    _analyser->set_property("pid", _pid);
 		    
 		    auto sink_pad = deint->get_static_pad("sink");
 		    auto src_pad  = _analyser->get_static_pad("src");
@@ -114,6 +119,21 @@ Video_branch::set_video (const Glib::RefPtr<Gst::Pad> p) {
     _set_pid.emit(_stream,_channel,_pid,rval);
 }
 
+void
+Video_branch::apply (const Settings::QoE& s) {
+    const Settings::QoE::Video& vs = s.video;
+
+    if (_analyser) {
+        _analyser->set_property("loss", vs.loss);
+        _analyser->set_property("mark-blocks", vs.blocky.mark_blocks);
+    }
+}
+
 Audio_branch::Audio_branch(uint stream, uint chan, uint pid) {
 
+}
+
+void
+Audio_branch::apply (const Settings::QoE&) {
+    
 }

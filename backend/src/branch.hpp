@@ -1,6 +1,7 @@
 #ifndef BRANCH_H
 #define BRANCH_H
 
+#include "settings.hpp"
 #include "metadata.hpp"
 #include "errexpn.hpp"
 #include "pad.hpp"
@@ -28,7 +29,7 @@ namespace Ats {
 	void    add_to_pipe ( const Glib::RefPtr<Gst::Bin>& bin ) { bin->add(_bin); _bin->sync_state_with_parent(); }
         void    plug ( const Glib::RefPtr<Gst::Pad>& p );
 	
-	template <class PropertyType >
+        template <class PropertyType >
 	void    set_property(const std::string& p, const PropertyType& v) {
 	    if (_analyser) _analyser->set_property(p, v);
 	    else throw Error_expn("Branch: set_property - no analyser exists");
@@ -38,7 +39,9 @@ namespace Ats {
 	    if (_analyser) _analyser->get_property(p, v);
 	    else throw Error_expn("Branch: get_property - no analyser exists");
 	}
-	
+
+        virtual void apply (const Settings::QoE&) = 0;
+        
 	static std::unique_ptr<Branch> create(std::string, uint, uint, uint);
 
 	sigc::signal <void,std::shared_ptr <Pad> > signal_pad_added() { return _pad_added; }
@@ -64,6 +67,7 @@ namespace Ats {
         virtual ~Video_branch() {}
 
 	virtual Type   type() { return Branch::Type::Video; }
+        virtual void   apply (const Settings::QoE&);
 
     private:
 	void set_video (const Glib::RefPtr<Gst::Pad>);
@@ -75,6 +79,7 @@ namespace Ats {
         virtual ~Audio_branch() {}
 
 	virtual Type   type() { return Branch::Type::Audio; }
+        virtual void   apply (const Settings::QoE&);
 	std::shared_ptr<Pad> get_audio_pad() { return _audio_pad; }
 	sigc::signal <void,std::shared_ptr <Pad> > signal_audio_pad_added() { return _audio_pad_added; }
 	

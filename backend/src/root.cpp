@@ -7,7 +7,7 @@
 using namespace Ats;
 using namespace std;
 
-Root::Root (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m) {
+Root::Root (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m, const Settings::QoE& s) : _qoe_settings(s) {
     uint stream = m.stream;
     
     _bin   = bin;
@@ -30,9 +30,17 @@ Root::~Root() {
 }
 
 unique_ptr<Root>
-Root::create (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m) {
+Root::create (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m, const Settings::QoE& s) {
     if (! m.to_be_analyzed()) return unique_ptr<Root>(nullptr);
-    else return unique_ptr<Root>(new Root(bin, m));
+    else return unique_ptr<Root>(new Root(bin, m, s));
+}
+
+void
+Root::apply (const Settings::QoE& s) {
+    _qoe_settings = s;
+    for (auto& branch : _branches) {
+        branch->apply(s);
+    }
 }
 
 void
@@ -94,6 +102,7 @@ Root::build_branch (const uint stream,
         b->signal_audio_pad_added().connect([this](std::shared_ptr<Pad> p){ _audio_pad_added.emit(p); });
     }
 
+    branch->apply(_qoe_settings);
     _branches.push_back(std::move(branch));
     _bin->set_state(Gst::State::STATE_PLAYING);
 }
