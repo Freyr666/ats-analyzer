@@ -95,7 +95,7 @@ Initial::usage (string prog_name) {
 /* ---------- Settings -------------------- */
 
 void
-Settings::init(Initial& i) {
+Settings_facade::init(Initial& i) {
     if(i.multicast_address) {
         return;
     }

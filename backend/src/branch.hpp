@@ -40,7 +40,7 @@ namespace Ats {
 	    else throw Error_expn("Branch: get_property - no analyser exists");
 	}
 
-        virtual void apply (const Settings::QoE&) = 0;
+        virtual void apply (const Settings&) = 0;
         
 	static std::unique_ptr<Branch> create(std::string, uint, uint, uint);
 
@@ -67,7 +67,7 @@ namespace Ats {
         virtual ~Video_branch() {}
 
 	virtual Type   type() { return Branch::Type::Video; }
-        virtual void   apply (const Settings::QoE&);
+        virtual void   apply (const Settings&);
 
     private:
 	void set_video (const Glib::RefPtr<Gst::Pad>);
@@ -79,7 +79,7 @@ namespace Ats {
         virtual ~Audio_branch() {}
 
 	virtual Type   type() { return Branch::Type::Audio; }
-        virtual void   apply (const Settings::QoE&);
+        virtual void   apply (const Settings&);
 	std::shared_ptr<Pad> get_audio_pad() { return _audio_pad; }
 	sigc::signal <void,std::shared_ptr <Pad> > signal_audio_pad_added() { return _audio_pad_added; }
 	

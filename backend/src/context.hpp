@@ -25,11 +25,11 @@ namespace Ats {
         struct Size_error : std::exception {};
 	
     private:
-        Control       control;
-        Graph         graph;
+        Control          control;
+        Graph            graph;
         vector< unique_ptr<Probe> > probes;
-        Streams       streams;
-        Settings      settings;
+        Streams          streams;
+        Settings_facade  settings;
 
         const json    j_schema;
 	
@@ -47,7 +47,6 @@ namespace Ats {
 
         // Chatterer_proxy
         void forward_talk(const Chatterer&);
-        void forward_talk_data(const json&);
         void forward_error(const std::string&);
         std::string dispatch(const std::vector<std::uint8_t>&);
 

@@ -16,20 +16,20 @@ namespace Ats {
 	Root(const Root&&) = delete;
         ~Root();
 
-        void apply(const Settings::QoE&);
+        void apply(const Settings&);
 
-	static unique_ptr<Root> create (const Glib::RefPtr<Gst::Bin>, const Metadata&, const Settings::QoE& s);
+	static unique_ptr<Root> create (const Glib::RefPtr<Gst::Bin>, const Metadata&, const Settings& s);
 
 	sigc::signal <void,std::shared_ptr <Pad> > signal_pad_added() { return _pad_added; }
 	sigc::signal <void,std::shared_ptr <Pad> > signal_audio_pad_added() { return _audio_pad_added; }
 
     private:
-	Root(const Glib::RefPtr<Gst::Bin>, const Metadata&, const Settings::QoE&);
+	Root(const Glib::RefPtr<Gst::Bin>, const Metadata&, const Settings&);
 	Glib::RefPtr<Gst::Bin> _bin;
 	Glib::RefPtr<Gst::Element> _tee;
 	Glib::RefPtr<Gst::Element> _demux;
 	std::vector<std::unique_ptr<Branch>> _branches;
-        Settings::QoE              _qoe_settings;
+        Settings                   _settings;
 	
 	void build_cb (const uint stream, const Meta_channel&);
 	void build_branch (const uint, const uint, const Glib::RefPtr<Gst::Pad>&);

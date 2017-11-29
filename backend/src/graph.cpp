@@ -28,7 +28,7 @@ Graph::set(const Streams& o) {
 
     for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
             // TODO separate create and add_to_pipe
-            auto root = Root::create(_pipe, m, _qoe_settings);
+            auto root = Root::create(_pipe, m, _settings);
 
             if (root) {		
                 root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
@@ -76,9 +76,9 @@ Graph::apply_streams(const Streams&) {
 
 void
 Graph::apply_settings(const Settings& s) {
-    _qoe_settings = s.qoe;
+    _settings = s;
     for (auto& root : _roots) {
-        root->apply(_qoe_settings);
+        root->apply(_settings);
     }
 }
 
@@ -100,10 +100,26 @@ Graph::get_state() const {
     return rval;
 }
 
+#define DATA_MARKER 0x8BA820F0
+#include <iostream>
+
 bool
 Graph::on_bus_message(const Glib::RefPtr<Gst::Bus>& bus,
                       const Glib::RefPtr<Gst::Message>& msg) {
-    return    false; // switch to true
+    switch (msg->get_message_type()) {
+    case Gst::MESSAGE_ELEMENT: {
+
+        auto str = msg->get_structure();
+        if ( str.get_name_id().id() == DATA_MARKER) {
+            std::cout << "Msg data " << str.to_string() << "\n";
+        }
+        
+        break;
+    }
+    default:
+        break;
+    }
+    return    true;
 }
 
 void
@@ -113,6 +129,6 @@ Graph::connect(Streams& o) {
 }
 
 void
-Graph::connect(Settings& s) {
+Graph::connect(Settings_facade& s) {
     s.set.connect(sigc::mem_fun(this, &Graph::apply_settings));
 }

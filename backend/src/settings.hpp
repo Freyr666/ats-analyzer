@@ -30,78 +30,76 @@ namespace Ats {
         static string usage (string prog_name);
     };
 
-    class Settings : public Chatterer, public Logger {
-
-    public:
-
-        struct QoE {
-        
-            struct Setting {
-                bool cont_en;
-                float cont;
-                bool peak_en;
-                float peak;
-            };
-
-            struct Black {
-                Setting black;
-                Setting luma;
-                float time;
-                uint black_pixel;
-            };
-
-            struct Freeze {
-                Setting freeze;
-                Setting diff;
-                float time;
-                uint pixel_diff;
-            };
-
-            struct Blocky {
-                Setting blocky;
-                float time;
-                bool mark_blocks;
-            };
-
-            struct Silence {
-                Setting silence;
-                float time;
-            };
-
-            struct Loudness {
-                Setting loudness;
-                float time;
-            };
-
-            struct Adv {
-                float adv_diff;
-                uint adv_buf;
-            };
-
-            struct Video {
-                float  loss;
-                Black  black;
-                Freeze freeze;
-                Blocky blocky;
-            };
-
-            struct Audio {
-                float    loss;
-                Silence  silence;
-                Loudness loudness;
-                Adv      adv;
-            };
-
-            Video video;
-            Audio audio;
+    class Settings {
+    public:        
+        struct Setting {
+            bool cont_en;
+            float cont;
+            bool peak_en;
+            float peak;
         };
 
-        QoE qoe;
+        struct Black {
+            Setting black;
+            Setting luma;
+            float time;
+            uint black_pixel;
+        };
+
+        struct Freeze {
+            Setting freeze;
+            Setting diff;
+            float time;
+            uint pixel_diff;
+        };
+
+        struct Blocky {
+            Setting blocky;
+            float time;
+            bool mark_blocks;
+        };
+
+        struct Silence {
+            Setting silence;
+            float time;
+        };
+
+        struct Loudness {
+            Setting loudness;
+            float time;
+        };
+
+        struct Adv {
+            float adv_diff;
+            uint adv_buf;
+        };
+
+        struct Video {
+            float  loss;
+            Black  black;
+            Freeze freeze;
+            Blocky blocky;
+        };
+
+        struct Audio {
+            float    loss;
+            Silence  silence;
+            Loudness loudness;
+            Adv      adv;
+        };
+
+        Video video;
+        Audio audio;
+    };
+
+    class Settings_facade : public Chatterer, public Logger {
+    public:
+        Settings settings;
         
         sigc::signal<void,const Settings&>   set;
     
-        Settings(const std::string& n) : Chatterer(n) {}
-        virtual ~Settings() {}
+        Settings_facade(const std::string& n) : Chatterer(n) {}
+        virtual ~Settings_facade() {}
 
         void   init(Initial&);
 
@@ -116,15 +114,15 @@ namespace Ats {
 
     // nlohmann json arbitrary types conversions
 
-    void to_json(json& j, const Settings::QoE::Setting&);
-    void to_json(json& j, const Settings::QoE::Black&);
-    void to_json(json& j, const Settings::QoE::Freeze&);
-    void to_json(json& j, const Settings::QoE::Blocky&);
-    void to_json(json& j, const Settings::QoE::Loudness&);
-    void to_json(json& j, const Settings::QoE::Silence&);
-    void to_json(json& j, const Settings::QoE::Adv&);
-    void to_json(json& j, const Settings::QoE::Video&);
-    void to_json(json& j, const Settings::QoE::Audio&);
+    void to_json(json& j, const Settings::Setting&);
+    void to_json(json& j, const Settings::Black&);
+    void to_json(json& j, const Settings::Freeze&);
+    void to_json(json& j, const Settings::Blocky&);
+    void to_json(json& j, const Settings::Loudness&);
+    void to_json(json& j, const Settings::Silence&);
+    void to_json(json& j, const Settings::Adv&);
+    void to_json(json& j, const Settings::Video&);
+    void to_json(json& j, const Settings::Audio&);
 };
 
 #endif /* SETTINGS_H */

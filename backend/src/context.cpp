@@ -26,7 +26,7 @@ Context::Context(Initial init) : control(init.log_level),
     }
 
     settings.init(init);
-    graph.apply_settings(settings);
+    graph.apply_settings(settings.settings);
 
     control.connect (settings);
     control.connect (streams);
@@ -34,7 +34,7 @@ Context::Context(Initial init) : control(init.log_level),
     control.connect ((Logger&) *this);
 
     control.connect ((Chatterer_proxy&) *this);
-
+    
     connect (settings);
     connect (streams);
     connect (graph);
@@ -60,29 +60,6 @@ Context::forward_talk(const Chatterer& c) {
     case Msg_type::Json:
     case Msg_type::Msgpack:
         json j = json{{c.name,c.serialize()}};
-        if (msg_type == Msg_type::Msgpack) {
-            std::vector<uint8_t> msgpack = json::to_msgpack(j);
-            rval = std::string(msgpack.begin(), msgpack.end());
-        } else {
-            rval = j.dump();
-        }
-        break;
-    }
-    send.emit(rval);
-}
-
-void
-Context::forward_talk_data(const json& js) {
-    std::string rval = "";
-
-    switch (msg_type) {
-    case Msg_type::Debug:
-        rval = "Data : ";
-        rval += js.dump();
-        break;
-    case Msg_type::Json:
-    case Msg_type::Msgpack:
-        json j = json{{"data", js}};
         if (msg_type == Msg_type::Msgpack) {
             std::vector<uint8_t> msgpack = json::to_msgpack(j);
             rval = std::string(msgpack.begin(), msgpack.end());

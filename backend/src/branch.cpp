@@ -120,8 +120,8 @@ Video_branch::set_video (const Glib::RefPtr<Gst::Pad> p) {
 }
 
 void
-Video_branch::apply (const Settings::QoE& s) {
-    const Settings::QoE::Video& vs = s.video;
+Video_branch::apply (const Settings& s) {
+    const Settings::Video& vs = s.video;
 
     if (_analyser) {
         _analyser->set_property("loss", vs.loss);
@@ -134,6 +134,6 @@ Audio_branch::Audio_branch(uint stream, uint chan, uint pid) {
 }
 
 void
-Audio_branch::apply (const Settings::QoE&) {
+Audio_branch::apply (const Settings&) {
     
 }
