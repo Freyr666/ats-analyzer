@@ -39,6 +39,7 @@ Context::Context(Initial init) : control(init.log_level),
     connect (streams);
     connect (graph);
     connect (graph.get_wm());
+    connect (graph.get_video_sender());
 
     control.received.connect(sigc::mem_fun(this,&Chatterer_proxy::dispatch));
     
@@ -60,6 +61,27 @@ Context::forward_talk(const Chatterer& c) {
     case Msg_type::Json:
     case Msg_type::Msgpack:
         json j = json{{c.name,c.serialize()}};
+        if (msg_type == Msg_type::Msgpack) {
+            std::vector<uint8_t> msgpack = json::to_msgpack(j);
+            rval = std::string(msgpack.begin(), msgpack.end());
+        } else {
+            rval = j.dump();
+        }
+        break;
+    }
+    send.emit(rval);
+}
+
+void
+Context::send_data(const std::string& name, json & msg) {
+    std::string rval = "";
+    switch (msg_type) {
+    case Msg_type::Debug:
+        rval = name + " : msg";
+        break;
+    case Msg_type::Json:
+    case Msg_type::Msgpack:
+        json j = json{{name, msg}};
         if (msg_type == Msg_type::Msgpack) {
             std::vector<uint8_t> msgpack = json::to_msgpack(j);
             rval = std::string(msgpack.begin(), msgpack.end());

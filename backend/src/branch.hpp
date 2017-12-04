@@ -5,6 +5,7 @@
 #include "metadata.hpp"
 #include "errexpn.hpp"
 #include "pad.hpp"
+#include "video_data.hpp"
 
 #include <gstreamermm.h>
 #include <string>
@@ -42,7 +43,8 @@ namespace Ats {
 
         virtual void apply (const Settings&) = 0;
         
-	static std::unique_ptr<Branch> create(std::string, uint, uint, uint);
+	static std::unique_ptr<Branch> create(std::string, uint, uint, uint,
+                                                  std::shared_ptr<Video_data>);
 
 	sigc::signal <void,std::shared_ptr <Pad> > signal_pad_added() { return _pad_added; }
 	sigc::signal <void,const uint,const uint,const uint,Meta_pid::Pid_type> signal_set_pid() { return _set_pid; }
@@ -63,13 +65,15 @@ namespace Ats {
     class Video_branch : public Branch {
     public:
 	Video_branch() : Branch () {}
-	Video_branch(uint, uint, uint);
+	Video_branch(uint, uint, uint, std::shared_ptr<Video_data>);
         virtual ~Video_branch() {}
 
+        void parse_data_msg(int64_t, Glib::RefPtr<Gst::Buffer>,int64_t, Glib::RefPtr<Gst::Buffer>);
 	virtual Type   type() { return Branch::Type::Video; }
         virtual void   apply (const Settings&);
 
     private:
+        std::shared_ptr<Video_data> _video_sender;
 	void set_video (const Glib::RefPtr<Gst::Pad>);
     };
 

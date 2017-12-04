@@ -8,10 +8,13 @@ LDFLAGS += `pkg-config --libs gstreamer-1.0 gstreamer-video-1.0 glib-2.0`
 
 PY=python3
 
-all: videoanalysis_api.o videoanalysis.o
-	@$(CC) $(LDFLAGS) videodata.o videoanalysis.o -o ../../../build/libvideoanalysis.so
+all: error.o videodata.o videoanalysis.o
+	@$(CC) $(LDFLAGS) videodata.o error.o videoanalysis.o -o ../../../build/libvideoanalysis.so
 
-videoanalysis_api.o: analysis.h
+error.o:
+	@$(CC) $(CFLAGS) error.c -o error.o
+
+videodata.o: analysis.h
 	@$(CC) $(CFLAGS) videodata.c -o videodata.o
 
 videoanalysis.o: analysis.h

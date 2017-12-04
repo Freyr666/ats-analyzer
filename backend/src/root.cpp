@@ -7,13 +7,15 @@
 using namespace Ats;
 using namespace std;
 
-Root::Root (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m, const Settings& s) : _settings(s) {
+Root::Root (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m,
+            const Settings& s, std::shared_ptr<Video_data> vd) : _settings(s) {
     uint stream = m.stream;
     
     _bin   = bin;
     auto src   = Gst::ElementFactory::create_element("udpsrc");
     auto parse = Gst::ElementFactory::create_element("tsparse");
     _tee   = Gst::Tee::create();
+    _video_sender = vd;
 
     src->set_property("uri", m.uri);
     src->set_property("buffer-size", 2147483647);
@@ -22,7 +24,7 @@ Root::Root (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m, const Settings&
 
     src->link(parse)->link(_tee);
 
-    m.for_analyzable ([this,stream](const Meta_channel& c) { build_cb(stream,c); });
+    m.for_analyzable ([this,stream,&vd](const Meta_channel& c) { build_cb(stream,c); });
 }
 
 Root::~Root() {
@@ -30,9 +32,10 @@ Root::~Root() {
 }
 
 unique_ptr<Root>
-Root::create (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m, const Settings& s) {
+Root::create (const Glib::RefPtr<Gst::Bin> bin, const Metadata& m,
+              const Settings& s, std::shared_ptr<Video_data> vd) {
     if (! m.to_be_analyzed()) return unique_ptr<Root>(nullptr);
-    else return unique_ptr<Root>(new Root(bin, m, s));
+    else return unique_ptr<Root>(new Root(bin, m, s, vd));
 }
 
 void
@@ -69,7 +72,7 @@ Root::build_cb (const uint stream, const Meta_channel& c) {
     srcpad->link(sinkpad);
     // GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_bin->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
     _demux->signal_pad_added().connect([this, stream, num](const Glib::RefPtr<Gst::Pad>& p)
-				      { build_branch(stream, num, p); });
+                                       { build_branch(stream, num, p); });
     //_demux->signal_pad_removed().connect([this, stream, num](const Glib::RefPtr<Gst::Pad>& p)
     //				      { destroy_branch(stream, num, p); });
 }
@@ -89,7 +92,7 @@ Root::build_branch (const uint stream,
     
     auto pid  = strtoul(name_toks[2].data(), NULL, 16);
 
-    auto branch = Branch::create(type, stream, num, pid);
+    auto branch = Branch::create(type, stream, num, pid, _video_sender);
 
     if (branch == nullptr) return;
 

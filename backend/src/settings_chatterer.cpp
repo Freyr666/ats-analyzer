@@ -11,14 +11,14 @@ Ats::to_json(json& j, const Settings::Setting& s) {
     j = {{"cont_en",s.cont_en},
          {"cont",s.cont},
          {"peak_en",s.peak_en},
-         {"peak",s.peak}};
+         {"peak",s.peak},
+         {"duration",s.duration}};
 }
 
 void
 Ats::to_json(json& j, const Settings::Black& b) {
     j = {{"black",b.black},
          {"luma",b.luma},
-         {"time",b.time},
          {"black_pixel",b.black_pixel}};
 }
 
@@ -26,27 +26,23 @@ void
 Ats::to_json(json& j, const Settings::Freeze& f) {
     j = {{"freeze",f.freeze},
          {"diff",f.diff},
-         {"time",f.time},
          {"pixel_diff",f.pixel_diff}};
 }
 
 void
 Ats::to_json(json& j, const Settings::Blocky& b) {
     j = {{"blocky",b.blocky},
-         {"time",b.time},
          {"mark_blocks",b.mark_blocks}};
 }
 
 void
 Ats::to_json(json& j, const Settings::Silence& s) {
-    j = {{"silence",s.silence},
-         {"time",s.time}};
+    j = {{"silence",s.silence}};
 }
 
 void
 Ats::to_json(json& j, const Settings::Loudness& l) {
-    j = {{"loudness",l.loudness},
-         {"time",l.time}};
+    j = {{"loudness",l.loudness}};
 }
 
 void
@@ -96,6 +92,7 @@ Settings_facade::deserialize(const json& j) {
             SET_VALUE_FROM_JSON(j_setting,s,peak,float,o_set);
             SET_VALUE_FROM_JSON(j_setting,s,cont_en,bool,o_set);
             SET_VALUE_FROM_JSON(j_setting,s,cont,float,o_set);
+            SET_VALUE_FROM_JSON(j_setting,s,duration,float,o_set);
         }
     };
 
@@ -108,7 +105,6 @@ Settings_facade::deserialize(const json& j) {
             auto j_black = j_video.at("black");
             get_setting(j_black,"black",settings.video.black.black);
             get_setting(j_black,"luma",settings.video.black.luma);
-            SET_VALUE_FROM_JSON(j_black,settings.video.black,time,float,o_set);
             SET_VALUE_FROM_JSON(j_black,settings.video.black,black_pixel,uint,o_set);
         }
 
@@ -116,14 +112,12 @@ Settings_facade::deserialize(const json& j) {
             auto j_freeze = j_video.at("freeze");
             get_setting(j_freeze,"freeze",settings.video.freeze.freeze);
             get_setting(j_freeze,"diff",settings.video.freeze.diff);
-            SET_VALUE_FROM_JSON(j_freeze,settings.video.freeze,time,float,o_set);
             SET_VALUE_FROM_JSON(j_freeze,settings.video.freeze,pixel_diff,uint,o_set);
         }
         
         if (j_video.find("blocky") != j_video.end()) {
             auto j_blocky = j_video.at("blocky");
             get_setting(j_blocky,"blocky",settings.video.blocky.blocky);
-            SET_VALUE_FROM_JSON(j_blocky,settings.video.blocky,time,float,o_set);
             SET_VALUE_FROM_JSON(j_blocky,settings.video.blocky,mark_blocks,bool,o_set);
         }
     }
@@ -136,13 +130,11 @@ Settings_facade::deserialize(const json& j) {
         if (j_audio.find("silence") != j_audio.end()) {
             auto j_silence = j_audio.at("silence");
             get_setting(j_silence,"silence",settings.audio.silence.silence);
-            SET_VALUE_FROM_JSON(j_silence,settings.audio.silence,time,float,o_set);
         }
         
         if (j_audio.find("loudness") != j_audio.end()) {
             auto j_loudness = j_audio.at("loudness");
             get_setting(j_loudness,"loudness",settings.audio.loudness.loudness);
-            SET_VALUE_FROM_JSON(j_loudness,settings.audio.loudness,time,float,o_set);
         }
         
         if (j_audio.find("adv") != j_audio.end()) {

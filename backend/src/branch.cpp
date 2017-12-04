@@ -8,8 +8,8 @@ using namespace std;
 using namespace Ats;
 
 unique_ptr<Branch>
-Branch::create(std::string type, uint stream, uint chan, uint pid) {
-    if (type == "video") return unique_ptr<Branch>((Branch*) new Video_branch(stream, chan, pid));
+Branch::create(std::string type, uint stream, uint chan, uint pid, std::shared_ptr<Video_data> vd) {
+    if (type == "video") return unique_ptr<Branch>((Branch*) new Video_branch(stream, chan, pid, vd));
     else if (type == "audio") return unique_ptr<Branch>((Branch*) new Audio_branch(stream, chan, pid));
     else return unique_ptr<Branch>(nullptr);
 }
@@ -40,10 +40,24 @@ Branch::plug ( const Glib::RefPtr<Gst::Pad>& p ) {
     _bin->sync_state_with_parent();
 }
 
-Video_branch::Video_branch(uint stream, uint chan, uint pid) : Branch () {
+static void
+data_callback (GstElement*,
+               guint64    ds,
+               GstBuffer* d,
+               guint64    es,
+               GstBuffer* e,
+               gpointer   _branch) {
+    Glib::RefPtr<Gst::Buffer> data = Glib::wrap(d);
+    Glib::RefPtr<Gst::Buffer> errors = Glib::wrap(e);
+    Video_branch* branch = (Video_branch*)_branch;
+    branch->parse_data_msg(ds, data, es, errors);
+}
+
+Video_branch::Video_branch(uint stream, uint chan, uint pid, std::shared_ptr<Video_data> vs) : Branch () {
     _stream = stream;
     _channel = chan;
     _pid = pid;
+    _video_sender = vs;
 
     _decoder->signal_pad_added().
 	connect([this,stream,chan,pid](const Glib::RefPtr<Gst::Pad>& pad)
@@ -62,9 +76,10 @@ Video_branch::Video_branch(uint stream, uint chan, uint pid) : Branch () {
                     if (! deint) Error_expn("Branch: deinterlace is not found");
                     if (! _analyser) Error_expn("Branch: videoanalysis is not found");
                     
-                    _analyser->set_property("stream-id", _stream);
-                    _analyser->set_property("program", _channel);
-                    _analyser->set_property("pid", _pid);
+                    g_signal_connect(_analyser->gobj(), "data", G_CALLBACK(data_callback), this);
+
+                    /* TODO consider placing analyser before deinterlacer */
+                    deint->set_property("method", 7);
 		    
 		    auto sink_pad = deint->get_static_pad("sink");
 		    auto src_pad  = _analyser->get_static_pad("src");
@@ -120,11 +135,43 @@ Video_branch::set_video (const Glib::RefPtr<Gst::Pad> p) {
 }
 
 void
+Video_branch::parse_data_msg(int64_t ds, Glib::RefPtr<Gst::Buffer> d,int64_t es, Glib::RefPtr<Gst::Buffer> e) {
+    _video_sender->parse_data_msg(_stream, _channel, _pid, ds,d,es,e);
+}
+
+void
 Video_branch::apply (const Settings& s) {
     const Settings::Video& vs = s.video;
 
     if (_analyser) {
         _analyser->set_property("loss", vs.loss);
+        _analyser->set_property("black-pixel-lb", vs.black.black_pixel);
+        _analyser->set_property("pixel-diff-lb", vs.freeze.pixel_diff);
+        _analyser->set_property("black-cont", vs.black.black.cont);
+        _analyser->set_property("black-cont-en", vs.black.black.cont_en);
+        _analyser->set_property("black-peak", vs.black.black.peak);
+        _analyser->set_property("black-peak-en", vs.black.black.peak_en);
+        _analyser->set_property("black-duration", vs.black.black.duration);
+        _analyser->set_property("luma-cont", vs.black.luma.cont);
+        _analyser->set_property("luma-cont-en", vs.black.luma.cont_en);
+        _analyser->set_property("luma-peak", vs.black.luma.peak);
+        _analyser->set_property("luma-peak-en", vs.black.luma.peak_en);
+        _analyser->set_property("luma-duration", vs.black.luma.duration);
+        _analyser->set_property("freeze-cont", vs.freeze.freeze.cont);
+        _analyser->set_property("freeze-cont-en", vs.freeze.freeze.cont_en);
+        _analyser->set_property("freeze-peak", vs.freeze.freeze.peak);
+        _analyser->set_property("freeze-peak-en", vs.freeze.freeze.peak_en);
+        _analyser->set_property("freeze-duration", vs.freeze.freeze.duration);
+        _analyser->set_property("diff-cont", vs.freeze.diff.cont);
+        _analyser->set_property("diff-cont-en", vs.freeze.diff.cont_en);
+        _analyser->set_property("diff-peak", vs.freeze.diff.peak);
+        _analyser->set_property("diff-peak-en", vs.freeze.diff.peak_en);
+        _analyser->set_property("diff-duration", vs.freeze.diff.duration);
+        _analyser->set_property("blocky-cont", vs.blocky.blocky.cont);
+        _analyser->set_property("blocky-cont-en", vs.blocky.blocky.cont_en);
+        _analyser->set_property("blocky-peak", vs.blocky.blocky.peak);
+        _analyser->set_property("blocky-peak-en", vs.blocky.blocky.peak_en);
+        _analyser->set_property("blocky-duration", vs.blocky.blocky.duration);
         _analyser->set_property("mark-blocks", vs.blocky.mark_blocks);
     }
 }

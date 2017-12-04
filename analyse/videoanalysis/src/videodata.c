@@ -18,6 +18,20 @@
 
 #include "videodata.h"
 #include <malloc.h>
+#include <string.h>
+
+float
+param_of_video_params (VideoParams* vp, PARAMETER p)
+{
+        switch (p) {
+        case BLACK:  return vp->black_pix;
+        case LUMA:   return vp->avg_bright;
+        case FREEZE: return vp->frozen_pix;
+        case DIFF:   return vp->avg_diff;
+        case BLOCKY: return vp->blocks;
+        default:     return 0.0;
+        }
+}
 
 VideoData*
 video_data_new(guint fr)
@@ -57,6 +71,18 @@ video_data_is_full(VideoData* dt)
 {
   if (dt->current == dt->frames) return TRUE;
   return FALSE;
+}
+
+#include <glib/gprintf.h>
+
+gpointer
+video_data_dump(VideoData* dt, gsize* sz) {
+        if (sz == NULL) return NULL;
+        
+        *sz         = dt->current;
+        VideoParams* buf = (VideoParams*) malloc(sizeof(VideoParams) * (*sz));
+        memcpy(buf, dt->data, (sizeof(VideoParams) * (*sz)));
+        return buf;
 }
 
 gchar*

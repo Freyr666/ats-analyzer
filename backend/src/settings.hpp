@@ -37,36 +37,32 @@ namespace Ats {
             float cont;
             bool peak_en;
             float peak;
+            float duration;
         };
 
         struct Black {
             Setting black;
             Setting luma;
-            float time;
             uint black_pixel;
         };
 
         struct Freeze {
             Setting freeze;
             Setting diff;
-            float time;
             uint pixel_diff;
         };
 
         struct Blocky {
             Setting blocky;
-            float time;
             bool mark_blocks;
         };
 
         struct Silence {
             Setting silence;
-            float time;
         };
 
         struct Loudness {
             Setting loudness;
-            float time;
         };
 
         struct Adv {

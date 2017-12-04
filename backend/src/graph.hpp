@@ -13,6 +13,7 @@
 #include "wm.hpp"
 #include "root.hpp"
 #include "renderer.hpp"
+#include "video_data.hpp"
 
 namespace Ats {
 
@@ -23,12 +24,15 @@ namespace Ats {
 	
     public:
         
-        Graph(const std::string& n) : Chatterer(n) { _vrenderer = unique_ptr<Video_renderer>(new Video_renderer()); }
+        Graph(const std::string& n) : Chatterer(n),
+                                      _video_sender(shared_ptr<Video_data>(new Video_data())),
+                                      _vrenderer(unique_ptr<Video_renderer>(new Video_renderer())) {}
         Graph(const Graph&) = delete;
         Graph(Graph&&) = delete;
         virtual ~Graph() {}
 
         Wm&        get_wm() { return _wm; };
+        Video_data& get_video_sender() { return *_video_sender; }
         void       set(const Streams&);
         void       reset();
         
@@ -51,6 +55,7 @@ namespace Ats {
     private:
         Settings                           _settings;
         Wm                                 _wm;
+        std::shared_ptr<Video_data>        _video_sender;
         std::unique_ptr<Video_renderer>    _vrenderer;
         std::vector<std::unique_ptr<Audio_renderer>> _arenderers;
         std::vector<std::unique_ptr<Root>> _roots;

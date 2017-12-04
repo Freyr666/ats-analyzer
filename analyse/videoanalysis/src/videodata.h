@@ -19,6 +19,8 @@
 #define VIDEODATA_H
 
 #include <glib.h>
+#include <gst/gst.h>
+#include "error.h"
 
 #define DATA_MARKER 0x8BA820F0
 
@@ -31,7 +33,10 @@ struct __VideoParams {
   float blocks;
   float avg_bright;
   float avg_diff;
+  gint64 time; 
 };
+
+float param_of_video_params (VideoParams*, PARAMETER);
 
 struct __VideoData {
   guint current;
@@ -45,6 +50,7 @@ void video_data_delete(VideoData* dt);
 gint video_data_append(VideoData* dt,
 		       VideoParams* par);
 gboolean video_data_is_full(VideoData* dt);
+gpointer video_data_dump(VideoData* dt, gsize* sz);
 /* convert data into string 
  * format:
  * channel:*:frozen_pix:black_pix:blocks:avg_bright:avg_diff:*:frozen_pix:black_pix:blocks:avg_bright:avg_diff

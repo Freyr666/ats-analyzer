@@ -79,6 +79,24 @@ namespace Ats {
         virtual json        serialize()    const = 0;
         virtual void        deserialize(const json&) = 0;
     };
+
+    class Chatterer_data {
+    public:
+        struct Serializer_failure : public Error_expn {
+            Serializer_failure() : Error_expn() {}
+            Serializer_failure(string s) : Error_expn(s) {}
+        };
+	
+        Chatterer_data(const std::string n) : name(n) {}
+        Chatterer_data(const Chatterer&) = delete;
+        Chatterer_data(Chatterer&&) = delete;
+	
+        const std::string name;
+        
+        sigc::signal<void,json&&>   send;
+
+        void data_send (json&& j)   { send.emit(j); }
+    };
     
     class Chatterer_proxy {
     public:
@@ -100,6 +118,7 @@ namespace Ats {
         virtual void forward_talk(const Chatterer&) = 0;
         virtual void forward_error(const std::string&) = 0;
         virtual std::string dispatch(const std::vector<std::uint8_t>&) = 0;
+        virtual void send_data(const std::string&, json &) = 0;
 
         static void validate(const json& j, const json& j_schema) {
 
@@ -126,6 +145,11 @@ namespace Ats {
             c.send.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_talk));
             c.send_err.connect(sigc::mem_fun(this, &Chatterer_proxy::forward_error));
             chatterers[c.name] = std::shared_ptr<Chatterer>(&c);
+        }
+
+        void connect(Chatterer_data& c) {
+            std::string name = c.name;
+            c.send.connect([this, name](json& j){ send_data(name, j); });
         }
 
     private:
