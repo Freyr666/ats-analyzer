@@ -7,6 +7,8 @@
 #include "json-schema.hpp"
 #include "errexpn.hpp"
 
+#include <thread>
+#include <mutex>
 #include <map>
 
 /* sets the value of *type* and *name* (if present),
@@ -47,7 +49,9 @@ namespace Ats {
         enum level {None = 0, Error, Info, Debug};
         
         sigc::signal<void, const level, const std::string&> send_log;
-        void log (const level l, const std::string& s) { send_log.emit(l,s); }
+        void log (const level l, const std::string& s) { std::scoped_lock lock{_mutex}; send_log.emit(l,s); }
+    private:
+        std::mutex      _mutex;
     };
 
     class Chatterer {
@@ -72,12 +76,14 @@ namespace Ats {
         sigc::signal<void,const Chatterer&>   send;
         sigc::signal<void,const std::string&> send_err;
 
-        void talk ()                     { send.emit(*this); }
-        void error(const std::string& s) { send_err.emit(s); }
+        void talk ()                     { std::scoped_lock lock{_mutex}; send.emit(*this); }
+        void error(const std::string& s) { std::scoped_lock lock{_mutex}; send_err.emit(s); }
 
         virtual std::string to_string()    const = 0;
         virtual json        serialize()    const = 0;
         virtual void        deserialize(const json&) = 0;
+    private:
+        std::mutex      _mutex;
     };
 
     class Chatterer_data {
@@ -95,7 +101,9 @@ namespace Ats {
         
         sigc::signal<void,json&&>   send;
 
-        void data_send (json&& j)   { send.emit(j); }
+        void data_send (json&& j)   { std::scoped_lock lock{_mutex}; send.emit(j); }
+    private:
+        std::mutex      _mutex;
     };
     
     class Chatterer_proxy {

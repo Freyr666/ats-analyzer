@@ -197,7 +197,7 @@ gst_videoanalysis_class_init (GstVideoAnalysisClass * klass)
         properties [PROP_PERIOD] =
                 g_param_spec_float("period", "Period",
                                    "Period of time between info masseges",
-                                   0.01, 1., 0.4, G_PARAM_READWRITE);
+                                   0.1, 5., 0.5, G_PARAM_READWRITE);
         properties [PROP_LOSS] =
                 g_param_spec_float("loss", "Loss",
                                    "Video loss",
@@ -323,7 +323,7 @@ gst_videoanalysis_init (GstVideoAnalysis *videoanalysis)
                         videoanalysis->params_boundary[i].duration = 1.;
         }
         videoanalysis->mark_blocks = 0;
-        videoanalysis->period = 0.4;
+        videoanalysis->period = 0.5;
         /* private */
         for (guint i = 0; i < PARAM_NUMBER; i++) {
                 videoanalysis->cont_err_duration[i] = 0.;
@@ -590,6 +590,7 @@ gst_videoanalysis_stop (GstBaseTransform * trans)
         return TRUE;
 }
 
+
 static gboolean
 gst_videoanalysis_set_info (GstVideoFilter * filter,
 			    GstCaps * incaps,
@@ -627,7 +628,7 @@ gst_videoanalysis_transform_frame_ip (GstVideoFilter * filter,
         GST_DEBUG_OBJECT (videoanalysis, "transform_frame_ip");
 
         gint64 tm = g_get_real_time ();
-
+        
         if (video_data_is_full(videoanalysis->data)
             || errors_is_full(videoanalysis->errors) ){
 
