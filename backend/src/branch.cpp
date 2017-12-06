@@ -8,9 +8,9 @@ using namespace std;
 using namespace Ats;
 
 unique_ptr<Branch>
-Branch::create(std::string type, uint stream, uint chan, uint pid, std::shared_ptr<Video_data> vd) {
+Branch::create(std::string type, uint stream, uint chan, uint pid, std::shared_ptr<Video_data> vd, std::shared_ptr<Audio_data> ad) {
     if (type == "video") return unique_ptr<Branch>((Branch*) new Video_branch(stream, chan, pid, vd));
-    else if (type == "audio") return unique_ptr<Branch>((Branch*) new Audio_branch(stream, chan, pid));
+    else if (type == "audio") return unique_ptr<Branch>((Branch*) new Audio_branch(stream, chan, pid, ad));
     else return unique_ptr<Branch>(nullptr);
 }
 
@@ -41,12 +41,12 @@ Branch::plug ( const Glib::RefPtr<Gst::Pad>& p ) {
 }
 
 static void
-data_callback (GstElement*,
-               guint64    ds,
-               GstBuffer* d,
-               guint64    es,
-               GstBuffer* e,
-               gpointer   _branch) {
+videodata_callback (GstElement*,
+                    guint64    ds,
+                    GstBuffer* d,
+                    guint64    es,
+                    GstBuffer* e,
+                    gpointer   _branch) {
     Glib::RefPtr<Gst::Buffer> data = Glib::wrap(d);
     Glib::RefPtr<Gst::Buffer> errors = Glib::wrap(e);
     Video_branch* branch = (Video_branch*)_branch;
@@ -60,50 +60,43 @@ Video_branch::Video_branch(uint stream, uint chan, uint pid, std::shared_ptr<Vid
     _video_sender = vs;
 
     _decoder->signal_pad_added().
-	connect([this,stream,chan,pid](const Glib::RefPtr<Gst::Pad>& pad)
-		{
-		    auto pcaps = pad->get_current_caps()->get_structure(0).get_name();
-		    vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
-		    auto& type    = caps_toks[0];		    
+	connect([this,stream,chan,pid](const Glib::RefPtr<Gst::Pad>& pad) {
+                auto pcaps = pad->get_current_caps()->get_structure(0).get_name();
+                vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
+                auto& type    = caps_toks[0];		    
 
-		    if (type != "video") return;
+                if (type != "video") return;
 
-		    pad->connect_property_changed("caps", [this, pad](){ set_video(pad); });
+                pad->connect_property_changed("caps", [this, pad](){ set_video(pad); });
 
-		    auto deint  = Gst::ElementFactory::create_element("deinterlace");
-		    auto _analyser = Gst::ElementFactory::create_element("videoanalysis");
+                auto deint  = Gst::ElementFactory::create_element("deinterlace");
+                auto _analyser = Gst::ElementFactory::create_element("videoanalysis");
 
-                    if (! deint) Error_expn("Branch: deinterlace is not found");
-                    if (! _analyser) Error_expn("Branch: videoanalysis is not found");
+                if (! deint) Error_expn("Branch: deinterlace is not found");
+                if (! _analyser) Error_expn("Branch: videoanalysis is not found");
                     
-                    g_signal_connect(_analyser->gobj(), "data", G_CALLBACK(data_callback), this);
+                g_signal_connect(_analyser->gobj(), "data", G_CALLBACK(videodata_callback), this);
 
-                    /* TODO consider placing analyser before deinterlacer */
-                    deint->set_property("method", 7);
+                /* TODO consider placing analyser before deinterlacer */
+                deint->set_property("method", 7);
 		    
-		    auto sink_pad = deint->get_static_pad("sink");
-		    auto src_pad  = _analyser->get_static_pad("src");
+                auto sink_pad = deint->get_static_pad("sink");
+                auto src_pad  = _analyser->get_static_pad("src");
 
-		    _bin->add(deint)->add(_analyser);
-		    deint->link(_analyser);
+                _bin->add(deint)->add(_analyser);
+                deint->link(_analyser);
 
-                    deint->sync_state_with_parent();
-                    _analyser->sync_state_with_parent();
+                deint->sync_state_with_parent();
+                _analyser->sync_state_with_parent();
 
-		    pad->link(sink_pad);
+                pad->link(sink_pad);
 
-		    auto src_ghost = Gst::GhostPad::create(src_pad, "src");
-		    src_ghost->set_active();
-		    _bin->add_pad(src_ghost);
+                auto p = shared_ptr<Pad>(new Pad(stream, chan, pid,
+                                                 "video", _bin, src_pad));
 
-		    auto p = shared_ptr<Pad>(new Pad(stream,
-						     chan, pid,
-						     "video",
-						     (Glib::RefPtr<Gst::Pad>) src_ghost));
-
-		    _pads.push_back(p);
-		    _pad_added.emit(p);
-		});
+                _pads.push_back(p);
+                _pad_added.emit(p);
+            });
     
 }
 
@@ -176,8 +169,47 @@ Video_branch::apply (const Settings& s) {
     }
 }
 
-Audio_branch::Audio_branch(uint stream, uint chan, uint pid) {
+Audio_branch::Audio_branch(uint stream, uint chan, uint pid, std::shared_ptr<Audio_data> as) {
+    _stream = stream;
+    _channel = chan;
+    _pid = pid;
+    _audio_sender = as;
 
+    _decoder->signal_pad_added().
+        connect([this,stream,chan,pid](const Glib::RefPtr<Gst::Pad>& pad) {
+                auto pcaps = pad->get_current_caps()->get_structure(0).get_name();
+                vector<Glib::ustring> caps_toks = Glib::Regex::split_simple("/", pcaps);
+                auto& type    = caps_toks[0];		    
+
+                if (type != "audio") return;
+
+                /* TODO add audio set */
+                //pad->connect_property_changed("caps", [this, pad](){ set_video(pad); });
+
+                auto conv      = Gst::ElementFactory::create_element("audioconvert");
+                auto _analyser = Gst::ElementFactory::create_element("audioanalysis");
+                if (! _analyser) Error_expn("Branch: audionalysis is not found");
+
+                /* TODO add audio data callback */
+                // g_signal_connect(_analyser->gobj(), "data", G_CALLBACK(audiodata_callback), this);
+
+                auto sink_pad = conv->get_static_pad("sink");
+                auto src_pad  = _analyser->get_static_pad("src");
+                
+                _bin->add(conv)->add(_analyser);
+                conv->link(_analyser);
+                
+                conv->sync_state_with_parent();
+                _analyser->sync_state_with_parent();
+
+                pad->link(sink_pad);
+
+                auto p = shared_ptr<Pad>(new Pad(stream, chan, pid,
+                                                 "audio", _bin, src_pad));
+                _pads.push_back(p);
+                _audio_pad_added.emit(p);
+                _pad_added.emit(p->copy());
+            });
 }
 
 void

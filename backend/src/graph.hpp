@@ -6,6 +6,8 @@
 #include <glibmm.h>
 #include <functional>
 #include <map>
+#include <thread>
+#include <mutex>
 #include <boost/variant.hpp>
 
 #include "chatterer.hpp"
@@ -14,6 +16,7 @@
 #include "root.hpp"
 #include "renderer.hpp"
 #include "video_data.hpp"
+#include "audio_data.hpp"
 
 namespace Ats {
 
@@ -26,6 +29,7 @@ namespace Ats {
         
         Graph(const std::string& n) : Chatterer(n),
                                       _video_sender(shared_ptr<Video_data>(new Video_data())),
+                                      _audio_sender(shared_ptr<Audio_data>(new Audio_data())),
                                       _vrenderer(unique_ptr<Video_renderer>(new Video_renderer())) {}
         Graph(const Graph&) = delete;
         Graph(Graph&&) = delete;
@@ -33,6 +37,7 @@ namespace Ats {
 
         Wm&        get_wm() { return _wm; };
         Video_data& get_video_sender() { return *_video_sender; }
+        Audio_data& get_audio_sender() { return *_audio_sender; }
         void       set(const Streams&);
         void       reset();
         
@@ -56,6 +61,7 @@ namespace Ats {
         Settings                           _settings;
         Wm                                 _wm;
         std::shared_ptr<Video_data>        _video_sender;
+        std::shared_ptr<Audio_data>        _audio_sender;
         std::unique_ptr<Video_renderer>    _vrenderer;
         std::vector<std::unique_ptr<Audio_renderer>> _arenderers;
         std::vector<std::unique_ptr<Root>> _roots;
@@ -64,6 +70,9 @@ namespace Ats {
 
         bool             on_bus_message(const Glib::RefPtr<Gst::Bus>&,
                                         const Glib::RefPtr<Gst::Message>&);
+
+        std::mutex                         _mutex_pad;
+        std::mutex                         _mutex_audio_pad;
     };
 
 };

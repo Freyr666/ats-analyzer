@@ -6,6 +6,7 @@
 #include "errexpn.hpp"
 #include "pad.hpp"
 #include "video_data.hpp"
+#include "audio_data.hpp"
 
 #include <gstreamermm.h>
 #include <string>
@@ -44,7 +45,7 @@ namespace Ats {
         virtual void apply (const Settings&) = 0;
         
 	static std::unique_ptr<Branch> create(std::string, uint, uint, uint,
-                                                  std::shared_ptr<Video_data>);
+                                              std::shared_ptr<Video_data>, std::shared_ptr<Audio_data> ad);
 
 	sigc::signal <void,std::shared_ptr <Pad> > signal_pad_added() { return _pad_added; }
 	sigc::signal <void,const uint,const uint,const uint,Meta_pid::Pid_type> signal_set_pid() { return _set_pid; }
@@ -79,7 +80,8 @@ namespace Ats {
 
     class Audio_branch : public Branch {
     public:
-	Audio_branch(uint, uint, uint);
+        Audio_branch() : Branch () {}
+	Audio_branch(uint, uint, uint, std::shared_ptr<Audio_data> as);
         virtual ~Audio_branch() {}
 
 	virtual Type   type() { return Branch::Type::Audio; }
@@ -88,7 +90,8 @@ namespace Ats {
 	sigc::signal <void,std::shared_ptr <Pad> > signal_audio_pad_added() { return _audio_pad_added; }
 	
     private:
-	std::shared_ptr<Pad> _audio_pad;
+        std::shared_ptr<Audio_data> _audio_sender;
+	std::shared_ptr<Pad>        _audio_pad;
 	sigc::signal <void,std::shared_ptr <Pad> > _audio_pad_added;
     };
 }

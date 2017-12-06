@@ -4,6 +4,7 @@ using namespace Ats;
 
 #include <iostream>
 
+/* TODO: optimize this */
 void
 Video_data::parse_data_msg(uint stream, uint channel, uint pid,
                            int64_t ds, Glib::RefPtr<Gst::Buffer> d,

@@ -35,6 +35,8 @@ namespace Ats {
 	~Audio_renderer () = default;
 	void plug (std::shared_ptr<Pad>);
 	virtual void add_to_pipe (const Glib::RefPtr<Gst::Bin>);
+    private:
+	Glib::RefPtr<Gst::Element> _output;
     };
 }
 
