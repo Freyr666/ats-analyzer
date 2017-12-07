@@ -11,15 +11,12 @@ namespace Ats {
     public:
         
         struct params {
-            float   frozen_pix;
-            float   black_pix;
-            float   blocks;
-            float   avg_bright;
-            float   avg_diff;
+            float   shortt;
+            float   moment;
             int64_t time; 
         };
 
-        enum parameter { BLACK, LUMA, FREEZE, DIFF, BLOCKY, PARAM_NUMBER };
+        enum parameter { SILENCE, LOUDNESS, PARAM_NUMBER };
 
         struct error_flags {
             bool cont;
@@ -39,8 +36,12 @@ namespace Ats {
 
         void parse_data_msg(uint, uint, uint,
                             int64_t, Glib::RefPtr<Gst::Buffer>,
-                            int64_t, Glib::RefPtr<Gst::Buffer>) {}
+                            int64_t, Glib::RefPtr<Gst::Buffer>);
     };
+
+    void to_json(json& j, const Audio_data::params&);
+    void to_json(json& j, const Audio_data::error_flags&);
+    void to_json(json& j, const Audio_data::msg&);
 
 }
 

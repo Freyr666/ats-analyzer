@@ -10,7 +10,8 @@ HEADERS = chatterer.hpp
 
 SOURCES = main.cpp probe.cpp settings.cpp settings_chatterer.cpp \
           metadata.cpp parser.cpp streams.cpp streams_chatterer.cpp \
-          graph.cpp graph_chatterer.cpp video_data.cpp context.cpp control.cpp	\
+          graph.cpp graph_chatterer.cpp video_data.cpp audio_data.cpp \
+          context.cpp control.cpp \
           wm.cpp wm_chatterer.cpp wm_container.cpp wm_treeview.cpp \
           wm_treeview_template.cpp wm_widget_video.cpp \
           pad.cpp branch.cpp root.cpp renderer.cpp \

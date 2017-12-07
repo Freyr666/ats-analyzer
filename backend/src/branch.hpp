@@ -84,6 +84,7 @@ namespace Ats {
 	Audio_branch(uint, uint, uint, std::shared_ptr<Audio_data> as);
         virtual ~Audio_branch() {}
 
+        void parse_data_msg(int64_t, Glib::RefPtr<Gst::Buffer>,int64_t, Glib::RefPtr<Gst::Buffer>);
 	virtual Type   type() { return Branch::Type::Audio; }
         virtual void   apply (const Settings&);
 	std::shared_ptr<Pad> get_audio_pad() { return _audio_pad; }

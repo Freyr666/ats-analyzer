@@ -169,6 +169,19 @@ Video_branch::apply (const Settings& s) {
     }
 }
 
+static void
+audiodata_callback (GstElement*,
+                    guint64    ds,
+                    GstBuffer* d,
+                    guint64    es,
+                    GstBuffer* e,
+                    gpointer   _branch) {
+    Glib::RefPtr<Gst::Buffer> data = Glib::wrap(d);
+    Glib::RefPtr<Gst::Buffer> errors = Glib::wrap(e);
+    Audio_branch* branch = (Audio_branch*)_branch;
+    branch->parse_data_msg(ds, data, es, errors);
+}
+
 Audio_branch::Audio_branch(uint stream, uint chan, uint pid, std::shared_ptr<Audio_data> as) {
     _stream = stream;
     _channel = chan;
@@ -190,8 +203,7 @@ Audio_branch::Audio_branch(uint stream, uint chan, uint pid, std::shared_ptr<Aud
                 auto _analyser = Gst::ElementFactory::create_element("audioanalysis");
                 if (! _analyser) Error_expn("Branch: audionalysis is not found");
 
-                /* TODO add audio data callback */
-                // g_signal_connect(_analyser->gobj(), "data", G_CALLBACK(audiodata_callback), this);
+                g_signal_connect(_analyser->gobj(), "data", G_CALLBACK(audiodata_callback), this);
 
                 auto sink_pad = conv->get_static_pad("sink");
                 auto src_pad  = _analyser->get_static_pad("src");
@@ -213,6 +225,27 @@ Audio_branch::Audio_branch(uint stream, uint chan, uint pid, std::shared_ptr<Aud
 }
 
 void
-Audio_branch::apply (const Settings&) {
-    
+Audio_branch::parse_data_msg(int64_t ds, Glib::RefPtr<Gst::Buffer> d,int64_t es, Glib::RefPtr<Gst::Buffer> e) {
+    _audio_sender->parse_data_msg(_stream, _channel, _pid, ds,d,es,e);
+}
+
+void
+Audio_branch::apply (const Settings& s) {
+    const Settings::Audio& as = s.audio;
+
+    if (_analyser) {
+        _analyser->set_property("loss", as.loss);
+        _analyser->set_property("silence-cont", as.silence.silence.cont);
+        _analyser->set_property("silence-cont-en", as.silence.silence.cont_en);
+        _analyser->set_property("silence-peak", as.silence.silence.peak);
+        _analyser->set_property("silence-peak-en", as.silence.silence.peak_en);
+        _analyser->set_property("silence-duration", as.silence.silence.duration);
+        _analyser->set_property("loudness-cont", as.loudness.loudness.cont);
+        _analyser->set_property("loudness-cont-en", as.loudness.loudness.cont_en);
+        _analyser->set_property("loudness-peak", as.loudness.loudness.peak);
+        _analyser->set_property("loudness-peak-en", as.loudness.loudness.peak_en);
+        _analyser->set_property("loudness-duration", as.loudness.loudness.duration);
+        _analyser->set_property("adv-diff", as.adv.adv_diff);
+        _analyser->set_property("adv-buf", as.adv.adv_buf);
+    }
 }

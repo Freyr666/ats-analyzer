@@ -40,6 +40,7 @@ Context::Context(Initial init) : control(init.log_level),
     connect (graph);
     connect (graph.get_wm());
     connect (graph.get_video_sender());
+    connect (graph.get_audio_sender());
 
     control.received.connect(sigc::mem_fun(this,&Chatterer_proxy::dispatch));
     

@@ -14,7 +14,7 @@
  * 
  * You should have received a copy of the GNU General Public License 
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
-*/
+ */
 
 #ifndef _GST_AUDIOANALYSIS_H_
 #define _GST_AUDIOANALYSIS_H_
@@ -24,48 +24,55 @@
 #include "ebur128.h"
 
 #include "audiodata.h"
+#include "error.h"
 
 #define OBSERVATION_TIME 100000000
-#define EVAL_PERIOD 4
+#define EVAL_PERIOD 10
 
 G_BEGIN_DECLS
 
-#define GST_TYPE_AUDIOANALYSIS\
-  (gst_audioanalysis_get_type())
-#define GST_AUDIOANALYSIS(obj)\
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_AUDIOANALYSIS,GstAudioanalysis))
-#define GST_AUDIOANALYSIS_CLASS(klass)\
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_AUDIOANALYSIS,GstAudioanalysisClass))
-#define GST_IS_AUDIOANALYSIS(obj)\
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_AUDIOANALYSIS))
-#define GST_IS_AUDIOANALYSIS_CLASS(obj)\
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_AUDIOANALYSIS))
+#define GST_TYPE_AUDIOANALYSIS                  \
+        (gst_audioanalysis_get_type())
+#define GST_AUDIOANALYSIS(obj)                                          \
+        (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_AUDIOANALYSIS,GstAudioAnalysis))
+#define GST_AUDIOANALYSIS_CLASS(klass)                                  \
+        (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_AUDIOANALYSIS,GstAudioAnalysisClass))
+#define GST_IS_AUDIOANALYSIS(obj)                                       \
+        (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_AUDIOANALYSIS))
+#define GST_IS_AUDIOANALYSIS_CLASS(obj)                                 \
+        (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_AUDIOANALYSIS))
 
-typedef struct _GstAudioanalysis GstAudioanalysis;
-typedef struct _GstAudioanalysisClass GstAudioanalysisClass;
+typedef struct _GstAudioAnalysis GstAudioAnalysis;
+typedef struct _GstAudioAnalysisClass GstAudioAnalysisClass;
 
-struct _GstAudioanalysis
+struct _GstAudioAnalysis
 {
-  GstAudioFilter base_audioanalysis;
-  /* Public */
-  guint  stream_id;
-  guint  program;
-  guint  pid;
-  gint64 ad_timeout;
-  /* Private */
-  ebur128_state *state;
-  AudioData     *data;
-  /* Global loudless */
-  ebur128_state *glob_state;
-  gboolean      glob_ad_flag;
-  time_t        glob_start;
-  //  GstClock* clock;
-  GstClockTime time;
+        GstAudioFilter base_audioanalysis;
+        /* Public */
+        /* TODO add later: period */
+        int      program;
+        float    loss;
+        gfloat   adv_diff;
+        gint     adv_buf;
+        BOUNDARY params_boundary [PARAM_NUMBER];
+        /* Private */
+        gfloat cont_err_duration [PARAM_NUMBER];
+        ebur128_state *state;
+        AudioData     *data;
+        Errors        *errors;
+        /* Global loudless */
+        ebur128_state *glob_state;
+        gboolean      glob_ad_flag;
+        time_t        glob_start;
+        //  GstClock* clock;
+        GstClockTime time;
 };
 
-struct _GstAudioanalysisClass
+struct _GstAudioAnalysisClass
 {
-  GstAudioFilterClass base_audioanalysis_class;
+        GstAudioFilterClass base_audioanalysis_class;
+
+        void (*data_signal) (GstAudioFilter *filter, guint64 ds, GstBuffer* d, guint64 es, GstBuffer* e);
 };
 
 GType gst_audioanalysis_get_type (void);

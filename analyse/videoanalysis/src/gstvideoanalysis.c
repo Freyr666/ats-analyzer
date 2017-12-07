@@ -347,7 +347,7 @@ gst_videoanalysis_set_property (GObject * object,
                 videoanalysis->period = g_value_get_float(value);
                 break;
         case PROP_LOSS:
-                videoanalysis->loss = g_value_get_uint(value);
+                videoanalysis->loss = g_value_get_float(value);
                 break;
         case PROP_BLACK_PIXEL_LB:
                 videoanalysis->black_pixel_lb = g_value_get_uint(value);
@@ -452,6 +452,9 @@ gst_videoanalysis_get_property (GObject * object,
         switch (property_id) {
         case PROP_PERIOD: 
                 g_value_set_float(value, videoanalysis->period);
+                break;
+        case PROP_LOSS: 
+                g_value_set_float(value, videoanalysis->loss);
                 break;
         case PROP_BLACK_PIXEL_LB:
                 g_value_set_uint(value, videoanalysis->black_pixel_lb);

@@ -18,6 +18,7 @@
 
 #include "audiodata.h"
 #include <malloc.h>
+#include <string.h>
 
 AudioData*
 audio_data_new(guint fr)
@@ -59,6 +60,15 @@ audio_data_is_full(AudioData* dt)
   if (dt->current == dt->period) return TRUE;
   return FALSE;
 }
+
+gpointer
+audio_data_dump(AudioData* dt, gsize* sz) {
+        *sz = sizeof(AudioParams) * dt->period;
+        AudioParams* buf = malloc(*sz);
+        memcpy(buf, dt->data, *sz);
+        return buf;
+}
+
 /* a(stream):(prog):(pid):*:moment:shortt:*:moment... */
 gchar*
 audio_data_to_string(AudioData* dt,

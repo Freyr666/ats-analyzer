@@ -67,7 +67,7 @@ namespace Ats {
 
         struct Adv {
             float adv_diff;
-            uint adv_buf;
+            int   adv_buf;
         };
 
         struct Video {
