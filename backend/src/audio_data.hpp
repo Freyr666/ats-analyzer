@@ -11,8 +11,8 @@ namespace Ats {
     public:
         
         struct params {
-            float   shortt;
-            float   moment;
+            double  shortt;
+            double  moment;
             int64_t time; 
         };
 

@@ -24,7 +24,7 @@ Audio_data::parse_data_msg(uint stream, uint channel, uint pid,
     /* errors */
     e->map(mmap, Gst::MapFlags::MAP_READ);
     error_flags* errors_buf = (error_flags*) mmap->get_data();
-    for (int p = 0; p < PARAM_NUMBER; p++) {
+    for (int p = 0; p < Audio_data::PARAM_NUMBER; p++) {
         std::vector<error_flags> errors (errors_buf + (p * es), errors_buf + (p * es) + es);
         _msg.errors[p] = std::move(errors);
     }
@@ -56,5 +56,5 @@ Ats::to_json(json& j, const Ats::Audio_data::msg& m) {
          {"pid", m.pid},
          {"parameters", m.parameters},
          {"errors", json{{"loudness", m.errors[Audio_data::LOUDNESS]},
-                         {"silense", m.errors[Audio_data::SILENCE]}}}};
+                         {"silence", m.errors[Audio_data::SILENCE]}}}};
 }

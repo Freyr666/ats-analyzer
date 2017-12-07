@@ -61,11 +61,14 @@ audio_data_is_full(AudioData* dt)
   return FALSE;
 }
 
+
 gpointer
 audio_data_dump(AudioData* dt, gsize* sz) {
-        *sz = sizeof(AudioParams) * dt->period;
-        AudioParams* buf = malloc(*sz);
-        memcpy(buf, dt->data, *sz);
+        if (sz == NULL) return NULL;
+        
+        *sz = dt->current;
+        AudioParams* buf = (AudioParams*) malloc(sizeof(AudioParams) * (*sz));
+        memcpy(buf, dt->data, (sizeof(AudioParams) * (*sz)));        
         return buf;
 }
 

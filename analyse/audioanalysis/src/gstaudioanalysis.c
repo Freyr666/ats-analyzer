@@ -523,9 +523,9 @@ gst_audioanalysis_transform_ip (GstBaseTransform * trans,
                 audio_data_reset(audioanalysis->data);
                 errors_reset(audioanalysis->errors);
 
-                GstBuffer* db = gst_buffer_new_wrapped (d, sizeof(d));
-                GstBuffer* eb = gst_buffer_new_wrapped (e, sizeof(e));
-
+                GstBuffer* db = gst_buffer_new_wrapped (d, sizeof(AudioParams) * ds);
+                GstBuffer* eb = gst_buffer_new_wrapped (e, sizeof(ErrFlags) * es * PARAM_NUMBER);
+                
                 g_signal_emit(audioanalysis, signals[DATA_SIGNAL], 0, ds, db, es, eb);
         }
 
