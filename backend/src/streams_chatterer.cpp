@@ -66,6 +66,11 @@ Streams::deserialize(const json& j) {
         }
     }
 
-    if (o_destr_set) destructive_set(*this);
-    else if (o_set) set.emit(*this);
+    if (o_destr_set) {
+        destructive_set(*this);
+        talk();
+    } else if (o_set) {
+        set.emit(*this);
+        talk();
+    }
 }

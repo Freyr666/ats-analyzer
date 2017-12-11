@@ -146,5 +146,6 @@ Settings_facade::deserialize(const json& j) {
     }
 
     if (o_set) set.emit(settings);
-    send.emit(*this);
+    //send.emit(*this);
+    talk();
 }
