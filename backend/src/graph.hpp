@@ -30,7 +30,7 @@ namespace Ats {
         Graph(const std::string& n) : Chatterer(n),
                                       _video_sender(shared_ptr<Video_data>(new Video_data())),
                                       _audio_sender(shared_ptr<Audio_data>(new Audio_data())),
-                                      _vrenderer(unique_ptr<Video_renderer>(new Video_renderer())) {}
+                                      _vrenderer(unique_ptr<Video_renderer>(nullptr)) {}
         Graph(const Graph&) = delete;
         Graph(Graph&&) = delete;
         virtual ~Graph() {}

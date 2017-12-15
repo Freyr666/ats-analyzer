@@ -22,7 +22,7 @@ Graph::set(const Streams& o) {
     _pipe = Gst::Pipeline::create();   
     _wm.add_to_pipe(_pipe);
 
-    _vrenderer.reset(new Video_renderer());
+    _vrenderer.reset(new Video_renderer(5004));
     _vrenderer->add_to_pipe(_pipe);
     _vrenderer->plug(_wm);
     
@@ -37,8 +37,8 @@ Graph::set(const Streams& o) {
 			// GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
                     });
                 root->signal_audio_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
-                        std::scoped_lock lock{_mutex_audio_pad};
-                        auto ar = unique_ptr<Audio_renderer> (new Audio_renderer ());
+                        std::scoped_lock lock{_mutex_audio_pad}; /* TODO FIX */
+                        auto ar = unique_ptr<Audio_renderer> (new Audio_renderer (5005 + p->stream() + p->pid()));
                         ar->add_to_pipe (_pipe);
                         ar->plug (p);
                         _arenderers.push_back(std::move(ar));
