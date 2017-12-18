@@ -3,9 +3,17 @@
 using namespace Ats;
 
 Video_renderer::Video_renderer(int port) : Renderer(port) {
-    _encoder = Gst::ElementFactory::create_element("vp8enc");
-    _pay     = Gst::ElementFactory::create_element("rtpvp8pay");
+    _encoder = Gst::ElementFactory::create_element("vp9enc");
+    _pay     = Gst::ElementFactory::create_element("rtpvp9pay");
     _output  = Gst::ElementFactory::create_element("udpsink");
+    _encoder->set_property("target-bitrate", 105000000);
+    _encoder->set_property("min-quantizer", 50);
+    _encoder->set_property("max-quantizer", 63);
+    _encoder->set_property("cq-level", 54);
+    _encoder->set_property("buffer-size", 600000000);
+    _encoder->set_property("cpu-used", 16);
+    _encoder->set_property("threads", 8);
+    //_encoder->set_property("lag-in-frames", 4);
     _output->set_property("host", std::string("127.0.0.1"));
     _output->set_property("port", port);
 }

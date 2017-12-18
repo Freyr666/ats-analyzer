@@ -34,7 +34,7 @@ Graph::set(const Streams& o) {
                 root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
                         std::scoped_lock lock{_mutex_pad};
                         _wm.plug(p);
-			// GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+			GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
                     });
                 root->signal_audio_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
                         std::scoped_lock lock{_mutex_audio_pad}; /* TODO FIX */
@@ -42,7 +42,7 @@ Graph::set(const Streams& o) {
                         ar->add_to_pipe (_pipe);
                         ar->plug (p);
                         _arenderers.push_back(std::move(ar));
-                        GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
+                        //GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipe->gobj()), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
                     });
                 _roots.push_back(std::move(root));
             }
