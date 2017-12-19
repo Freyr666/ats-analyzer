@@ -17,6 +17,9 @@ Branch::create(std::string type, uint stream, uint chan, uint pid, std::shared_p
 Branch::Branch() {
     _bin    = Gst::Bin::create();
     auto queue   = Gst::ElementFactory::create_element("queue");
+    Gst::ElementFactory::find("vaapih264dec")->set_rank(Gst::Rank::RANK_NONE);
+    Gst::ElementFactory::find("vaapimpeg2dec")->set_rank(Gst::Rank::RANK_NONE);
+    Gst::ElementFactory::find("vaapidecodebin")->set_rank(Gst::Rank::RANK_NONE);
     _decoder = Gst::ElementFactory::create_element("decodebin");
 
     queue->set_property("max-size-buffers", 20000);
@@ -24,6 +27,9 @@ Branch::Branch() {
 
     _bin->add(queue)->add(_decoder);
     queue->link(_decoder);
+
+    queue->sync_state_with_parent();
+    _decoder->sync_state_with_parent();
 
     auto p = queue->get_static_pad("sink");
     auto sink_ghost = Gst::GhostPad::create(p, "sink");

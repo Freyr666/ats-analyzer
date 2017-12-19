@@ -29,7 +29,6 @@ Graph::set(const Streams& o) {
     for_each(o.data.begin(),o.data.end(),[this](const Metadata& m){
             // TODO separate create and add_to_pipe
             auto root = Root::create(_pipe, m, _settings, _video_sender, _audio_sender);
-
             if (root) {		
                 root->signal_pad_added().connect([this, m](std::shared_ptr<Pad> p) {
                         std::scoped_lock lock{_mutex_pad};
