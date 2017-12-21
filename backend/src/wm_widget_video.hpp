@@ -31,7 +31,7 @@ namespace Ats {
         uint channel() const { if (_plugged) return _channel; else throw Not_plugged {}; }
         uint pid()     const { if (_plugged) return _pid; else throw Not_plugged {}; }
 
-        std::string get_type_string() const { return "video"; }
+        std::string get_type_string() const { return std::string("video"); }
         std::string to_string() const;
         
     private:

@@ -38,6 +38,10 @@ Streams::set_data(const Metadata& m) {
             data.push_back(Metadata(m));
         }
     }
+    // if empty
+    if (is_empty()) {
+        destructive_set.emit(*this);
+    }
     updated.emit();
     talk();
 }

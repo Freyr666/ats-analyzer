@@ -11,6 +11,7 @@ Wm::reset() {
     _widgets.clear();
     _treeview.reset();
     _bin.reset();
+    talk();
 }
 
 void /* TODO err */
