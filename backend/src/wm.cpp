@@ -16,14 +16,16 @@ Wm::reset() {
 void /* TODO err */
 Wm::add_to_pipe(const Glib::RefPtr<Gst::Bin> b) {
     _bin        = b;
-    _mixer      = Gst::ElementFactory::create_element("glvideomixer");
+    _mixer      = Gst::ElementFactory::create_element("compositor");
     _background = Gst::ElementFactory::create_element("videotestsrc");
+    _mixer->set_property("background", 1);
     _background->set_property("is_live", true);
     _background->set_property("pattern", 2);
 
     _bin->add(_mixer)->add(_background);
     
     _background_pad = _mixer->get_request_pad("sink_%u");
+    _background_pad->set_property("zorder", 1);
 
     auto in_pad = _background->get_static_pad("src");
     in_pad->link(_background_pad);

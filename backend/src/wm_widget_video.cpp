@@ -78,6 +78,11 @@ Wm_widget_video::get_position() const {
 void
 Wm_widget_video::apply_position () {
     if (_mixer_pad && _position) {
+        auto cps = std::string("video/x-raw,pixel-aspect-ratio=1/1,height=")
+            + std::to_string(_position.get_height())
+            + ",width="
+            + std::to_string(_position.get_width());
+        _caps->set_property("caps", Gst::Caps::create_from_string(cps));
         _mixer_pad->set_property("height", _position.get_height());
         _mixer_pad->set_property("width", _position.get_width());
         _mixer_pad->set_property("xpos", _position.get_x());
@@ -88,7 +93,7 @@ Wm_widget_video::apply_position () {
 void
 Wm_widget_video::set_layer (uint layer) {
     if (_mixer_pad) {
-        _mixer_pad->set_property("zorder", layer);
+        _mixer_pad->set_property("zorder", layer + 1);
     }
 }
 

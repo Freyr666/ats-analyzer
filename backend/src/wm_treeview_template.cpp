@@ -29,7 +29,9 @@ Wm_treeview_template::create (const json& j,
             if (wdg_it == _widgets.end())
                 throw Error_expn(elt_not_present("Widget",wdg_uid));
             if (wdg_it->second->get_type_string() != wdg_type)
-                throw Error_expn(elt_wrong_type("Widget",wdg_uid,wdg_type,wdg_it->second->get_type_string()));
+                continue; /*
+                            TODO
+                            throw Error_expn(elt_wrong_type("Widget",wdg_uid,wdg_type,wdg_it->second->get_type_string())); */
 
             Wm_position wdg_pos = parse_position(j_widget.at("position"));
             tw->add_widget(uid, wdg_uid, wdg_pos, layer, wdg_it->second);
