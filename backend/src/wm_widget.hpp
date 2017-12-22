@@ -40,6 +40,8 @@ namespace Ats {
             auto vi = gst_video_info_new();
             auto pcaps = p->get_current_caps();
 
+            if (! pcaps) return;
+
             if (! gst_video_info_from_caps(vi, pcaps->gobj())) {
                 gst_video_info_free(vi);
                 return;

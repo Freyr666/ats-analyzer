@@ -21,6 +21,7 @@ namespace Ats {
         ~Root();
 
         void apply(const Settings&);
+        Glib::RefPtr<Gst::Element> src() { return _src; }
 
 	static unique_ptr<Root> create (const Glib::RefPtr<Gst::Bin>,
                                         const Metadata&, const Settings&,
@@ -33,6 +34,7 @@ namespace Ats {
 	Root(const Glib::RefPtr<Gst::Bin>, const Metadata&, const Settings&,
              std::shared_ptr<Video_data>, std::shared_ptr<Audio_data>);
 	Glib::RefPtr<Gst::Bin> _bin;
+        Glib::RefPtr<Gst::Element> _src;
 	Glib::RefPtr<Gst::Element> _tee;
 	Glib::RefPtr<Gst::Element> _demux;
 	std::vector<std::unique_ptr<Branch>> _branches;

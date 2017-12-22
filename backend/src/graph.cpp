@@ -61,6 +61,10 @@ Graph::reset() {
     if (_bus)   _bus.reset();
     if (_pipe)  {
 	set_state(Gst::State::STATE_PAUSED);
+        for (auto& root : _roots) {
+            auto msg = Gst::MessageEos::create(root->src());
+            root->src()->post_message(msg);
+        }
 	set_state(Gst::State::STATE_NULL);
         _wm.reset();
         _vrenderer.reset();
