@@ -7,10 +7,10 @@ using namespace std;
 
 void
 Wm_treeview::reset() {
-    for_each([](const std::string&, Wm_container& c){
-        c.for_each([](const std::string&, Wm_widget& w){
-                w.disable();
-            });
+    for_each([](const std::string&, const std::shared_ptr<Wm_container>& c){
+            c->for_each([](const std::string&, const std::shared_ptr<Wm_widget>& w){
+                    w->disable();
+                });
         });
     _containers.clear();
 }
@@ -61,15 +61,15 @@ Wm_treeview::remove_widget (std::string wdg_pos) {
 }
 
 void
-Wm_treeview::for_each (std::function<void(const std::string&, Wm_container&)> f) {
+Wm_treeview::for_each (std::function<void(const std::string&, const std::shared_ptr<Wm_container>&)> f) {
     for (auto& nh : _containers) {
-        f (nh.first , *nh.second);
+        f (nh.first , nh.second);
     }
 }
 
 void
-Wm_treeview::for_each (std::function<void(const std::string&, const Wm_container&)> f) const {
+Wm_treeview::for_each (std::function<void(const std::string&, const std::shared_ptr<const Wm_container>&)> f) const {
     for (auto& nh : _containers) {
-        f (nh.first , *nh.second);
+        f (nh.first , nh.second);
     }
 }

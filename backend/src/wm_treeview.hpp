@@ -77,8 +77,8 @@ namespace Ats {
         void remove_widget    (std::string, std::string);
         void remove_widget    (std::string);
 
-        void for_each (std::function<void(const std::string&,Wm_container&)>);
-        void for_each (std::function<void(const std::string&,const Wm_container&)>) const;
+        void for_each (std::function<void(const std::string&,const std::shared_ptr<Wm_container>&)>);
+        void for_each (std::function<void(const std::string&,const std::shared_ptr<const Wm_container>&)>) const;
 
         // Wm_container*       find_container (std::string uid);
         const Wm_container* find_container (std::string uid) const;

@@ -50,11 +50,9 @@ namespace Ats {
         void   apply_resolution();
     };
 
-    void to_json(json& j, const pair<std::string, const Wm_widget&>& p);
     void to_json(json& j, const pair<std::string, std::shared_ptr<const Wm_widget>>& p);
-    void to_json(json& j, const Wm_widget&);
     void to_json(json& j, const std::shared_ptr<const Wm_widget>&);
-    void to_json(json& j, const Wm_container&);
+    void to_json(json& j, const std::shared_ptr<const Wm_container>&);
     void to_json(json& j, const Wm_position&);
 }
 

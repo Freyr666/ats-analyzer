@@ -19,7 +19,7 @@ Wm::to_string() const {
         rval += std::to_string(p.get_bottom());
         return rval;
     };
-    auto widget_to_string = [&position_to_string](const Wm_widget* w) {
+    auto widget_to_string = [&position_to_string](const std::shared_ptr<const Wm_widget>& w) {
         std::string rval;
         rval += "\nType: ";
         rval += w->get_type_string();
@@ -42,24 +42,24 @@ Wm::to_string() const {
     for (auto it = _widgets.begin(); it != _widgets.end(); ++it) {
         widgets += "\n\nUID: ";
         widgets += it->first;
-        widgets += widget_to_string(it->second.get());
+        widgets += widget_to_string(it->second);
     }
     rval += Ats::add_indent(widgets,1);
     // layout
     rval += "\n\n-------------- Layout ----------------";
     std::string layout;
-    std::function<void(const std::string&,const Wm_container&)> f =
-        [&layout,&widget_to_string](const std::string& s, const Wm_container& c) {
+    std::function<void(const std::string&,const std::shared_ptr<const Wm_container>&)> f =
+        [&layout,&widget_to_string](const std::string& s,const std::shared_ptr<const Wm_container>& c) {
         layout += "\n\nUID: ";
         layout += s;
         layout += "\nPosition: \n";
         layout += "\nWidgets: ";
         std::string layout_widgets;
-        std::function<void(const std::string&,const Wm_widget&)> f_wdg =
-        [&layout_widgets,&widget_to_string](const std::string& s_wdg, const Wm_widget& wdg) {
-            layout_widgets += widget_to_string(&wdg);
+        std::function<void(const std::string&,const std::shared_ptr<const Wm_widget>&)> f_wdg =
+        [&layout_widgets,&widget_to_string](const std::string& s_wdg, const std::shared_ptr<const Wm_widget>& wdg) {
+            layout_widgets += widget_to_string(wdg);
         };
-        c.for_each(f_wdg);
+        c->for_each(f_wdg);
         layout += Ats::add_indent(layout_widgets,1);
     };
     _treeview.for_each(f);
@@ -72,14 +72,14 @@ Wm::to_string() const {
 json
 Wm::serialize() const {
     
-    typedef std::function<void(const std::string&,const Wm_container&)> f_containers_t;
+    typedef std::function<void(const std::string&,const std::shared_ptr<const Wm_container>&)> f_containers_t;
     
     std::vector<pair<std::string,shared_ptr<const Wm_widget>>> widgets_v(_widgets.begin(), _widgets.end());
     
     json j_widgets(widgets_v);
 
     json j_treeview = json::array();
-    f_containers_t f = [&j_treeview](const std::string& s,const Wm_container& c) {
+    f_containers_t f = [&j_treeview](const std::string& s,const std::shared_ptr<const Wm_container>& c) {
         json j_container = {s,c};
         j_treeview.push_back(j_container);
     };
@@ -119,25 +119,8 @@ Wm::deserialize(const json& j) {
 }
 
 void
-Ats::to_json(json& j, const pair<std::string, const Wm_widget&>& p) {
-    j = {p.first,p.second};
-}
-
-void
 Ats::to_json(json& j, const pair<std::string, std::shared_ptr<const Wm_widget>>& p) {
     j = {p.first,p.second};
-}
-
-void
-Ats::to_json(json& j, const Wm_widget& w) {
-    j = {{"type",     w.get_type_string()},
-         {"position", w.get_position()},
-         {"layer",    w.get_layer()},
-         {"aspect",   {w.aspect.first, w.aspect.second}},
-         {"description", w.description()} };
-
-    /* Widget type-dependent fields */
-    /* TODO */
 }
 
 void
@@ -153,16 +136,16 @@ Ats::to_json(json& j, const std::shared_ptr<const Wm_widget>& w) {
 }
 
 void
-Ats::to_json(json& j, const Wm_container& c) {
+Ats::to_json(json& j, const std::shared_ptr<const Wm_container>& c) {
     json j_widgets;
-    std::function<void(const std::string&,const Wm_widget&)> f_widgets =
-        [&j_widgets](const std::string& s, const Wm_widget& w) {
+    std::function<void(const std::string&,const std::shared_ptr<const Wm_widget>&)> f_widgets =
+        [&j_widgets](const std::string& s, const std::shared_ptr<const Wm_widget>& w) {
         json j_widget = {s,w};
         j_widgets.push_back(j_widget);
     };
 
-    j = {{"position",c.get_position()}};
-    c.for_each(f_widgets);
+    j["position"] = c->get_position();
+    c->for_each(f_widgets);
     j["widgets"] = j_widgets;
 }
 
