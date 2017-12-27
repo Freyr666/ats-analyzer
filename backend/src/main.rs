@@ -8,5 +8,5 @@ fn main() {
     let args = std::env::args();
     let i    = Initial::new(&args).unwrap();
     let c    = Context::new(&i).unwrap();
-    println!("Hello, world!");
+    c.run()
 }
