@@ -14,7 +14,8 @@ Root::Root (const Glib::RefPtr<Gst::Bin> bin,
     
     _bin   = bin;
     _src   = Gst::ElementFactory::create_element("udpsrc");
-    auto parse = Gst::ElementFactory::create_element("tsparse");
+    // auto queue = Gst::ElementFactory::create_element("queue");
+    // auto parse = Gst::ElementFactory::create_element("tsparse");
     _tee   = Gst::Tee::create();
     _video_sender = vd;
     _audio_sender = ad;
@@ -22,9 +23,9 @@ Root::Root (const Glib::RefPtr<Gst::Bin> bin,
     _src->set_property("uri", m.uri);
     _src->set_property("buffer-size", 2147483647);
 
-    _bin->add(_src)->add(parse)->add(_tee);
+    _bin->add(_src)->add(_tee);
 
-    _src->link(parse)->link(_tee);
+    _src->link(_tee);
 
     m.for_analyzable ([this,stream](const Meta_channel& c) { build_cb(stream,c); });
 }

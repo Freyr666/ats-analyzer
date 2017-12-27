@@ -71,9 +71,11 @@ Wm::to_string() const {
 
 json
 Wm::serialize() const {
+    
     typedef std::function<void(const std::string&,const Wm_container&)> f_containers_t;
     
     std::vector<pair<std::string,shared_ptr<const Wm_widget>>> widgets_v(_widgets.begin(), _widgets.end());
+    
     json j_widgets(widgets_v);
 
     json j_treeview = json::array();
@@ -92,6 +94,7 @@ Wm::serialize() const {
 
 void
 Wm::deserialize(const json& j) {
+    
     constexpr const char* wm_bg_key         = "background";
     constexpr const char* wm_resolution_key = "resolution";
     constexpr const char* wm_layout_key     = "layout";
@@ -116,8 +119,29 @@ Wm::deserialize(const json& j) {
 }
 
 void
-Ats::to_json(json& j, const shared_ptr<const Wm_widget> w) {
-    /* Widget type-independent fields */
+Ats::to_json(json& j, const pair<std::string, const Wm_widget&>& p) {
+    j = {p.first,p.second};
+}
+
+void
+Ats::to_json(json& j, const pair<std::string, std::shared_ptr<const Wm_widget>>& p) {
+    j = {p.first,p.second};
+}
+
+void
+Ats::to_json(json& j, const Wm_widget& w) {
+    j = {{"type",     w.get_type_string()},
+         {"position", w.get_position()},
+         {"layer",    w.get_layer()},
+         {"aspect",   {w.aspect.first, w.aspect.second}},
+         {"description", w.description()} };
+
+    /* Widget type-dependent fields */
+    /* TODO */
+}
+
+void
+Ats::to_json(json& j, const std::shared_ptr<const Wm_widget>& w) {
     j = {{"type",     w->get_type_string()},
          {"position", w->get_position()},
          {"layer",    w->get_layer()},
@@ -133,7 +157,7 @@ Ats::to_json(json& j, const Wm_container& c) {
     json j_widgets;
     std::function<void(const std::string&,const Wm_widget&)> f_widgets =
         [&j_widgets](const std::string& s, const Wm_widget& w) {
-        json j_widget = {s,shared_ptr<const Wm_widget>(&w)};
+        json j_widget = {s,w};
         j_widgets.push_back(j_widget);
     };
 

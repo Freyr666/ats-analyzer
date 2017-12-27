@@ -18,7 +18,7 @@ namespace Ats {
 
         std::string get_uid() const { return _name; }
         Wm_position get_position () const { return _position; }
-        void add_widget (std::string, shared_ptr<Wm_widget>);
+        void add_widget (std::string, const shared_ptr<Wm_widget>&);
         void remove_widget (std::string);
         bool empty () { return _widgets.empty(); }
 

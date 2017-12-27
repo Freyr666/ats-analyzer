@@ -13,6 +13,7 @@ namespace Ats {
     class Wm_widget {
     public:
         class Not_plugged : public std::exception {};
+        virtual ~Wm_widget() {}
 
         std::pair<uint,uint> aspect;
 

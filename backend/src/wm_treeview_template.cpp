@@ -5,7 +5,7 @@ using namespace std;
 
 unique_ptr<Wm_treeview_template>
 Wm_treeview_template::create (const json& j,
-                              const std::map<std::string,shared_ptr<Wm_widget>> _widgets) {
+                              const std::map<std::string,const shared_ptr<Wm_widget>> _widgets) {
 
     unique_ptr<Wm_treeview_template> tw(new Wm_treeview_template());
 
@@ -25,7 +25,7 @@ Wm_treeview_template::create (const json& j,
             std::string wdg_type  = j_widget.at("type").get<std::string>();
             uint layer            = j_widget.at("layer").get<uint>();
 
-            auto wdg_it = _widgets.find(wdg_uid);
+            const auto wdg_it = _widgets.find(wdg_uid);
             if (wdg_it == _widgets.end())
                 throw Error_expn(elt_not_present("Widget",wdg_uid));
             if (wdg_it->second->get_type_string() != wdg_type)
@@ -79,7 +79,7 @@ Wm_treeview_template::add_container (string wnd_uid, Wm_position& pos) {
 
 void
 Wm_treeview_template::add_widget (string wnd_uid, string wdg_uid, Wm_position& pos,
-                                  uint layer, shared_ptr<Wm_widget> widget) {
+                                  uint layer, const shared_ptr<Wm_widget>& widget) {
     auto cont_it = find_if(_containers.begin(), _containers.end(), [&wnd_uid](Wm_container_template c) {
             return c.name == wnd_uid;
         });
@@ -139,7 +139,7 @@ void
 Wm_treeview_template::Wm_container_template::add_widget(string uid,
                                                         Wm_position& pos,
                                                         uint layer,
-                                                        shared_ptr<Wm_widget> widget) {
+                                                        const shared_ptr<Wm_widget>& widget) {
     auto wdg_it = find_if(_widgets.begin(), _widgets.end(), [&uid](Wm_widget_template w) {
             return w.uid == uid;
         });

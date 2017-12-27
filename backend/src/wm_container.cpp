@@ -11,7 +11,7 @@ Wm_container::~Wm_container() {
 }
 
 void
-Wm_container::add_widget(std::string uid, shared_ptr<Wm_widget> wdg) {
+Wm_container::add_widget(std::string uid, const shared_ptr<Wm_widget>& wdg) {
     _widgets.try_emplace(uid,wdg);
     wdg->enable();
 }

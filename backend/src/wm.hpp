@@ -37,7 +37,7 @@ namespace Ats {
 
     private:
         pair<uint,uint> _resolution = make_pair(1280, 720);
-        std::map<std::string,std::shared_ptr<Wm_widget> > _widgets;
+        std::map<std::string,const std::shared_ptr<Wm_widget> > _widgets;
         Wm_treeview                _treeview;
         Glib::RefPtr<Gst::Bin>     _bin;
         Glib::RefPtr<Gst::Element> _background;
@@ -50,9 +50,10 @@ namespace Ats {
         void   apply_resolution();
     };
 
-    template<class T>
-    void to_json(json& j, const pair<std::string,shared_ptr<T>> p) { j = {p.first,p.second}; }
-    void to_json(json& j, const shared_ptr<const Wm_widget>);
+    void to_json(json& j, const pair<std::string, const Wm_widget&>& p);
+    void to_json(json& j, const pair<std::string, std::shared_ptr<const Wm_widget>>& p);
+    void to_json(json& j, const Wm_widget&);
+    void to_json(json& j, const std::shared_ptr<const Wm_widget>&);
     void to_json(json& j, const Wm_container&);
     void to_json(json& j, const Wm_position&);
 }

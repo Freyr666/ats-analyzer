@@ -29,12 +29,12 @@ Wm_treeview::reset_from_template(Wm_treeview_template* t) {
 }
 
 void
-Wm_treeview::add_container(std::string uid,shared_ptr<Ats::Wm_container> c) {
+Wm_treeview::add_container(std::string uid,const shared_ptr<Ats::Wm_container>& c) {
     _containers.try_emplace(uid, c);
 }
 
 void
-Wm_treeview::add_widget (std::string wnd_uid, std::string wdg_uid, shared_ptr<Wm_widget> wdg) {
+Wm_treeview::add_widget (std::string wnd_uid, std::string wdg_uid, const shared_ptr<Wm_widget>& wdg) {
     auto nh = _containers.find(wnd_uid);
     if (nh != _containers.end()) nh->second->add_widget(wdg_uid,wdg);
     else throw Error_expn("Wm_treeview: add_widget - no such window");

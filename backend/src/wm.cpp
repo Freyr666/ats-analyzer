@@ -43,7 +43,7 @@ Wm::plug(shared_ptr<Pad> src) {
         w->plug(src);
         auto uid = w->gen_uid();
         auto wres = _widgets.try_emplace(uid, w);
-
+        
         if (wres.second) { // inserted
             auto sink_pad = _mixer->get_request_pad("sink_%u");
             w->plug(sink_pad);
