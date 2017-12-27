@@ -161,8 +161,7 @@ Ats::to_json(json& j, const Wm_container& c) {
         j_widgets.push_back(j_widget);
     };
 
-    j = {{"uid", c.get_uid()},
-         {"position",c.get_position()}};
+    j = {{"position",c.get_position()}};
     c.for_each(f_widgets);
     j["widgets"] = j_widgets;
 }
