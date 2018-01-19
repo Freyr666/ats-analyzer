@@ -45,6 +45,7 @@ namespace Ats {
         
         Glib::RefPtr<Gst::Pad> _mixer_pad;
         Glib::RefPtr<Gst::Pad> _input_pad;
+        Glib::RefPtr<Gst::Element> _valve;
         Glib::RefPtr<Gst::Element> _scale;
         Glib::RefPtr<Gst::Element> _caps;
 

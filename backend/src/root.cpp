@@ -22,6 +22,7 @@ Root::Root (const Glib::RefPtr<Gst::Bin> bin,
 
     _src->set_property("uri", m.uri);
     _src->set_property("buffer-size", 2147483647);
+    // _src->set_property("multicast-iface", std::vector<string>{"enp1s0", "enp0s31f6"});
 
     _bin->add(_src)->add(_tee);
 

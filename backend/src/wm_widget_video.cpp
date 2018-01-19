@@ -4,8 +4,10 @@ using namespace Ats;
 using namespace std;
 
 Wm_widget_video::Wm_widget_video() : _position (make_pair(0,0), make_pair(0,0)) {
+    _valve  = Gst::ElementFactory::create_element("valve");
     _scale  = Gst::ElementFactory::create_element("videoscale");
     _caps   = Gst::ElementFactory::create_element("capsfilter");
+    _valve->set_property("drop", true);
     _caps->set_property("caps", Gst::Caps::create_from_string("video/x-raw,pixel-aspect-ratio=1/1"));
 }
 
@@ -16,8 +18,9 @@ Wm_widget_video::~Wm_widget_video () {
 
 void
 Wm_widget_video::add_to_pipe (const Glib::RefPtr<Gst::Bin> pipe) {
-    pipe->add(_scale)->add(_caps);
-    _scale->link(_caps);
+    pipe->add(_valve)->add(_scale)->add(_caps);
+    _valve->link(_scale)->link(_caps);
+    _valve->sync_state_with_parent();
     _scale->sync_state_with_parent();
     _caps->sync_state_with_parent();
 }
@@ -29,7 +32,7 @@ Wm_widget_video::plug(shared_ptr<Ats::Pad> src) {
     _channel = src->channel();
     _pid = src->pid();
     _plugged = true;
-    _input_pad = _scale->get_static_pad("sink");
+    _input_pad = _valve->get_static_pad("sink");
     _input_pad->connect_property_changed("caps", [this]() {retrieve_aspect(_input_pad);});
     src->pad()->link(_input_pad);
     src->signal_unlinked().connect([this](){ _unlinked.emit(); });
@@ -56,12 +59,14 @@ Wm_widget_video::is_enabled() const {
 
 void
 Wm_widget_video::enable() {
-    
+    _enabled = true;
+    _valve->set_property("drop", false);
 }
 
 void
 Wm_widget_video::disable() {
-
+    _enabled = false;
+    _valve->set_property("drop", true);
 }
 
 void
