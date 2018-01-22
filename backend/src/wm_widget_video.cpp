@@ -60,13 +60,17 @@ Wm_widget_video::is_enabled() const {
 void
 Wm_widget_video::enable() {
     _enabled = true;
+    _mixer_pad->set_property("alpha", 1.);
     _valve->set_property("drop", false);
+    //_valve->get_static_pad("src")->push_event(Gst::EventStreamStart::create("test"));
 }
 
 void
 Wm_widget_video::disable() {
     _enabled = false;
+    _mixer_pad->set_property("alpha", 0.);
     _valve->set_property("drop", true);
+    //_valve->get_static_pad("src")->push_event(Gst::EventStreamStart::create("test"));
 }
 
 void
