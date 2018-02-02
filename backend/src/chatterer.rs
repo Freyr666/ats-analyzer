@@ -18,7 +18,7 @@ struct Msg <'a, T: 'a> {
     data: &'a T,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Name<'a> {
     pub name: &'a str,
 }

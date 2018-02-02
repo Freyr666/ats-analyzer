@@ -15,14 +15,18 @@ use std::str::FromStr;
 use std::fmt::Display;
 use std::boxed::Box;
 use std::collections::HashMap;
+use gst;
+use gst::prelude::*;
+use glib;
 
 use chatterer::{MsgType,Name,Addressable,Dispatcher,DispatchTable};
 
 pub struct Context<'a> {
+    mainloop:    glib::MainLoop,
     name:        String,
     format:      MsgType,
     table:       HashMap<String, (Box<Fn(&'a [u8]) -> Vec<u8> + 'a>)>,   
-    probes:      Vec<Box<Probe>>,
+    probes:      Vec<Probe>,
     control:     Control,
     graph:       Graph<'a>,
     structure:   Structure,
@@ -58,6 +62,9 @@ impl<'a> Dispatcher<'a> for Context<'a> {}
 
 impl<'a> Context<'a> {
     pub fn new(i : &Initial) -> Result<Context, String> {
+        gst::init().unwrap();
+        
+        let mainloop    = glib::MainLoop::new(None, false);
         let name        = String::from_str("context").unwrap();
         let table       = HashMap::new();
         let format      = MsgType::Json;
@@ -65,33 +72,20 @@ impl<'a> Context<'a> {
         let structure   = Structure::new();
         let graph       = Graph::new().unwrap();
         let preferences = Preferences::new();
-        //let s  = serde_json::to_string(graph.settings).unwrap();
-        let js = "{\"name\": \"Hello\", \"val\": 42}";
-        let test : Vec<Box<Display>> = vec![Box::new(1), Box::new("string")];
-        //let msg = serde_msgpack::to_vec(serde_json::from_str(js).unwrap()).unwrap();
-        let v: Result<Name,_> = serde_json::from_str(js);
-        match v {
-            Ok(v) => println!("Result: {}", v.name),
-            Err(e) => println!("Error: {}", e),
-        };
-        for i in test {
-            println!("Val: {}", i);
+        let mut probes  = vec![Probe::new(0, "udp://224.1.2.2:1234")];
+        
+        for probe in &mut probes {
+            probe.set_state(gst::State::Playing);
+            probe.updated.lock().unwrap().connect(|s| println!("Msg from probe: {:?}", s));
         }
         
         control.connect(|s| { println!("String: {:?}", s); Vec::from("rval")} );
-        Ok(Context { name,
-                     table,
-                     format,
-                     probes: vec![],
-                     control,
-                     structure,
-                     graph,
-                     preferences })
+        Ok(Context { mainloop, name, table,
+                     format,   probes, control,
+                     structure, graph, preferences })
     }
 
     pub fn run(&self) {
-        loop {
-            thread::sleep_ms(1000);
-        }
+        self.mainloop.run();
     }
 }
