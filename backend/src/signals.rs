@@ -1,7 +1,7 @@
 use std::collections::LinkedList;
 
 pub struct Signal<T> {
-    callbacks: LinkedList<Box<fn(&T)>>
+    callbacks: LinkedList<Box<Fn(&T) + Send + Sync + 'static>>
 }
 
 impl<T> Signal<T> {
@@ -9,7 +9,8 @@ impl<T> Signal<T> {
         Signal { callbacks: LinkedList::new() }
     }
 
-    pub fn connect(&mut self, f: fn(&T)) {
+    pub fn connect<F>(&mut self, f: F)
+        where F: Fn(&T) + Send + Sync + 'static {
         self.callbacks.push_front(Box::new(f))
     }
 
@@ -25,7 +26,7 @@ impl<T> Signal<T> {
 }
 
 pub struct Msg<T,R> {
-    callback: Option<Box<fn(&T)->R>>
+    callback: Option<Box<Fn(&T)->R + Send + Sync + 'static>>
 }
 
 impl<T,R> Msg<T,R> {
@@ -33,7 +34,8 @@ impl<T,R> Msg<T,R> {
         Msg { callback: None }
     }
 
-    pub fn connect(&mut self, f: fn(&T)->R) -> Result<(),String> {
+    pub fn connect<F>(&mut self, f: F) -> Result<(),String>
+        where F: Fn(&T)->R + Send + Sync + 'static {
         match self.callback {
             Some(_) => Err(String::from("Connected")),
             None    => Ok(self.callback = Some(Box::new(f)))

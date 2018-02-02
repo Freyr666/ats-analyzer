@@ -22,9 +22,6 @@ impl Probe {
         let updated       = Arc::new(Mutex::new(Signal::new()));
         let mut structure = Structure::new(String::from_str(uri).unwrap(), stream);
         
-        //let metadata  = structure.clone();
-        let signal    = updated.clone();
-        
         let src   = gst::ElementFactory::make("udpsrc", None).unwrap();
         let parse = gst::ElementFactory::make("tsparse", None).unwrap();
         let sink  = gst::ElementFactory::make("fakesink", None).unwrap();
@@ -32,7 +29,7 @@ impl Probe {
         let pipeline = gst::Pipeline::new(None);
 
         src.set_property("uri", &uri).unwrap();
-        //src.set_property("timeout", &5000).unwrap();
+        src.set_property("timeout", &5000000000u64).unwrap();
         
         pipeline.add_many(&[&src, &parse, &sink]).unwrap();
 
@@ -40,6 +37,9 @@ impl Probe {
         
         let bus = pipeline.get_bus().unwrap();
 
+        //let metadata  = structure.clone();
+        let signal    = updated.clone();
+        let pipe      = pipeline.clone();
         bus.add_watch(move |_, msg| {
             use gst::MessageView;
             
@@ -51,6 +51,15 @@ impl Probe {
                             if let Some(s) = parse::table(section, &mut structure) {
                                 signal.lock().unwrap().emit(&s)
                             };
+                        }
+                    } else {
+                        if let Some(s) = msg.get_structure() {
+                            if s.get_name() == "GstUDPSrcTimeout" {
+                                structure.clear();
+                                let _ = pipe.set_state(gst::State::Null);
+                                let _ = pipe.set_state(gst::State::Playing);
+                                signal.lock().unwrap().emit(&structure)
+                            }
                         }
                     },
                 _ => ()

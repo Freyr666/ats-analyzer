@@ -91,6 +91,10 @@ impl Structure {
     pub fn new (uri: String, id: i32) -> Structure {
         Structure { id, uri, channels: vec![] }
     }
+
+    pub fn from (&mut self, other: &Structure) {
+        self.channels = other.channels.clone()
+    }
     
     pub fn add_channel (&mut self, c: Channel) {
         self.channels.push(c)

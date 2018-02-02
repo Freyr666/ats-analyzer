@@ -9,8 +9,6 @@ use graph::Graph;
 use graph::GraphSettings;
 use preferences::Preferences;
 use std::thread;
-use serde_json;
-use serde_msgpack;
 use std::str::FromStr;
 use std::fmt::Display;
 use std::boxed::Box;
@@ -19,7 +17,7 @@ use gst;
 use gst::prelude::*;
 use glib;
 
-use chatterer::{MsgType,Name,Addressable,Dispatcher,DispatchTable};
+use chatterer::{MsgType,Addressable,Dispatcher,DispatchTable};
 
 pub struct Context<'a> {
     mainloop:    glib::MainLoop,
@@ -34,18 +32,9 @@ pub struct Context<'a> {
 }
 
 impl<'a> Addressable for Context<'a> {
-    fn set_name (&mut self, s: String) {
-        self.name = s
-    }
-    fn get_name (&self) -> &str {
-        &self.name
-    }
-    fn set_format (&mut self, t: MsgType) {
-        self.format = t
-    }
-    fn get_format (&self) -> MsgType {
-        self.format
-    }
+    fn get_name (&self) -> &str { &self.name }
+    fn set_format (&mut self, t: MsgType) { self.format = t  }
+    fn get_format (&self) -> MsgType { self.format }
 }
 
 impl<'a> DispatchTable<'a> for Context<'a> {

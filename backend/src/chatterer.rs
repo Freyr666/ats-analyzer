@@ -37,16 +37,15 @@ pub enum Response<T> {
 }
 
 pub trait Addressable {
-    fn set_name (&mut self, String);
     fn get_name (&self) -> &str;
 
     fn set_format (&mut self, MsgType);
     fn get_format (&self) -> MsgType;
 }
 
-pub trait Sendbox {
-    fn set_sender (&self, Sender<&[u8]>);
-    fn get_sender (&self) -> Option<&Sender<&[u8]>>;
+pub trait Sendbox<'a> {
+    fn set_sender (&mut self, Sender<Vec<u8>>);
+    fn get_sender (&'a self) -> Option<&'a Sender<Vec<u8>>>;
 }
 
 pub trait Replybox<'a,T,R> {    
@@ -66,17 +65,17 @@ pub trait Notifier<'a, T>: Addressable
     }
 }
 
-pub trait Chatterer<'a, T>: Notifier<'a, T> + Sendbox
-    where T: Addressable + Serialize {
+pub trait Chatterer<'a, T>: Notifier<'a, T> + Sendbox<'a>
+    where T: Serialize {
     
-    fn connect_channel (&mut self, m: MsgType, s: Sender<&[u8]>) {
+    fn connect_channel (&mut self, m: MsgType, s: Sender<Vec<u8>>) {
         self.set_format(m);
         self.set_sender(s);
     }
     
-    fn talk (&'a self, data: &'a T) {
-       let s = self.get_sender().unwrap();
-       s.send(&self.serialize_msg(data)).unwrap()
+    fn talk (&'a mut self, data: &'a T) {
+        let s = self.get_sender().unwrap();
+        s.send(self.serialize_msg(data)).unwrap()
     }
 }
 
