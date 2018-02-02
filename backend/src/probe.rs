@@ -54,12 +54,13 @@ impl Probe {
                         }
                     } else {
                         if let Some(s) = msg.get_structure() {
-                            if s.get_name() == "GstUDPSrcTimeout" {
-                                structure.clear();
-                                let _ = pipe.set_state(gst::State::Null);
-                                let _ = pipe.set_state(gst::State::Playing);
-                                signal.lock().unwrap().emit(&structure)
-                            }
+                            if s.get_name() == "GstUDPSrcTimeout" &&
+                                ! structure.is_empty() {
+                                    structure.clear();
+                                    let _ = pipe.set_state(gst::State::Null);
+                                    let _ = pipe.set_state(gst::State::Playing);
+                                    signal.lock().unwrap().emit(&structure)
+                                }
                         }
                     },
                 _ => ()
