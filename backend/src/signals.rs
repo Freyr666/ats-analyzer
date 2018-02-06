@@ -26,7 +26,7 @@ impl<T> Signal<T> {
 }
 
 pub struct Msg<T,R> {
-    callback: Option<Box<Fn(&T)->R + Send + Sync + 'static>>
+    callback: Option<Box<Fn(T)->R + Send + Sync + 'static>>
 }
 
 impl<T,R> Msg<T,R> {
@@ -35,14 +35,14 @@ impl<T,R> Msg<T,R> {
     }
 
     pub fn connect<F>(&mut self, f: F) -> Result<(),String>
-        where F: Fn(&T)->R + Send + Sync + 'static {
+        where F: Fn(T)->R + Send + Sync + 'static {
         match self.callback {
             Some(_) => Err(String::from("Connected")),
             None    => Ok(self.callback = Some(Box::new(f)))
         }
     }
 
-    pub fn emit(&self, v: &T) -> Option<R> {
+    pub fn emit(&self, v: T) -> Option<R> {
         match self.callback {
             Some (ref f) => Some (f(v)),
             None         => None

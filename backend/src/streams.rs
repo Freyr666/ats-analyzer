@@ -1,11 +1,11 @@
 use metadata::Structure;
 use std::sync::{Arc,Mutex};
-use chatterer::{Respondent,Chatterer,Notifier,Addressable,Sendbox,Replybox,MsgType};
+use chatterer::{Chatterer,Notifier,Addressable,Sendbox,Replybox,MsgType};
 use signals::Msg;
 use std::sync::mpsc::Sender;
 use std::str::FromStr;
 use probe::Probe;
-//use std::marker::PhantomData;
+use std::marker::PhantomData;
 
 pub struct StreamsComm {
     name:       String,
@@ -22,7 +22,7 @@ pub struct Streams {
     structures: Arc<Mutex<Vec<Structure>>>,
 }
 
-impl Addressable for StreamsComm {
+impl<'a> Addressable for StreamsComm {
     fn get_name (&self) -> &str { &self.name }
 
     fn set_format (&mut self, t: MsgType) { self.format = t }
@@ -39,20 +39,21 @@ impl<'a> Sendbox<'a> for StreamsComm {
     }
 }
 
-impl<'a> Replybox<'a, Vec<Structure>, ()> for StreamsComm {
-    fn reply (&self, data: Vec<Structure>) -> Result<(),String> {
-        match self.update.lock().unwrap().emit(&data) {
-            None    => Err(String::from_str("Streams are not connected to the graph").unwrap()),
-            Some(r) => r
-        }
+impl Replybox<Vec<Structure>, ()> for StreamsComm {
+    fn reply (&self) -> Box<Fn(Vec<Structure>)->Result<(),String> + Send + Sync> {
+        let signal = self.update.clone();
+        Box::new(move | data: Vec<Structure>| {
+            match signal.lock().unwrap().emit(data) {
+                None    => Err(String::from_str("Streams are not connected to the graph").unwrap()),
+                Some(r) => r
+            }
+        })
     }
 }
 
 impl<'a> Notifier<'a, Vec<Structure>> for StreamsComm { }
 
 impl<'a> Chatterer<'a, Vec<Structure>> for StreamsComm { }
-
-impl<'a> Respondent<'a, Vec<Structure>, ()> for StreamsComm { }
 
 impl Streams {
     pub fn new () -> Streams {
@@ -81,7 +82,7 @@ impl Streams {
                 str.from(s)
             }
         chatterer.talk(structures);
-        chatterer.update.lock().unwrap().emit(structures); // TODO remove this
+        chatterer.update.lock().unwrap().emit(structures.clone()); // TODO remove this
     }
     
     pub fn connect_probe (&mut self, p: &mut Probe) {

@@ -1,4 +1,5 @@
 use serde::{Serialize,Deserialize};
+use serde::de::DeserializeOwned;
 //use signals::Signal;
 //use std::sync::{Arc,Mutex};
 use std::sync::mpsc::{Sender};
@@ -19,13 +20,13 @@ struct Msg <'a, T: 'a> {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Name<'a> {
-    pub name: &'a str,
+pub struct Name {
+    pub name: String,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Request<'a, T: 'a> {
-    pub name: &'a str,
+pub struct Request<T> {
+    pub name: String,
     //#[serde(bound(deserialize = "&'a T: Deserialize<'de>"))]
     pub data: T,
 }
@@ -48,10 +49,10 @@ pub trait Sendbox<'a> {
     fn get_sender (&'a self) -> Option<&'a Sender<Vec<u8>>>;
 }
 
-pub trait Replybox<'a,T,R>
-    where T: 'a + Deserialize<'a>,
+pub trait Replybox<T,R>: Addressable
+    where T: DeserializeOwned,
           R: Serialize {    
-    fn reply (&self, T) -> Result<R,String>;    
+    fn reply (&self) -> Box<Fn(T)->Result<R,String> + Send + Sync>;
 }
 
 pub trait Notifier<'a, T>: Addressable
@@ -81,71 +82,48 @@ pub trait Chatterer<'a, T>: Notifier<'a, T> + Sendbox<'a>
     }
 }
 
-pub trait Respondent<'a, T, R>: Addressable + Replybox<'a,T,R>
-    where T: 'a + Deserialize<'a>,
-          R: Serialize {
-
-    fn respond (&self, req: &'a [u8]) -> Vec<u8> {
-        let fmt = self.get_format();
-        
-        let v : Request<T> = match fmt {
-            MsgType::Json    => serde_json::from_slice(&req).unwrap(),
-            MsgType::Msgpack => serde_msgpack::from_slice(&req).unwrap(),
-        };
-        
-        if v.name != self.get_name() {
-            panic!("Respondent: name mismatch")
-        };
-
-        let rep = match self.reply(v.data) {
-            Ok(v)  => Response::Fine(v),
-            Err(s) => Response::Error(s),
-        };
-
-        match fmt {
-            MsgType::Msgpack => serde_msgpack::to_vec(&rep).unwrap(),
-            MsgType::Json    => serde_json::to_vec(&rep).unwrap(),
-        }
-    }
-       
+pub trait DispatchTable {
+    fn add_respondent (&mut self, String, Box<Fn(Vec<u8>) -> Vec<u8> + Sync + Send>);
+    fn get_respondent (&self, &str) -> Option<&Box<Fn(Vec<u8>) -> Vec<u8> + Sync + Send>>;
 }
 
-pub trait DispatchTable<'a> {
-    fn add_respondent (&mut self, String, Box<Fn(&'a [u8]) -> Vec<u8> + 'a>);
-    fn get_respondent (&'a self, &str) -> Option<&Box<Fn(&'a [u8]) -> Vec<u8> + 'a>>;
-}
+pub trait Dispatcher: Addressable + DispatchTable {
 
-pub trait Dispatcher<'a>: Addressable + DispatchTable<'a> {
+    fn add_to_table<T,R> (&mut self, r: &Replybox<T,R>)
+        where T: 'static + DeserializeOwned,
+              R: 'static + Serialize {
+        let name  = String::from_str(r.get_name()).unwrap();
+        let fmt   = self.get_format();
+        let rep   = r.reply();
+        
+        let clos = move | buf: Vec<u8> | { 
+            let req : Request<T> = match fmt {
+                MsgType::Json    => serde_json::from_slice(&buf).unwrap(),
+                MsgType::Msgpack => serde_msgpack::from_slice(&buf).unwrap(),
+            };
 
-    fn add_to_table<T,R> (&'a mut self, r: &'a Respondent<'a,T,R>)
-        where T: 'a + Deserialize<'a>,
-              R: Serialize {
-        let name = String::from_str(r.get_name()).unwrap();
-        //let clos = Box::new(move | buf | { r.respond(buf)});
-        self.add_respondent(name, Box::new(move | buf | { r.respond(buf)}) )
+            let rep : Response<R> = match rep(req.data) {
+                Ok(v)  => Response::Fine(v),
+                Err(s) => Response::Error(s),
+            };
+
+            match fmt {
+                MsgType::Msgpack => serde_msgpack::to_vec(&rep).unwrap(),
+                MsgType::Json    => serde_json::to_vec(&rep).unwrap(),
+            }
+        };
+        self.add_respondent(name, Box::new(move | buf | { clos(buf)}));
     }
     
-    fn dispatch (&'a self, r: &'a [u8]) -> Option<Vec<u8>> {
+    fn dispatch (&self, r: Vec<u8>) -> Option<Vec<u8>> {
         let n : Name = match self.get_format() {
             MsgType::Json    => serde_json::from_slice(&r).unwrap(),
             MsgType::Msgpack => serde_msgpack::from_slice(&r).unwrap(),
         };
-
-        let resp = self.get_respondent(n.name)?;
-
+        println!("name: {}", n.name);
+        let resp = self.get_respondent(&n.name)?;
+        
         Some(resp(r))
     }
     
 }
-
-/*
-pub trait Chatterer<'a,T>
-    where T: Serialize + Deserialize<'a> {
-
-    fn name(&self) -> &'static str;
-
-    fn ask_state(&'a self) -> &'a T;
-    fn set_state(&self, b: &T) -> Response;
-    fn signal(&self) -> Arc<Mutex<Signal<&'a T>>>;
-}
-*/

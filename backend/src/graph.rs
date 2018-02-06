@@ -1,5 +1,5 @@
-
-use chatterer::{Chatterer,Response};
+use chatterer::MsgType;
+use chatterer::{Addressable,Replybox};
 use serde::{Serialize,Deserialize};
 use std::sync::{Arc,Mutex};
 use signals::Signal;
@@ -12,6 +12,21 @@ pub struct GraphSettings {
 pub struct Graph<'a> {
     signal:       Arc<Mutex<Signal<&'a GraphSettings>>>,
     pub settings: &'a GraphSettings
+}
+
+impl<'a> Addressable for Graph<'a> {
+    fn get_name(&self) -> &'static str { "graph" }
+    fn get_format(&self) -> MsgType { MsgType::Json }
+    fn set_format(&mut self, _: MsgType) {}
+}
+
+impl<'a> Replybox<String,String> for Graph<'a> {
+    fn reply (&self) -> Box<Fn(String)->Result<String,String> + Send + Sync> {
+        Box::new(move |name| {
+            let s = String::from("Hello, ");
+            Ok(s + &name)
+        })
+    }
 }
 
 impl<'a> Graph<'a> {

@@ -29,7 +29,7 @@ impl Control {
         thread::Builder::new().name("recv_thread".to_string()).spawn(move || {
             loop {
                 let buffer = in_socket.recv_bytes(0).unwrap();
-                let reply : Vec<u8> = r.lock().unwrap().emit(&buffer).unwrap();
+                let reply : Vec<u8> = r.lock().unwrap().emit(buffer).unwrap();
                 in_socket.send (&reply, 0).unwrap();
                // reply.map(|buf| in_socket.send (&buf, 0));
             }
@@ -50,7 +50,7 @@ impl Control {
    // }
     
     pub fn connect<F> (&mut self, f: F)
-        where F: Fn(&Vec<u8>) -> Vec<u8> + Send + Sync + 'static {
+        where F: Fn(Vec<u8>) -> Vec<u8> + Send + Sync + 'static {
         self.received.lock().unwrap().connect(f).unwrap()
     }
 }

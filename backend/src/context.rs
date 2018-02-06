@@ -20,14 +20,14 @@ use std::sync::{Arc,Mutex};
 
 use chatterer::{MsgType,Addressable,Dispatcher,DispatchTable};
 
-pub struct ContextDispatcher<'a> {
+pub struct ContextDispatcher {
     name:        String,
     format:      MsgType,
-    table:       HashMap<String, (Box<Fn(&'a [u8]) -> Vec<u8> + 'a>)>,
+    table:       HashMap<String, (Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync>)>,
 }
 
 pub struct Context<'a> {
-    dispatcher:  Arc<Mutex<ContextDispatcher<'a>>>,
+    dispatcher:  Arc<Mutex<ContextDispatcher>>,
     mainloop:    glib::MainLoop,  
     probes:      Vec<Probe>,
     control:     Control,
@@ -36,26 +36,26 @@ pub struct Context<'a> {
     preferences: Preferences,
 }
 
-impl<'a> Addressable for ContextDispatcher<'a> {
+impl Addressable for ContextDispatcher {
     fn get_name (&self) -> &str { &self.name }
     fn set_format (&mut self, t: MsgType) { self.format = t  }
     fn get_format (&self) -> MsgType { self.format }
 }
 
-impl<'a> DispatchTable<'a> for ContextDispatcher<'a> {
-    fn add_respondent (&mut self, s: String, c: Box<Fn(&'a [u8]) -> Vec<u8> + 'a>) {
+impl DispatchTable for ContextDispatcher {
+    fn add_respondent (&mut self, s: String, c: Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync>) {
         self.table.insert(s, c);
     }
     
-    fn get_respondent (&'a self, s: &str) -> Option<&Box<Fn(&'a [u8]) -> Vec<u8> + 'a>> {
+    fn get_respondent (&self, s: &str) -> Option<&Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync>> {
         self.table.get(s)
     }
 }
 
-impl<'a> Dispatcher<'a> for ContextDispatcher<'a> {}
+impl Dispatcher for ContextDispatcher {}
 
-impl<'a> ContextDispatcher<'a> {
-    pub fn new () -> ContextDispatcher<'a> {
+impl ContextDispatcher {
+    pub fn new () -> ContextDispatcher {
         let name        = String::from_str("context").unwrap();
         let table       = HashMap::new();
         let format      = MsgType::Json;
@@ -83,9 +83,12 @@ impl<'a> Context<'a> {
 
         streams.connect_channel(MsgType::Json, control.sender.clone());
 
-        //dispatcher.lock().unwrap().add_to_table(&(*streams.chatterer.lock().unwrap()));
-        
-        control.connect(|s| { println!("String: {:?}", s); Vec::from("rval")} );
+        dispatcher.lock().unwrap().add_to_table(&(*streams.chatterer.lock().unwrap()));
+        dispatcher.lock().unwrap().add_to_table(&graph);
+
+        let dis = dispatcher.clone();
+        control.connect(move |s| dis.lock().unwrap().dispatch(s).unwrap());
+        //control.connect(|s| { println!("String: {:?}", s); Vec::from("rval")} );
         
         Ok(Context { mainloop, dispatcher, probes, control,
                      streams, graph, preferences })
