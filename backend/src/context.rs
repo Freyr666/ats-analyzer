@@ -4,7 +4,7 @@ use chatterer::Chatterer;
 use initial::Initial;
 use probe::Probe;
 use control::Control;
-use streams::{Streams,StreamsComm};
+use streams::{Streams,StreamsState};
 use graph::Graph;
 use graph::GraphSettings;
 use preferences::Preferences;
@@ -77,18 +77,16 @@ impl<'a> Context<'a> {
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
-            //probe.updated.lock().unwrap().connect(|s| println!("Msg from probe: {:?}", s));
             streams.connect_probe(probe);
         }
 
         streams.connect_channel(MsgType::Json, control.sender.clone());
 
-        dispatcher.lock().unwrap().add_to_table(&(*streams.chatterer.lock().unwrap()));
+        dispatcher.lock().unwrap().add_to_table(&(*streams.state.lock().unwrap()));
         dispatcher.lock().unwrap().add_to_table(&graph);
 
         let dis = dispatcher.clone();
         control.connect(move |s| dis.lock().unwrap().dispatch(s).unwrap());
-        //control.connect(|s| { println!("String: {:?}", s); Vec::from("rval")} );
         
         Ok(Context { mainloop, dispatcher, probes, control,
                      streams, graph, preferences })
