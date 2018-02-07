@@ -83,6 +83,8 @@ impl Context {
 
         let dis = dispatcher.clone();
         control.connect(move |s| dis.lock().unwrap().dispatch(s).unwrap());
+
+        graph.connect_destructive(&mut streams.update.lock().unwrap());
         
         Ok(Context { mainloop, dispatcher, probes, control,
                      streams, graph, preferences })

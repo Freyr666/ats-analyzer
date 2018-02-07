@@ -4,7 +4,8 @@ use chatterer::control::{Addressable,Replybox};
 use root::Root;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
-use signals::Signal;
+use signals::{Signal,Msg};
+use metadata::Structure;
 use gst::prelude::*;
 use gst;
 
@@ -42,8 +43,17 @@ impl Graph {
     pub fn new(format: MsgType, sender: Sender<Vec<u8>>) -> Result<Graph,String> {
         let settings = GraphSettings { state: String::from("") };
         let chat = Arc::new(Mutex::new( Notifier::new("graph", format, sender )));
-        Ok(Graph { chat, settings, format } )
+        let pipeline = gst::Pipeline::new(None);
+        let bus      = pipeline.get_bus().unwrap();
+        let roots    = Vec::new();
+        Ok(Graph { format, chat, settings, pipeline, bus, roots } )
     }
 
+    pub fn connect_destructive (&self, msg: &mut Msg<Vec<Structure>,Result<(),String>>) {
+        msg.connect(move |s| {
+            println!("Got structs: {:?}", s);
+            Ok(())
+        }).unwrap();
+    }
     
 }

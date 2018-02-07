@@ -45,7 +45,7 @@ impl Streams {
         Streams { format, chat, update, structures }
     }
 
-    fn set_data (chat: &Notifier, structures: &mut Vec<Structure>, s: &Structure) {
+    fn set_data (chat: &Notifier, structures: &mut Vec<Structure>, s: &Structure, update: &Msg<Vec<Structure>,Result<(),String>>) {
         if structures.is_empty()
             || ! (structures.iter().any(|st| st.id == s.id)) {
                 structures.push(s.clone())
@@ -54,13 +54,15 @@ impl Streams {
                 str.from(s)
             }
         chat.talk(&structures);
+        update.emit(structures.clone());
     }
     
     pub fn connect_probe (&mut self, p: &mut Probe) {
         let chat    = self.chat.clone();
         let structs = self.structures.clone();
+        let msg     = self.update.clone();
         p.updated.lock().unwrap().connect(move |s| {
-            Streams::set_data(&chat.lock().unwrap(), &mut structs.lock().unwrap(), s);
+            Streams::set_data(&chat.lock().unwrap(), &mut structs.lock().unwrap(), s, &msg.lock().unwrap());
         } );
     }
 }

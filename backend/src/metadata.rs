@@ -42,14 +42,14 @@ pub struct Channel {
 
 #[derive(Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Structure {
-    pub id:       i32, //[@key "stream"] (* TODO replace by id *)
+    pub id:       i32, //[@key "stream"] (* TODO replace by id and u32 *)
     pub uri:      String,
     pub channels: Vec<Channel>
 }
 
 impl Pid {
     pub fn new (pid: u32, stream_type: u32, stream_type_name: String) -> Pid {
-        Pid { pid, to_be_analyzed: false, content: PidContent::Empty, stream_type, stream_type_name }
+        Pid { pid, to_be_analyzed: true /* TODO fix */, content: PidContent::Empty, stream_type, stream_type_name }
     }
 }
 
@@ -158,6 +158,5 @@ impl Structure {
             }
         }
         None
-    }
-    
+    }    
 }

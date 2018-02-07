@@ -1,6 +1,7 @@
 use gst;
 use gst::prelude::*;
 
+#[derive(Clone,Copy)]
 pub enum Type {
     Video, Audio, Graph_volume, Unknown
 }
@@ -39,7 +40,6 @@ impl SrcPad {
 
         SrcPad { typ, stream, channel, pid, bin, tee, pad: ghost.upcast() }
     }
-
     
 }
 
@@ -49,14 +49,15 @@ impl Clone for SrcPad {
         let ghost   = gst::GhostPad::new(None, &mid_pad).unwrap();
         ghost.set_active(true).unwrap();
 
-        SrcPad { pad: ghost.upcast(), .. *self }
+        SrcPad { typ: self.typ, stream: self.stream, channel: self.channel, pid: self.pid,
+                 bin: self.bin.clone(), tee: self.tee.clone(), pad: ghost.upcast() }
     }
 }
 
 impl Drop for SrcPad {
     fn drop (&mut self) {
         self.bin.remove_pad(&self.pad).unwrap();
-        if let Ok(p) = self.pad.downcast::<gst::GhostPad>() {
+        if let Ok(p) = self.pad.clone().downcast::<gst::GhostPad>() {
             self.tee.remove_pad(&p.get_target().unwrap());
         } else {
             self.tee.remove_pad(&self.pad);
