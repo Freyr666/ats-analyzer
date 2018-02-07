@@ -1,13 +1,12 @@
 use metadata::Structure;
 use std::sync::{Arc,Mutex};
-use chatterer::{Chatterer,Notifier,Addressable,Sendbox,Replybox,MsgType};
+use chatterer::{Notifier,Addressable,Sendbox,Replybox,MsgType};
 use signals::Msg;
 use std::sync::mpsc::Sender;
 use std::str::FromStr;
 use probe::Probe;
 
 pub struct StreamsState {
-    name:       String,
     format:     MsgType,
     sender:     Option<Sender<Vec<u8>>>,
     structures: Arc<Mutex<Vec<Structure>>>,
@@ -19,7 +18,7 @@ pub struct Streams {
 }
 
 impl Addressable for StreamsState {
-    fn get_name (&self) -> &str { &self.name }
+    fn get_name (&self) -> &str { "streams" }
 
     fn set_format (&mut self, t: MsgType) { self.format = t }
     fn get_format (&self) -> MsgType { self.format }
@@ -52,16 +51,12 @@ impl Replybox<Vec<Structure>, ()> for StreamsState {
 
 impl<'a> Notifier<'a, Vec<Structure>> for StreamsState { }
 
-impl<'a> Chatterer<'a, Vec<Structure>> for StreamsState { }
-
 impl Streams {
     pub fn new () -> Streams {
-        let name   = String::from_str("streams").unwrap();
         let update = Arc::new(Mutex::new(Msg::new()));
         let format = MsgType::Json;
-        let sender = None;
         let structures = Arc::new(Mutex::new(vec![]));
-        let state  = Arc::new(Mutex::new(StreamsState { name, update, format, sender, structures }));
+        let state  = Arc::new(Mutex::new(StreamsState { update, format, sender: None, structures }));
         Streams { state }
     }
 

@@ -1,6 +1,5 @@
 //use chatterer::ChattererProxy;
 //use chatterer::Logger;
-use chatterer::Chatterer;
 use initial::Initial;
 use probe::Probe;
 use control::Control;
@@ -26,13 +25,13 @@ pub struct ContextDispatcher {
     table:       HashMap<String, (Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync>)>,
 }
 
-pub struct Context<'a> {
+pub struct Context {
     dispatcher:  Arc<Mutex<ContextDispatcher>>,
     mainloop:    glib::MainLoop,  
     probes:      Vec<Probe>,
     control:     Control,
     streams:     Streams,
-    graph:       Graph<'a>,
+    graph:       Graph,
     preferences: Preferences,
 }
 
@@ -63,8 +62,8 @@ impl ContextDispatcher {
     }
 }
 
-impl<'a> Context<'a> {
-    pub fn new (i : &Initial) -> Result<Context<'a>, String> {
+impl Context {
+    pub fn new (i : &Initial) -> Result<Context, String> {
         gst::init().unwrap();
 
         let dispatcher  = Arc::new(Mutex::new(ContextDispatcher::new()));
@@ -72,7 +71,7 @@ impl<'a> Context<'a> {
         let mut control = Control::new().unwrap();
         let graph       = Graph::new().unwrap();
         let preferences = Preferences::new();
-        let mut probes  = vec![Probe::new(0, "udp://224.1.2.2:1234")];
+        let mut probes  = vec![Probe::new(0, "udp://224.1.2.2:1234"), Probe::new(1, "udp://224.1.2.3:1235")];
         let mut streams = Streams::new();
         
         for probe in &mut probes {
@@ -83,7 +82,7 @@ impl<'a> Context<'a> {
         streams.connect_channel(MsgType::Json, control.sender.clone());
 
         dispatcher.lock().unwrap().add_to_table(&(*streams.state.lock().unwrap()));
-        dispatcher.lock().unwrap().add_to_table(&graph);
+        dispatcher.lock().unwrap().add_to_table(&(*graph.state.lock().unwrap()));
 
         let dis = dispatcher.clone();
         control.connect(move |s| dis.lock().unwrap().dispatch(s).unwrap());

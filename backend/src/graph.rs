@@ -1,26 +1,33 @@
 use chatterer::MsgType;
 use chatterer::{Addressable,Replybox};
-use serde::{Serialize,Deserialize};
 use std::sync::{Arc,Mutex};
+use std::sync::mpsc::Sender;
 use signals::Signal;
+use gst::prelude::*;
 
 #[derive(Serialize,Deserialize,Debug)]
 pub struct GraphSettings {
-    x: i32
+    state: String,
 }
 
-pub struct Graph<'a> {
-    signal:       Arc<Mutex<Signal<&'a GraphSettings>>>,
-    pub settings: &'a GraphSettings
+pub struct GraphState {
+    format:     MsgType,
+    sender:     Option<Sender<Vec<u8>>>,
+    
+    settings:   GraphSettings,
 }
 
-impl<'a> Addressable for Graph<'a> {
-    fn get_name(&self) -> &'static str { "graph" }
-    fn get_format(&self) -> MsgType { MsgType::Json }
-    fn set_format(&mut self, _: MsgType) {}
+pub struct Graph {
+    pub state:   Arc<Mutex<GraphState>>
 }
 
-impl<'a> Replybox<String,String> for Graph<'a> {
+impl Addressable for GraphState {
+    fn get_name(&self) -> &str { "graph" }
+    fn get_format(&self) -> MsgType { self.format }
+    fn set_format(&mut self, f: MsgType) { self.format = f }
+}
+
+impl Replybox<String,String> for GraphState {
     fn reply (&self) -> Box<Fn(String)->Result<String,String> + Send + Sync> {
         Box::new(move |name| {
             let s = String::from("Hello, ");
@@ -29,10 +36,11 @@ impl<'a> Replybox<String,String> for Graph<'a> {
     }
 }
 
-impl<'a> Graph<'a> {
-    pub fn new() -> Result<Graph<'a>,String> {
-        Ok(Graph { signal:   Arc::new(Mutex::new(Signal::new())),
-                   settings: &GraphSettings { x: 42 } })
+impl Graph {
+    pub fn new() -> Result<Graph,String> {
+        let settings = GraphSettings { state: String::from("") };
+        let state = Arc::new(Mutex::new( GraphState { format: MsgType::Json, sender: None, settings } ));
+        Ok(Graph { state } )
     }
 
     //pub fn run();

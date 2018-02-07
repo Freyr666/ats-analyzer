@@ -55,9 +55,9 @@ pub trait Replybox<T,R>: Addressable
     fn reply (&self) -> Box<Fn(T)->Result<R,String> + Send + Sync>;
 }
 
-pub trait Notifier<'a, T>: Addressable
+pub trait Notifier<'a, T>: Addressable + Sendbox<'a>
     where T: Serialize {
-    
+
     fn serialize_msg (&'a self, data: &'a T) -> Vec<u8> {
         let msg = Msg { name: self.get_name(),
                         data };
@@ -66,10 +66,6 @@ pub trait Notifier<'a, T>: Addressable
             MsgType::Msgpack => serde_msgpack::to_vec(&msg).unwrap(),
         }
     }
-}
-
-pub trait Chatterer<'a, T>: Notifier<'a, T> + Sendbox<'a>
-    where T: Serialize {
     
     fn connect_channel (&mut self, m: MsgType, s: Sender<Vec<u8>>) {
         self.set_format(m);
