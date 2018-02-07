@@ -17,7 +17,8 @@ use gst::prelude::*;
 use glib;
 use std::sync::{Arc,Mutex};
 
-use chatterer::{MsgType,Addressable,Dispatcher,DispatchTable};
+use chatterer::MsgType;
+use chatterer::control::{Addressable,Dispatcher,DispatchTable};
 
 pub struct ContextDispatcher {
     format:      MsgType,

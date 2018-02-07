@@ -1,5 +1,6 @@
 use chatterer::MsgType;
-use chatterer::{Addressable,Replybox};
+use chatterer::notif::Notifier;
+use chatterer::control::{Addressable,Replybox};
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
 use signals::Signal;
@@ -10,20 +11,10 @@ pub struct GraphSettings {
     state: String,
 }
 
-pub struct GraphChatterer {
-    format:     MsgType,
-    sender:     Option<Sender<Vec<u8>>>,
-}
-
 pub struct Graph {
     format:      MsgType,
-    pub chat:    Arc<Mutex<GraphChatterer>>,
+    pub chat:    Arc<Mutex<Notifier>>,
     settings:    GraphSettings,
-}
-
-impl Addressable for GraphChatterer {
-    fn get_name(&self) -> &str { "graph" }
-    fn get_format(&self) -> MsgType { self.format }
 }
 
 impl Addressable for Graph {
@@ -43,7 +34,7 @@ impl Replybox<String,String> for Graph {
 impl Graph {
     pub fn new(format: MsgType, sender: Sender<Vec<u8>>) -> Result<Graph,String> {
         let settings = GraphSettings { state: String::from("") };
-        let chat = Arc::new(Mutex::new( GraphChatterer { format: MsgType::Json, sender: None,  } ));
+        let chat = Arc::new(Mutex::new( Notifier::new("graph", format, sender )));
         Ok(Graph { chat, settings, format } )
     }
 }
