@@ -1,10 +1,12 @@
 use chatterer::MsgType;
 use chatterer::notif::Notifier;
 use chatterer::control::{Addressable,Replybox};
+use root::Root;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
 use signals::Signal;
 use gst::prelude::*;
+use gst;
 
 #[derive(Serialize,Deserialize,Debug)]
 pub struct GraphSettings {
@@ -14,7 +16,11 @@ pub struct GraphSettings {
 pub struct Graph {
     format:      MsgType,
     pub chat:    Arc<Mutex<Notifier>>,
+
     settings:    GraphSettings,
+    pipeline:    gst::Pipeline,
+    bus:         gst::Bus,
+    roots:       Vec<Root>,
 }
 
 impl Addressable for Graph {
@@ -32,30 +38,12 @@ impl Replybox<String,String> for Graph {
 }
 
 impl Graph {
+    
     pub fn new(format: MsgType, sender: Sender<Vec<u8>>) -> Result<Graph,String> {
         let settings = GraphSettings { state: String::from("") };
         let chat = Arc::new(Mutex::new( Notifier::new("graph", format, sender )));
         Ok(Graph { chat, settings, format } )
     }
+
+    
 }
-
-// impl<'a,GraphSettings> Chatterer<'a,GraphSettings> for Graph<'a>
-//     where GraphSettings: Serialize+Deserialize<'a>{
-
-//     fn name(&self) -> &'static str {
-//         "graph"
-//     }
-
-//     fn ask_state(&'a self) -> &'a GraphSettings {
-//         let a : &'a GraphSettings = self.settings;
-//         a
-//     }
-
-//     fn set_state(&self, new_state: &GraphSettings) -> Response {
-//         Response::Fine
-//     }
-
-//     fn signal(&self) -> Arc<Mutex<Signal<&'a GraphSettings>>> {
-//         self.signal
-//     }
-// }
