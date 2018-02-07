@@ -10,24 +10,28 @@ pub struct GraphSettings {
     state: String,
 }
 
-pub struct GraphState {
+pub struct GraphChatterer {
     format:     MsgType,
     sender:     Option<Sender<Vec<u8>>>,
-    
-    settings:   GraphSettings,
 }
 
 pub struct Graph {
-    pub state:   Arc<Mutex<GraphState>>
+    format:      MsgType,
+    pub chat:    Arc<Mutex<GraphChatterer>>,
+    settings:    GraphSettings,
 }
 
-impl Addressable for GraphState {
+impl Addressable for GraphChatterer {
     fn get_name(&self) -> &str { "graph" }
     fn get_format(&self) -> MsgType { self.format }
-    fn set_format(&mut self, f: MsgType) { self.format = f }
 }
 
-impl Replybox<String,String> for GraphState {
+impl Addressable for Graph {
+    fn get_name(&self) -> &str { "graph" }
+    fn get_format(&self) -> MsgType { self.format }
+}
+
+impl Replybox<String,String> for Graph {
     fn reply (&self) -> Box<Fn(String)->Result<String,String> + Send + Sync> {
         Box::new(move |name| {
             let s = String::from("Hello, ");
@@ -37,13 +41,11 @@ impl Replybox<String,String> for GraphState {
 }
 
 impl Graph {
-    pub fn new() -> Result<Graph,String> {
+    pub fn new(format: MsgType, sender: Sender<Vec<u8>>) -> Result<Graph,String> {
         let settings = GraphSettings { state: String::from("") };
-        let state = Arc::new(Mutex::new( GraphState { format: MsgType::Json, sender: None, settings } ));
-        Ok(Graph { state } )
+        let chat = Arc::new(Mutex::new( GraphChatterer { format: MsgType::Json, sender: None,  } ));
+        Ok(Graph { chat, settings, format } )
     }
-
-    //pub fn run();
 }
 
 // impl<'a,GraphSettings> Chatterer<'a,GraphSettings> for Graph<'a>

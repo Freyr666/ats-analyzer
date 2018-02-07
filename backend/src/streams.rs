@@ -6,35 +6,34 @@ use std::sync::mpsc::Sender;
 use std::str::FromStr;
 use probe::Probe;
 
-pub struct StreamsState {
+pub struct StreamsChatterer {
     format:     MsgType,
-    sender:     Option<Sender<Vec<u8>>>,
-    structures: Arc<Mutex<Vec<Structure>>>,
-    update:     Arc<Mutex<Msg<Vec<Structure>,Result<(),String>>>>,
+    sender:     Sender<Vec<u8>>,
 }
 
 pub struct Streams {
-    pub state:  Arc<Mutex<StreamsState>>,
+    format:     MsgType,
+    structures: Arc<Mutex<Vec<Structure>>>,
+
+    pub chat:   Arc<Mutex<StreamsChatterer>>,
+    pub update: Arc<Mutex<Msg<Vec<Structure>,Result<(),String>>>>,
 }
 
-impl Addressable for StreamsState {
+impl Addressable for StreamsChatterer {
     fn get_name (&self) -> &str { "streams" }
-
-    fn set_format (&mut self, t: MsgType) { self.format = t }
     fn get_format (&self) -> MsgType { self.format }
 }
 
-impl<'a> Sendbox<'a> for StreamsState {
-    fn set_sender (&mut self, s: Sender<Vec<u8>>) { self.sender = Some(s) }
-    fn get_sender (&'a self) -> Option<&'a Sender<Vec<u8>>> {
-        match self.sender {
-            None => None,
-            Some(ref s) => Some(&s)
-        }
-    }
+impl Addressable for Streams {
+    fn get_name (&self) -> &str { "streams" }
+    fn get_format (&self) -> MsgType { self.format }
 }
 
-impl Replybox<Vec<Structure>, ()> for StreamsState {
+impl Sendbox for StreamsChatterer {
+    fn get_sender (&self) -> &Sender<Vec<u8>> { &self.sender }
+}
+
+impl Replybox<Vec<Structure>, ()> for Streams {
     fn reply (&self) -> Box<Fn(Vec<Structure>)->Result<(),String> + Send + Sync> {
         let signal = self.update.clone();
         let structures = self.structures.clone();
@@ -49,29 +48,17 @@ impl Replybox<Vec<Structure>, ()> for StreamsState {
     }
 }
 
-impl<'a> Notifier<'a, Vec<Structure>> for StreamsState { }
+impl Notifier<Vec<Structure>> for StreamsChatterer { }
 
 impl Streams {
-    pub fn new () -> Streams {
-        let update = Arc::new(Mutex::new(Msg::new()));
-        let format = MsgType::Json;
+    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Streams {
+        let update     = Arc::new(Mutex::new(Msg::new()));
         let structures = Arc::new(Mutex::new(vec![]));
-        let state  = Arc::new(Mutex::new(StreamsState { update, format, sender: None, structures }));
-        Streams { state }
+        let chat       = Arc::new(Mutex::new(StreamsChatterer { format, sender }));
+        Streams { format, chat, update, structures }
     }
 
-    pub fn connect_channel(&mut self, m: MsgType, s: Sender<Vec<u8>>) {
-        let mut chat = self.state.lock().unwrap();
-        chat.set_format(m);
-        chat.set_sender(s);
-    }
-
-    pub fn update (&self) -> Arc<Mutex<Msg<Vec<Structure>,Result<(),String>>>> {
-        self.state.lock().unwrap().update.clone()
-    }
-
-    fn set_data (state: &StreamsState, s: &Structure) {
-        let mut structures = state.structures.lock().unwrap();
+    fn set_data (chat: &StreamsChatterer, structures: &mut Vec<Structure>, s: &Structure) {
         if structures.is_empty()
             || ! (structures.iter().any(|st| st.id == s.id)) {
                 structures.push(s.clone())
@@ -79,13 +66,14 @@ impl Streams {
                 let str = structures.iter_mut().find(|st| st.id == s.id).unwrap();
                 str.from(s)
             }
-        state.talk(&structures);
+        chat.talk(&structures);
     }
     
     pub fn connect_probe (&mut self, p: &mut Probe) {
-        let state = self.state.clone();
+        let chat    = self.chat.clone();
+        let structs = self.structures.clone();
         p.updated.lock().unwrap().connect(move |s| {
-            Streams::set_data(&state.lock().unwrap(), s);
+            Streams::set_data(&chat.lock().unwrap(), &mut structs.lock().unwrap(), s);
         } );
     }
 }

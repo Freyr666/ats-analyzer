@@ -39,14 +39,11 @@ pub enum Response<T> {
 
 pub trait Addressable {
     fn get_name (&self) -> &str;
-
-    fn set_format (&mut self, MsgType);
     fn get_format (&self) -> MsgType;
 }
 
-pub trait Sendbox<'a> {
-    fn set_sender (&mut self, Sender<Vec<u8>>);
-    fn get_sender (&'a self) -> Option<&'a Sender<Vec<u8>>>;
+pub trait Sendbox {
+    fn get_sender (&self) -> &Sender<Vec<u8>>;
 }
 
 pub trait Replybox<T,R>: Addressable
@@ -55,10 +52,10 @@ pub trait Replybox<T,R>: Addressable
     fn reply (&self) -> Box<Fn(T)->Result<R,String> + Send + Sync>;
 }
 
-pub trait Notifier<'a, T>: Addressable + Sendbox<'a>
+pub trait Notifier<T>: Addressable + Sendbox
     where T: Serialize {
 
-    fn serialize_msg (&'a self, data: &'a T) -> Vec<u8> {
+    fn serialize_msg (&self, data: &T) -> Vec<u8> {
         let msg = Msg { name: self.get_name(),
                         data };
         match self.get_format() {
@@ -67,13 +64,8 @@ pub trait Notifier<'a, T>: Addressable + Sendbox<'a>
         }
     }
     
-    fn connect_channel (&mut self, m: MsgType, s: Sender<Vec<u8>>) {
-        self.set_format(m);
-        self.set_sender(s);
-    }
-    
-    fn talk (&'a self, data: &'a T) {
-        let s = self.get_sender().unwrap();
+    fn talk (&self, data: &T) {
+        let s = self.get_sender();
         s.send(self.serialize_msg(data)).unwrap()
     }
 }

@@ -3,7 +3,7 @@
 use initial::Initial;
 use probe::Probe;
 use control::Control;
-use streams::{Streams,StreamsState};
+use streams::{Streams};
 use graph::Graph;
 use graph::GraphSettings;
 use preferences::Preferences;
@@ -20,7 +20,6 @@ use std::sync::{Arc,Mutex};
 use chatterer::{MsgType,Addressable,Dispatcher,DispatchTable};
 
 pub struct ContextDispatcher {
-    name:        String,
     format:      MsgType,
     table:       HashMap<String, (Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync>)>,
 }
@@ -36,8 +35,7 @@ pub struct Context {
 }
 
 impl Addressable for ContextDispatcher {
-    fn get_name (&self) -> &str { &self.name }
-    fn set_format (&mut self, t: MsgType) { self.format = t  }
+    fn get_name (&self) -> &str { "context" }
     fn get_format (&self) -> MsgType { self.format }
 }
 
@@ -54,11 +52,9 @@ impl DispatchTable for ContextDispatcher {
 impl Dispatcher for ContextDispatcher {}
 
 impl ContextDispatcher {
-    pub fn new () -> ContextDispatcher {
-        let name        = String::from_str("context").unwrap();
+    pub fn new (format: MsgType) -> ContextDispatcher {
         let table       = HashMap::new();
-        let format      = MsgType::Json;
-        ContextDispatcher { name, table, format }
+        ContextDispatcher { table, format }
     }
 }
 
@@ -66,23 +62,23 @@ impl Context {
     pub fn new (i : &Initial) -> Result<Context, String> {
         gst::init().unwrap();
 
-        let dispatcher  = Arc::new(Mutex::new(ContextDispatcher::new()));
+        let dispatcher  = Arc::new(Mutex::new(ContextDispatcher::new(MsgType::Json)));
         let mainloop    = glib::MainLoop::new(None, false);
         let mut control = Control::new().unwrap();
-        let graph       = Graph::new().unwrap();
-        let preferences = Preferences::new();
+        
         let mut probes  = vec![Probe::new(0, "udp://224.1.2.2:1234"), Probe::new(1, "udp://224.1.2.3:1235")];
-        let mut streams = Streams::new();
+
+        let mut streams = Streams::new(MsgType::Json, control.sender.clone());
+        let graph       = Graph::new(MsgType::Json, control.sender.clone()).unwrap();
+        let preferences = Preferences::new();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
             streams.connect_probe(probe);
         }
 
-        streams.connect_channel(MsgType::Json, control.sender.clone());
-
-        dispatcher.lock().unwrap().add_to_table(&(*streams.state.lock().unwrap()));
-        dispatcher.lock().unwrap().add_to_table(&(*graph.state.lock().unwrap()));
+        dispatcher.lock().unwrap().add_to_table(&streams);
+        dispatcher.lock().unwrap().add_to_table(&graph);
 
         let dis = dispatcher.clone();
         control.connect(move |s| dis.lock().unwrap().dispatch(s).unwrap());
