@@ -24,6 +24,7 @@ pub mod preferences;
 pub mod pad;
 pub mod branch;
 pub mod root;
+pub mod wm;
 pub mod graph;
 pub mod control;
 pub mod context;
