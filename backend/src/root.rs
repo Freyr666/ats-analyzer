@@ -27,12 +27,10 @@ impl Root {
         let caps_toks: Vec<&str> = pcaps.split('/').collect();
         
         if name_toks.len() != 3 || caps_toks.len() == 0 { return };
-
         let typ = caps_toks[0];
         let pid = u32::from_str_radix(name_toks[2], 16).unwrap();
-
         if let Some (p) = chan.find_pid(pid){
-            if p.to_be_analyzed { return };
+            if !p.to_be_analyzed { return };
         };
 
         if let Some(branch) = Branch::new(stream, chan.number, pid, typ) {
@@ -69,11 +67,11 @@ impl Root {
             let demux_name = format!("demux_{}_{}", m.id, chan.number);
 
             let queue = gst::ElementFactory::make("queue", None).unwrap();
-            let demux = gst::ElementFactory::make("demux", Some(demux_name.as_str())).unwrap();
+            let demux = gst::ElementFactory::make("tsdemux", Some(demux_name.as_str())).unwrap();
 
-            demux.set_property("program-number", &chan.number).unwrap();
-            queue.set_property("max-size-buffers", &200000).unwrap();
-            queue.set_property("max-size-bytes", &429496729).unwrap();
+            demux.set_property("program-number", &(chan.number as i32)).unwrap();
+            queue.set_property("max-size-buffers", &200000u32).unwrap();
+            queue.set_property("max-size-bytes", &429496729u32).unwrap();
 
             let sinkpad = queue.get_static_pad("sink").unwrap();
             let srcpad  = tee.get_request_pad("src_%u").unwrap();

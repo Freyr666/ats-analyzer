@@ -70,7 +70,7 @@ impl Context {
         let mut probes  = vec![Probe::new(0, "udp://224.1.2.2:1234"), Probe::new(1, "udp://224.1.2.3:1235")];
 
         let mut streams = Streams::new(MsgType::Json, control.sender.clone());
-        let graph       = Graph::new(MsgType::Json, control.sender.clone()).unwrap();
+        let mut graph   = Graph::new(MsgType::Json, control.sender.clone()).unwrap();
         let preferences = Preferences::new();
         
         for probe in &mut probes {

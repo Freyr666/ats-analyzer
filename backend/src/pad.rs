@@ -14,7 +14,7 @@ pub struct SrcPad {
 
     bin: gst::Bin,
     tee: gst::Element,
-    pad: gst::Pad,
+    pub pad: gst::Pad,
 }
 
 impl SrcPad {

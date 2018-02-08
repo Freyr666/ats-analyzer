@@ -171,7 +171,8 @@ impl AudioBranch {
             audio_pad_added_c.lock().unwrap().emit(&spad);
             pads_c.lock().unwrap().push(spad);
         });
-        
+
+        bin.sync_children_states();
         AudioBranch { stream, channel, pid, pads, analyser, decoder, bin, sink, pad_added, audio_pad_added }
     }
 
@@ -197,7 +198,7 @@ impl Branch {
     pub fn new(stream: u32, channel: u32, pid: u32, typ: &str) -> Option<Branch> {
         match typ {
             "video" => Some(Branch::Video(VideoBranch::new(stream, channel, pid))),
-            "audio" => Some(Branch::Audio(AudioBranch::new(stream, channel, pid))),
+           // "audio" => Some(Branch::Audio(AudioBranch::new(stream, channel, pid))),
             _       => None
         }
     }
