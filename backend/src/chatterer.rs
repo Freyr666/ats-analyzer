@@ -65,6 +65,13 @@ pub mod control {
         pub data: T,
     }
 
+    #[derive(Deserialize, Debug)]
+    #[serde(tag = "method", content = "body")]
+    pub enum Req<G,S> {
+        Get(G),
+        Set(S),
+    }
+
     #[derive(Serialize, Debug)]
     pub enum Response<T> {
         Fine (T),

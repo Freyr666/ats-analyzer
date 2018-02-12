@@ -1,5 +1,6 @@
 use gst;
 use gst::prelude::*;
+use std::str::FromStr;
 use pad::SrcPad;
 use wm::position::Position;
 use wm::widget::{Widget,WidgetDesc};
@@ -18,7 +19,7 @@ pub struct WidgetVideo {
 }
 
 impl WidgetVideo {
-    pub fn new() -> Box<Widget> {
+    pub fn new() -> WidgetVideo {
         let desc = WidgetDesc {
             position: Position::new(),
             typ: String::from("video"),
@@ -30,14 +31,14 @@ impl WidgetVideo {
         let valve = gst::ElementFactory::make("valve", None).unwrap();
         let scale = gst::ElementFactory::make("videoscale", None).unwrap();
         let caps  = gst::ElementFactory::make("capsfilter", None).unwrap();
-        caps.set_property("caps", &"video/x-raw,pixel-aspect-ratio=1/1").unwrap();
-        Box::new(WidgetVideo {
+        caps.set_property("caps", &gst::Caps::from_str("video/x-raw,pixel-aspect-ratio=1/1").unwrap()).unwrap();
+        WidgetVideo {
             desc,
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
             valve, scale, caps,
-        })
+        }
     }
 
     fn set_enabled(&mut self, enabled: bool) {

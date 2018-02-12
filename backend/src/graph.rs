@@ -2,6 +2,7 @@ use chatterer::MsgType;
 use chatterer::notif::Notifier;
 use chatterer::control::{Addressable,Replybox};
 use root::Root;
+use wm::Wm;
 use pad::{Type,SrcPad};
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
@@ -19,6 +20,7 @@ pub struct GraphState {
     settings:    GraphSettings,
     pipeline:    gst::Pipeline,
     bus:         gst::Bus,
+    pub wm:      Arc<Mutex<Wm>>,
     roots:       Vec<Root>,
 }
 
@@ -44,18 +46,20 @@ impl Replybox<String,String> for Graph {
 }
 
 impl GraphState {
-    pub fn new () -> GraphState {
+    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> GraphState {
         let settings = GraphSettings { state: String::from("") };
         let pipeline = gst::Pipeline::new(None);
+        let wm       = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender)));
         let bus      = pipeline.get_bus().unwrap();
         let roots    = Vec::new();
-        GraphState { settings, pipeline, bus, roots }
+        GraphState { settings, pipeline, wm, bus, roots }
     }
 
     pub fn reset (&mut self) {
         self.pipeline.set_state(gst::State::Null);
         self.roots    = Vec::new();
         self.pipeline = gst::Pipeline::new(None);
+        self.wm.lock().unwrap().reset(self.pipeline.clone());
         self.bus      = self.pipeline.get_bus().unwrap();
     }
 
@@ -72,18 +76,10 @@ impl GraphState {
             if let Some(root) = Root::new(self.pipeline.clone().upcast(), s.clone()) {
                 println!("New root");
                 let pipe = self.pipeline.clone();
+                let wm = self.wm.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
                     println!("Pad added");
-                    match p.typ {
-                        Type::Video => {
-                            let sink = gst::ElementFactory::make("xvimagesink", None).unwrap();
-                            pipe.add(&sink).unwrap();
-                            let sink_pad = sink.get_static_pad("sink").unwrap();
-                            p.pad.link(&sink_pad);
-                            sink.sync_state_with_parent();
-                        },
-                        _ => ()
-                    };
+                    wm.lock().unwrap().plug(p);
                     //pipe.set_state(gst::State::Playing);
                     gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
                 });
@@ -97,8 +93,8 @@ impl GraphState {
 impl Graph {
     
     pub fn new(format: MsgType, sender: Sender<Vec<u8>>) -> Result<Graph,String> {
-        let chat = Arc::new(Mutex::new( Notifier::new("graph", format, sender )));
-        let state = Arc::new(Mutex::new(GraphState::new() ));
+        let chat = Arc::new(Mutex::new( Notifier::new("graph", format, sender.clone() )));
+        let state = Arc::new(Mutex::new(GraphState::new(format, sender) ));
         Ok(Graph { format, chat, state } )
     }
 
