@@ -80,6 +80,8 @@ impl Context {
 
         dispatcher.lock().unwrap().add_to_table(&streams);
         dispatcher.lock().unwrap().add_to_table(&graph);
+        let wm = graph.get_wm();
+        dispatcher.lock().unwrap().add_to_table(&(*wm.lock().unwrap()));
 
         let dis = dispatcher.clone();
         control.connect(move |s| dis.lock().unwrap().dispatch(s).unwrap());

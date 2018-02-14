@@ -7,6 +7,7 @@ use wm::widget::{Widget,WidgetDesc};
 
 pub struct WidgetVideo {
     desc:      WidgetDesc,
+    enabled:   bool,
     uid:       Option<String>,
     stream:    u32,
     channel:   u32,
@@ -25,7 +26,6 @@ impl WidgetVideo {
             typ: String::from("video"),
             aspect: (0,0),
             description: String::from("video widget"),
-            enabled: false,
             layer: 0,
         };
         let valve = gst::ElementFactory::make("valve", None).unwrap();
@@ -34,27 +34,11 @@ impl WidgetVideo {
         caps.set_property("caps", &gst::Caps::from_str("video/x-raw,pixel-aspect-ratio=1/1").unwrap()).unwrap();
         WidgetVideo {
             desc,
+            enabled:   false,
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
             valve, scale, caps,
-        }
-    }
-
-    fn set_enabled(&mut self, enabled: bool) {
-        if self.desc.enabled == enabled { return };
-        self.desc.enabled = enabled;
-        if let Some(ref pad) = self.mixer_pad {
-            if enabled {
-                pad.set_property("alpha", &1.0).unwrap();
-            } else {
-                pad.set_property("alpha", &0.0).unwrap();
-            }
-        };
-        if enabled {
-            self.valve.set_property("drop", &false).unwrap();
-        } else {
-            self.valve.set_property("drop", &true).unwrap();
         }
     }
 
@@ -103,9 +87,26 @@ impl Widget for WidgetVideo {
         src.pad.link(&in_pad.clone());
     }
     
-    fn plug_sink(&mut self, sink: gst::Pad) {
+    fn plug_sink (&mut self, sink: gst::Pad) {
         self.caps.get_static_pad("src").unwrap().link(&sink);
         self.mixer_pad = Some(sink.clone());
+    }
+
+    fn set_enable (&mut self, enabled: bool) {
+        if self.enabled == enabled { return };
+        self.enabled = enabled;
+        if let Some(ref pad) = self.mixer_pad {
+            if enabled {
+                pad.set_property("alpha", &1.0).unwrap();
+            } else {
+                pad.set_property("alpha", &0.0).unwrap();
+            }
+        };
+        if enabled {
+            self.valve.set_property("drop", &false).unwrap();
+        } else {
+            self.valve.set_property("drop", &true).unwrap();
+        }
     }
     
     fn gen_uid(&mut self) -> String {
@@ -122,8 +123,7 @@ impl Widget for WidgetVideo {
         &self.desc
     }
     
-    fn apply_desc(&mut self, d: WidgetDesc) {
-        self.set_enabled(d.enabled);
+    fn apply_desc(&mut self, d: &WidgetDesc) {
         self.set_layer(d.layer);
         self.set_position(d.position);
     }

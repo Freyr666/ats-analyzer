@@ -3,6 +3,7 @@ use std::sync::{Arc,Mutex};
 use chatterer::MsgType;
 use chatterer::notif::Notifier;
 use chatterer::control::{Addressable,Replybox};
+use chatterer::control::message::{Request,Reply};
 use signals::Msg;
 use std::sync::mpsc::Sender;
 use std::str::FromStr;
@@ -22,19 +23,35 @@ impl Addressable for Streams {
     fn get_format (&self) -> MsgType { self.format }
 }
 
-impl Replybox<Vec<Structure>, ()> for Streams {
-    fn reply (&self) -> Box<Fn(Vec<Structure>)->Result<(),String> + Send + Sync> {
-        let signal = self.update.clone();
-        let structures = self.structures.clone();
-        Box::new(move | data: Vec<Structure>| {
-            let mut s = structures.lock().unwrap();
-            *s = data.clone();
-            match signal.lock().unwrap().emit(data) {
-                None    => Err(String::from_str("Streams are not connected to the graph").unwrap()),
-                Some(r) => r
-            }
-        })
-    }
+impl Replybox<Request<Vec<Structure>>,Reply<Vec<Structure>>> for Streams {
+    
+    fn reply (&self) ->
+        Box<Fn(Request<Vec<Structure>>)->Result<Reply<Vec<Structure>>,String> + Send + Sync> {
+            
+            let signal = self.update.clone();
+            let structures = self.structures.clone();
+            Box::new(move | data: Request<Vec<Structure>>| {
+                match data {
+                    Request::Get => 
+                        if let Ok(s) = structures.lock() {
+                            Ok(Reply::Get(s.clone()))
+                        } else {
+                            Err(String::from("can't acquire the structure"))
+                        },
+                    Request::Set(data) => {
+                        let mut s = structures.lock().unwrap();
+                        *s = data.clone();
+                        match signal.lock().unwrap().emit(data) {
+                            None    => Err(String::from_str("Streams are not connected to the graph").unwrap()),
+                            Some(r) => match r {
+                                Ok(()) => Ok(Reply::Set),
+                                Err(e) => Err(e),
+                            }
+                        }
+                    }
+                }
+            })
+        }
 }
 
 impl Streams {
@@ -54,7 +71,6 @@ impl Streams {
                 str.from(s)
             }
         chat.talk(&structures);
-        update.emit(structures.clone());
     }
     
     pub fn connect_probe (&mut self, p: &mut Probe) {

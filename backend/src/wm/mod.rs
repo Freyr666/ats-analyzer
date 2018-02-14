@@ -14,6 +14,7 @@ use gst;
 use glib;
 use chatterer::notif::Notifier;
 use chatterer::control::{Addressable,Replybox};
+use chatterer::control::message::{Request,Reply};
 use chatterer::MsgType;
 use pad::{Type,SrcPad};
 use wm::widget::{Widget,WidgetDesc};
@@ -77,21 +78,47 @@ impl WmState {
                 {
                     let mut widg = widg.lock().unwrap();
                     widg.add_to_pipe(self.pipe.clone().upcast());
-                    uid = widg.gen_uid();
                     let sink_pad = self.mixer.get_request_pad("sink_%u").unwrap();
                     widg.plug_src(pad);
                     widg.plug_sink(sink_pad);
+                    uid = widg.gen_uid();
                 }
                 self.widgets.insert(uid, widg);
             }
             _ => ()
         }
     }
+
+    pub fn set_resolution (&mut self, res: (u32, u32)) {
+
+    }
     
     pub fn from_template (&mut self, t: &WmTemplate) -> Result<(),String> {
+        for &(ref name,_) in &t.widgets {
+            if ! self.widgets.keys().any(|n| n == name) {
+                return Err(format!("Wm: Widget {} does not exists", name))
+            }
+        }
+        t.validate()?;
+        self.widgets.iter_mut().for_each(|(_,w)| w.lock().unwrap().set_enable(false));
+
+        self.layout = HashMap::new();
+        for &(ref cname, ref c) in &t.layout {
+            let position = c.position;
+            let mut widgets  = HashMap::new();
+            for &(ref wname, ref w) in &c.widgets {
+                let widget = self.widgets.get(wname).unwrap().clone();
+                widget.lock().unwrap().apply_desc(&w);
+                widget.lock().unwrap().set_enable(true);
+                widgets.insert(wname.clone(), widget).unwrap();
+            }
+            self.layout.insert(cname.clone(), Container { position, widgets } ).unwrap();
+        }
+        self.set_resolution(t.resolution);
+        self.pipe.set_state(gst::State::Playing);
         Ok(())
     }
-
+    
     pub fn to_template (&self) -> WmTemplate {
         let resolution = self.resolution;
         let layout     = self.layout.iter()
@@ -116,27 +143,41 @@ impl Addressable for Wm {
     fn get_format (&self) -> MsgType { self.format }
 }
 
-impl Replybox<WmTemplatePartial,()> for Wm {
-    fn reply (&self) -> Box<Fn(WmTemplatePartial)->Result<(),String> + Send + Sync> {
-        let state = self.state.clone();
-        let chat  = self.chat.clone();
-        Box::new(move |templ| {
-            let widg = state.lock().unwrap().widgets.iter()
-                .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
-                .collect::<HashMap<String,WidgetDesc>> ();
-            let temp = WmTemplate::from_partial(templ, widg);
-            match temp.validate() {
-                Err(e) => Err(e),
-                Ok(()) => {
-                    let res = state.lock().unwrap().from_template(&temp);
-                    if res.is_ok() { // New layout
-                        chat.lock().unwrap().talk(&temp);
-                    };
-                    res
+impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
+    
+    fn reply (&self) ->
+        Box<Fn(Request<WmTemplatePartial>)->Result<Reply<WmTemplate>,String> + Send + Sync> {
+            let state = self.state.clone();
+            let auxilary = move |templ: WmTemplatePartial| -> Result<(),String> {
+                let widg = state.lock().unwrap().widgets.iter()
+                    .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
+                    .collect();
+                let temp = WmTemplate::from_partial(templ, widg);
+                match temp.validate() {
+                    Err(e) => Err(e),
+                    Ok(()) => {
+                        let res = state.lock().unwrap().from_template(&temp);
+                        res
+                    }
                 }
-            }
-        })
-    }
+            };
+            
+            let state = self.state.clone();
+            Box::new(move |req| {
+                match req {
+                    Request::Get =>
+                        if let Ok(s) = state.lock() {
+                            Ok(Reply::Get(s.to_template()))
+                        } else {
+                            Err(String::from("can't acquire wm layout"))
+                        },
+                    Request::Set(templ) => match auxilary(templ) {
+                        Ok(()) => Ok(Reply::Set),
+                        Err(e) => Err(e),
+                    }
+                }
+            })
+        }
 }
 
 impl Wm {
@@ -148,6 +189,7 @@ impl Wm {
 
     pub fn reset (&mut self, pipe: gst::Pipeline) {
         *self.state.lock().unwrap() = WmState::new(pipe, (1280,720));
+        self.chat.lock().unwrap().talk(&self.state.lock().unwrap().to_template());
     }
 
     pub fn src_pad (&self) -> gst::Pad {

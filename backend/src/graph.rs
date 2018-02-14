@@ -1,15 +1,16 @@
+use gst::prelude::*;
+use gst;
+use std::sync::{Arc,Mutex};
+use std::sync::mpsc::Sender;
 use chatterer::MsgType;
 use chatterer::notif::Notifier;
 use chatterer::control::{Addressable,Replybox};
 use root::Root;
 use wm::Wm;
 use pad::{Type,SrcPad};
-use std::sync::{Arc,Mutex};
-use std::sync::mpsc::Sender;
 use signals::{Signal,Msg};
 use metadata::Structure;
-use gst::prelude::*;
-use gst;
+use renderer::{VideoR,AudioR,Renderer};
 
 #[derive(Serialize,Deserialize,Debug)]
 pub struct GraphSettings {
@@ -22,6 +23,8 @@ pub struct GraphState {
     bus:         gst::Bus,
     pub wm:      Arc<Mutex<Wm>>,
     roots:       Vec<Root>,
+    vrend:       Option<Renderer<VideoR>>,
+    arends:      Arc<Mutex<Vec<Renderer<AudioR>>>>,
 }
 
 pub struct Graph {
@@ -50,9 +53,11 @@ impl GraphState {
         let settings = GraphSettings { state: String::from("") };
         let pipeline = gst::Pipeline::new(None);
         let wm       = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender)));
+        let vrend    = None;
+        let arends   = Arc::new(Mutex::new(Vec::new()));
         let bus      = pipeline.get_bus().unwrap();
         let roots    = Vec::new();
-        GraphState { settings, pipeline, wm, bus, roots }
+        GraphState { settings, pipeline, wm, bus, roots, arends, vrend }
     }
 
     pub fn reset (&mut self) {
@@ -60,7 +65,11 @@ impl GraphState {
         self.roots    = Vec::new();
         self.pipeline = gst::Pipeline::new(None);
         self.wm.lock().unwrap().reset(self.pipeline.clone());
+        self.vrend    = Some(Renderer::<VideoR>::new(5004, self.pipeline.clone().upcast()));
+        self.arends   = Arc::new(Mutex::new(Vec::new()));
         self.bus      = self.pipeline.get_bus().unwrap();
+
+        self.vrend.iter().for_each(|rend| rend.plug(self.wm.lock().unwrap().src_pad().clone()));
     }
 
     pub fn set_state (&self, st: gst::State) {
@@ -68,17 +77,17 @@ impl GraphState {
     }
 
     pub fn apply_streams (&mut self, s: Vec<Structure>) -> Result<(),String> {
-        println!("Apply Stream");
+        //println!("Apply Stream");
         self.reset();
 
         for s in s.iter() {
-            println!("Stream");
+            //println!("Stream");
             if let Some(root) = Root::new(self.pipeline.clone().upcast(), s.clone()) {
-                println!("New root");
+                //println!("New root");
                 let pipe = self.pipeline.clone();
                 let wm = self.wm.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
-                    println!("Pad added");
+                    //println!("Pad added");
                     wm.lock().unwrap().plug(p);
                     //pipe.set_state(gst::State::Playing);
                     gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
@@ -92,16 +101,19 @@ impl GraphState {
 
 impl Graph {
     
-    pub fn new(format: MsgType, sender: Sender<Vec<u8>>) -> Result<Graph,String> {
+    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Result<Graph,String> {
         let chat = Arc::new(Mutex::new( Notifier::new("graph", format, sender.clone() )));
         let state = Arc::new(Mutex::new(GraphState::new(format, sender) ));
         Ok(Graph { format, chat, state } )
     }
 
+    pub fn get_wm (&self) -> Arc<Mutex<Wm>> {
+        self.state.lock().unwrap().wm.clone()
+    }
+    
     pub fn connect_destructive (&mut self, msg: &mut Msg<Vec<Structure>,Result<(),String>>) {
         let state = self.state.clone();
         msg.connect(move |s| {
-            println!("Got structs: {:?}", s);
             state.lock().unwrap().apply_streams(s)
         }).unwrap();
     }
