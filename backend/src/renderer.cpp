@@ -6,8 +6,8 @@ Video_renderer::Video_renderer(int port) : Renderer(port) {
     _encoder = Gst::ElementFactory::create_element("vaapivp8enc");
     _pay     = Gst::ElementFactory::create_element("rtpvp8pay");
     _output  = Gst::ElementFactory::create_element("udpsink");
-    //_encoder->set_property("bitrate", 102400);
-    //_encoder->set_property("yac-qi", 40);
+    _encoder->set_property("bitrate", 3400);
+    //_encoder->set_property("yac-qi", 50);
     //_encoder->set_property("sharpness-level", 3);
     //_encoder->set_property("loop-filter-level", 63);
     _encoder->set_property("rate-control", 2);

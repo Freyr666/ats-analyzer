@@ -23,7 +23,7 @@ Probe::Probe(int s, string uri) : stream(s), metadata(uri, s) {
     src->link(parse)->link(sink);
 
     src->set_property("uri", uri);
-    src->set_property("timeout", 5000000000);
+    src->set_property("timeout", 0);
 
     bus    = pipe->get_bus();
 

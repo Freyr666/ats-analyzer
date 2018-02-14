@@ -36,7 +36,7 @@ namespace Ats {
         void   deserialize(const json&);
 
     private:
-        pair<uint,uint> _resolution = make_pair(1280, 720);
+        pair<uint,uint> _resolution = make_pair(800, 600);
         std::map<std::string,const std::shared_ptr<Wm_widget> > _widgets;
         Wm_treeview                _treeview;
         Glib::RefPtr<Gst::Bin>     _bin;
