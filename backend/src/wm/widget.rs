@@ -6,6 +6,7 @@ use wm::position::Position;
 pub struct WidgetDesc {
     #[serde(rename = "type")]
     pub typ:         String,
+    pub domain:      String,
     pub position:    Position,
     pub layer:       i32,
     pub aspect:      (u32,u32),

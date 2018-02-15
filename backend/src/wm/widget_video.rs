@@ -24,6 +24,7 @@ impl WidgetVideo {
         let desc = WidgetDesc {
             position: Position::new(),
             typ: String::from("video"),
+            domain: String::from(""),
             aspect: (0,0),
             description: String::from("video widget"),
             layer: 0,

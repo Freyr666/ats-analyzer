@@ -2,7 +2,7 @@ VERSION = 0.1.9
 
 VIDEOSRC = ./analyse/videoanalysis/src/
 AUDIOSRC = ./analyse/audioanalysis/src/
-BACKSRC = ./backend/src/
+BACKSRC = ./backend/
 
 all:
 	[ -d build ] || mkdir build
