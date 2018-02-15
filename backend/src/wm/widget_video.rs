@@ -82,6 +82,9 @@ impl Widget for WidgetVideo {
         self.pid     = src.pid;
         let in_pad   = self.valve.get_static_pad("sink").unwrap();
         self.input_pad = Some(in_pad.clone());
+        
+        self.desc.domain = format!("s{}_c{}", src.stream, src.channel);
+
         in_pad.connect_property_caps_notify(move |_| {
             
         });
