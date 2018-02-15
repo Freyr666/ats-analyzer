@@ -16,6 +16,7 @@ use chatterer::notif::Notifier;
 use chatterer::control::{Addressable,Replybox};
 use chatterer::control::message::{Request,Reply};
 use chatterer::MsgType;
+use signals::Signal;
 use pad::{Type,SrcPad};
 use wm::widget::{Widget,WidgetDesc};
 use wm::position::Position;
@@ -70,7 +71,7 @@ impl WmState {
                   pipe, background, background_pad, mixer }
     }
 
-    pub fn plug (&mut self, pad: &SrcPad) {
+    pub fn plug (&mut self, pad: &SrcPad) -> Option<Arc<Mutex<Signal<()>>>> {
         match pad.typ {
             Type::Video => {
                 let uid;
@@ -83,9 +84,11 @@ impl WmState {
                     widg.plug_sink(sink_pad);
                     uid = widg.gen_uid();
                 }
+                let signal = widg.lock().unwrap().linked();
                 self.widgets.insert(uid, widg);
+                Some(signal)
             }
-            _ => ()
+            _ => None
         }
     }
 
@@ -125,7 +128,7 @@ impl WmState {
             .map(|(cname,c)| {
                 let position = c.position;
                 let widgets  = c.widgets.iter()
-                    .map(move |(wname,w)| (wname.clone(), w.lock().unwrap().get_desc().clone()))
+                    .map(move |(wname,w)| (wname.clone(), w.lock().unwrap().get_desc()))
                     .collect();
                 let cont = ContainerTemplate { position, widgets };
                 (cname.clone(), cont)
@@ -197,7 +200,12 @@ impl Wm {
     }
 
     pub fn plug (&mut self, pad: &SrcPad) {
-        self.state.lock().unwrap().plug(&pad);
-        self.chat.lock().unwrap().talk(&self.state.lock().unwrap().to_template());
+        if let Some(linked) = self.state.lock().unwrap().plug(&pad) {
+            let chat  = self.chat.clone();
+            let state = self.state.clone();
+            linked.lock().unwrap().connect(move |&()| {
+                chat.lock().unwrap().talk(&state.lock().unwrap().to_template());
+            });
+        }
     }
 }

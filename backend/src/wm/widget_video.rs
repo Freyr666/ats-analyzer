@@ -1,12 +1,15 @@
 use gst;
+use gst_video::VideoInfo;
 use gst::prelude::*;
 use std::str::FromStr;
 use pad::SrcPad;
+use signals::Signal;
+use std::sync::{Arc,Mutex};
 use wm::position::Position;
 use wm::widget::{Widget,WidgetDesc};
 
 pub struct WidgetVideo {
-    desc:      WidgetDesc,
+    desc:      Arc<Mutex<WidgetDesc>>,
     enabled:   bool,
     uid:       Option<String>,
     stream:    u32,
@@ -17,6 +20,7 @@ pub struct WidgetVideo {
     valve:     gst::Element,
     scale:     gst::Element,
     caps:      gst::Element,
+    linked:    Arc<Mutex<Signal<()>>>,
 }
 
 impl WidgetVideo {
@@ -29,6 +33,8 @@ impl WidgetVideo {
             description: String::from("video widget"),
             layer: 0,
         };
+        let desc  = Arc::new(Mutex::new(desc));
+        let linked = Arc::new(Mutex::new(Signal::new()));
         let valve = gst::ElementFactory::make("valve", None).unwrap();
         let scale = gst::ElementFactory::make("videoscale", None).unwrap();
         let caps  = gst::ElementFactory::make("capsfilter", None).unwrap();
@@ -40,20 +46,48 @@ impl WidgetVideo {
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
             valve, scale, caps,
+            linked,
+        }
+    }
+
+    fn gcd(x: u32, y: u32) -> u32 {
+        let mut x = x;
+        let mut y = y;
+        while y != 0 {
+            let t = y;
+            y = x % y;
+            x = t;
+        }
+        x
+    }
+
+    fn retrieve_aspect (pad: &gst::Pad) -> Option<(u32, u32)> {
+        if let Some(ref caps) = pad.get_current_caps() {
+            let vi = VideoInfo::from_caps(caps).unwrap();
+            let (width, height) = (vi.width(), vi.height());
+            let (par_n, par_d)  = vi.par().into();
+            let x = width * (par_n as u32);
+            let y = height * (par_d as u32);
+            let gcd = WidgetVideo::gcd(x, y);
+            Some((x/gcd, y/gcd))
+        } else {
+            None
         }
     }
 
     fn set_layer(&mut self, layer: i32) {
-        if self.desc.layer == layer { return };
-        self.desc.layer = layer;
+        let mut desc = self.desc.lock().unwrap();
+        if desc.layer == layer { return };
+        desc.layer = layer;
         if let Some(ref pad) = self.mixer_pad {
             pad.set_property("zorder", &(layer+1)).unwrap();
         };
     }
 
     fn set_position(&mut self, position: Position) {
-        if self.desc.position == position { return };
-        self.desc.position = position;
+        let mut desc = self.desc.lock().unwrap();
+        if desc.position == position { return };
+        desc.position = position;
         if let Some(ref pad) = self.mixer_pad {
             let cps = format!("video/x-raw,pixel-aspect-ratio=1/1,height={},width={}",
                               position.get_height(), position.get_width());
@@ -83,10 +117,15 @@ impl Widget for WidgetVideo {
         let in_pad   = self.valve.get_static_pad("sink").unwrap();
         self.input_pad = Some(in_pad.clone());
         
-        self.desc.domain = format!("s{}_c{}", src.stream, src.channel);
-        
-        in_pad.connect_property_caps_notify(move |_| {
-            
+        self.desc.lock().unwrap().domain = format!("s{}_c{}", src.stream, src.channel);
+
+        let desc   = self.desc.clone();
+        let linked = self.linked.clone();
+        in_pad.connect_property_caps_notify(move |pad| {
+            if let Some (aspect) = WidgetVideo::retrieve_aspect(pad) {
+                desc.lock().unwrap().aspect = aspect;
+                linked.lock().unwrap().emit(&());
+            }
         });
         src.pad.link(&in_pad.clone());
     }
@@ -127,13 +166,17 @@ impl Widget for WidgetVideo {
         }
     }
     
-    fn get_desc(&self) -> &WidgetDesc {
-        &self.desc
+    fn get_desc(&self) -> WidgetDesc {
+        self.desc.lock().unwrap().clone()
     }
     
     fn apply_desc(&mut self, d: &WidgetDesc) {
         self.set_layer(d.layer);
         self.set_position(d.position);
+    }
+
+    fn linked(&self) -> Arc<Mutex<Signal<()>>> {
+        self.linked.clone()
     }
 }
 

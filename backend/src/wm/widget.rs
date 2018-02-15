@@ -1,5 +1,7 @@
 use gst;
 use pad::SrcPad;
+use signals::Signal;
+use std::sync::{Arc,Mutex};
 use wm::position::Position;
 
 #[derive(Serialize,Deserialize,Clone)]
@@ -19,6 +21,7 @@ pub trait Widget {
     fn plug_sink(&mut self, gst::Pad);
     fn gen_uid(&mut self) -> String;
     fn set_enable(&mut self, bool);
-    fn get_desc(&self) -> &WidgetDesc;
+    fn get_desc(&self) -> WidgetDesc;
     fn apply_desc(&mut self, &WidgetDesc);
+    fn linked(&self) -> Arc<Mutex<Signal<()>>>;
 }
