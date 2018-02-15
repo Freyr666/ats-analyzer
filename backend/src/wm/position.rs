@@ -1,4 +1,4 @@
-#[derive(Serialize,Deserialize,Clone,Copy,PartialEq)]
+#[derive(Serialize,Deserialize,Clone,Copy,PartialEq,Debug)]
 pub struct Position {
     pub left:   u32,
     pub top:    u32,

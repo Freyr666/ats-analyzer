@@ -84,7 +84,7 @@ impl Widget for WidgetVideo {
         self.input_pad = Some(in_pad.clone());
         
         self.desc.domain = format!("s{}_c{}", src.stream, src.channel);
-
+        
         in_pad.connect_property_caps_notify(move |_| {
             
         });
@@ -93,6 +93,10 @@ impl Widget for WidgetVideo {
     
     fn plug_sink (&mut self, sink: gst::Pad) {
         self.caps.get_static_pad("src").unwrap().link(&sink);
+        if ! self.enabled {
+            self.valve.set_property("drop", &false).unwrap();
+            sink.set_property("alpha", &0.0).unwrap();
+        }
         self.mixer_pad = Some(sink.clone());
     }
 
