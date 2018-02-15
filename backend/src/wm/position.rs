@@ -20,8 +20,8 @@ impl Position {
     pub fn get_y (&self) -> u32 { self.top }
 
     pub fn is_in (&self, other: &Position) -> bool {
-        self.top <= other.top
-            && self.bottom >= other.bottom
+        self.top >= other.top
+            && self.bottom <= other.bottom
             && self.left >= other.left
             && self.right <= other.right
     }

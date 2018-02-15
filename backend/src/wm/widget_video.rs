@@ -92,10 +92,10 @@ impl WidgetVideo {
             let cps = format!("video/x-raw,pixel-aspect-ratio=1/1,height={},width={}",
                               position.get_height(), position.get_width());
             self.caps.set_property("caps", &gst::Caps::from_string(&cps).unwrap()).unwrap();
-            pad.set_property("height", &position.get_height()).unwrap();
-            pad.set_property("wodth", &position.get_width()).unwrap();
-            pad.set_property("xpos", &position.get_x()).unwrap();
-            pad.set_property("ypos", &position.get_y()).unwrap();
+            pad.set_property("height", &(position.get_height() as i32)).unwrap();
+            pad.set_property("width", &(position.get_width() as i32)).unwrap();
+            pad.set_property("xpos", &(position.get_x() as i32)).unwrap();
+            pad.set_property("ypos", &(position.get_y() as i32)).unwrap();
         };
     }
 }

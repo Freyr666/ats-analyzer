@@ -2,13 +2,13 @@ use std::collections::HashMap;
 use wm::position::Position;
 use wm::widget::WidgetDesc;
 
-#[derive(Serialize,Deserialize,Clone)]
+#[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct ContainerTemplate {
     pub position: Position,
     pub widgets:  Vec<(String,WidgetDesc)>,
 }
 
-#[derive(Serialize,Deserialize,Clone)]
+#[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct WmTemplatePartial {
     resolution: (u32, u32),
     layout:     Vec<(String,ContainerTemplate)>,

@@ -113,9 +113,9 @@ impl WmState {
                 let widget = self.widgets.get(wname).unwrap().clone();
                 widget.lock().unwrap().apply_desc(&w);
                 widget.lock().unwrap().set_enable(true);
-                widgets.insert(wname.clone(), widget).unwrap();
+                widgets.insert(wname.clone(), widget);
             }
-            self.layout.insert(cname.clone(), Container { position, widgets } ).unwrap();
+            self.layout.insert(cname.clone(), Container { position, widgets } );
         }
         self.set_resolution(t.resolution);
         self.pipe.set_state(gst::State::Playing);
@@ -156,13 +156,7 @@ impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
                     .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
                     .collect();
                 let temp = WmTemplate::from_partial(templ, widg);
-                match temp.validate() {
-                    Err(e) => Err(e),
-                    Ok(()) => {
-                        let res = state.lock().unwrap().from_template(&temp);
-                        res
-                    }
-                }
+                state.lock().unwrap().from_template(&temp)
             };
             
             let state = self.state.clone();

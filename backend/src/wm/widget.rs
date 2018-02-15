@@ -4,7 +4,7 @@ use signals::Signal;
 use std::sync::{Arc,Mutex};
 use wm::position::Position;
 
-#[derive(Serialize,Deserialize,Clone)]
+#[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct WidgetDesc {
     #[serde(rename = "type")]
     pub typ:         String,
