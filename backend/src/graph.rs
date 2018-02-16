@@ -18,6 +18,8 @@ pub struct GraphSettings {
 }
 
 pub struct GraphState {
+    format:      MsgType,
+    sender:      Sender<Vec<u8>>,
     settings:    GraphSettings,
     pipeline:    gst::Pipeline,
     bus:         gst::Bus,
@@ -52,12 +54,12 @@ impl GraphState {
     pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> GraphState {
         let settings = GraphSettings { state: String::from("") };
         let pipeline = gst::Pipeline::new(None);
-        let wm       = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender)));
+        let wm       = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender.clone())));
         let vrend    = None;
         let arends   = Arc::new(Mutex::new(Vec::new()));
         let bus      = pipeline.get_bus().unwrap();
         let roots    = Vec::new();
-        GraphState { settings, pipeline, wm, bus, roots, arends, vrend }
+        GraphState { settings, pipeline, wm, bus, roots, arends, vrend, format, sender }
     }
 
     pub fn reset (&mut self) {
@@ -79,10 +81,10 @@ impl GraphState {
     pub fn apply_streams (&mut self, s: Vec<Structure>) -> Result<(),String> {
         //println!("Apply Stream");
         self.reset();
-
+        
         for s in s.iter() {
             //println!("Stream");
-            if let Some(root) = Root::new(self.pipeline.clone().upcast(), s.clone()) {
+            if let Some(root) = Root::new(self.pipeline.clone().upcast(), s.clone(), self.format, self.sender.clone()) {
                 //println!("New root");
                 let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
@@ -112,7 +114,7 @@ impl Graph {
     
     pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Result<Graph,String> {
         let chat = Arc::new(Mutex::new( Notifier::new("graph", format, sender.clone() )));
-        let state = Arc::new(Mutex::new(GraphState::new(format, sender) ));
+        let state = Arc::new(Mutex::new(GraphState::new(format, sender.clone()) ));
         Ok(Graph { format, chat, state } )
     }
 
@@ -121,7 +123,7 @@ impl Graph {
     }
     
     pub fn connect_destructive (&mut self, msg: &mut Msg<Vec<Structure>,Result<(),String>>) {
-        let state = self.state.clone();
+        let state  = self.state.clone();
         msg.connect(move |s| {
             state.lock().unwrap().apply_streams(s)
         }).unwrap();

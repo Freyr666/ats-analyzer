@@ -1,9 +1,13 @@
 use std::sync::{Arc,Mutex};
+use std::sync::mpsc::Sender;
 use gst::prelude::*;
+use glib;
 use gst;
 use std::str::Split;
 use pad::SrcPad;
+use video_data::VideoData;
 use signals::Signal;
+use chatterer::MsgType;
 
 struct CommonBranch {
     decoder: gst::Element,
@@ -53,7 +57,7 @@ pub struct VideoBranch {
 }
 
 impl VideoBranch {
-    pub fn new (stream: u32, channel: u32, pid: u32) -> VideoBranch {
+    pub fn new (stream: u32, channel: u32, pid: u32, format: MsgType, sender: Sender<Vec<u8>>) -> VideoBranch {
         let common = CommonBranch::new();
         
         let pads      = Arc::new(Mutex::new(Vec::new()));
@@ -61,6 +65,7 @@ impl VideoBranch {
         let decoder   = common.decoder;
         let bin       = common.bin;
         let sink      = common.sink;
+        let vdata     = Arc::new(Mutex::new(VideoData::new(stream, channel, pid, format, sender)));
         let pad_added = Arc::new(Mutex::new(Signal::new()));
 
         let bin_c = bin.clone();
@@ -87,6 +92,16 @@ impl VideoBranch {
 
             deint.sync_state_with_parent();
             analyser_c.sync_state_with_parent();
+
+            let vdata = vdata.clone();
+            analyser_c.connect("data", true, move |vals| {
+                let dsz: u64       = vals[1].get::<u64>().expect("Expect dsz");
+                let d: gst::Buffer = vals[2].get::<gst::Buffer>().expect("Expect d");
+                let esz: u64       = vals[3].get::<u64>().expect("Expect esz");
+                let e: gst::Buffer = vals[4].get::<gst::Buffer>().expect("Expect e");
+                vdata.lock().unwrap().send_msg(dsz, d, esz, e);
+                None
+            });
 
             pad.link(&sink_pad);
 
@@ -197,9 +212,9 @@ pub enum Branch {
 
 impl Branch {
 
-    pub fn new(stream: u32, channel: u32, pid: u32, typ: &str) -> Option<Branch> {
+    pub fn new(stream: u32, channel: u32, pid: u32, typ: &str, format: MsgType, sender: Sender<Vec<u8>>) -> Option<Branch> {
         match typ {
-            "video" => Some(Branch::Video(VideoBranch::new(stream, channel, pid))),
+            "video" => Some(Branch::Video(VideoBranch::new(stream, channel, pid, format, sender))),
            // "audio" => Some(Branch::Audio(AudioBranch::new(stream, channel, pid))),
             _       => None
         }
