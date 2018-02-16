@@ -13,6 +13,7 @@ pub struct Root {
     tee:           gst::Element,
     branches:      Arc<Mutex<Vec<Branch>>>,
     pub pad_added: Arc<Mutex<Signal<SrcPad>>>,
+    pub audio_pad_added: Arc<Mutex<Signal<SrcPad>>>,
 }
 
 impl Root {
@@ -20,6 +21,7 @@ impl Root {
     fn build_branch (branches: &mut Vec<Branch>,
                      stream: u32, chan: &Channel,
                      added: Arc<Mutex<Signal<SrcPad>>>,
+                     audio_added: Arc<Mutex<Signal<SrcPad>>>,
                      bin: gst::Bin, pad: &gst::Pad) {
         let pname = pad.get_name();
         let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
@@ -38,7 +40,10 @@ impl Root {
             branch.plug(&pad);
             match branch {
                 Branch::Video(ref b) => b.pad_added.lock().unwrap().connect(move |p| added.lock().unwrap().emit(p)),
-                Branch::Audio(ref b) => b.pad_added.lock().unwrap().connect(move |p| added.lock().unwrap().emit(p)),
+                Branch::Audio(ref b) => {
+                    b.pad_added.lock().unwrap().connect(move |p| added.lock().unwrap().emit(p));
+                    b.audio_pad_added.lock().unwrap().connect(move |p| audio_added.lock().unwrap().emit(p));
+                },
             };
 
             branches.push(branch);
@@ -53,6 +58,7 @@ impl Root {
         let tee = gst::ElementFactory::make("tee", None).unwrap();
         let branches = Arc::new(Mutex::new(Vec::new()));
         let pad_added = Arc::new(Mutex::new(Signal::new()));
+        let audio_pad_added = Arc::new(Mutex::new(Signal::new()));
         
         src.set_property("uri", &m.uri).unwrap();
         src.set_property("buffer-size", &2147483647).unwrap();
@@ -85,13 +91,14 @@ impl Root {
             let bin_cc = bin_c.clone();
             let branches_c = branches.clone();
             let pad_added_c = pad_added.clone();
+            let audio_pad_added_c = audio_pad_added.clone();
 
             demux.connect_pad_added(move | _, pad | {
                 Root::build_branch(&mut branches_c.lock().unwrap(), stream, &chan,
-                                   pad_added_c.clone(), bin_cc.clone(), pad);
+                                   pad_added_c.clone(), audio_pad_added_c.clone(), bin_cc.clone(), pad);
             });
         };
 
-        Some(Root { bin, src, tee, branches, pad_added })
+        Some(Root { bin, src, tee, branches, pad_added, audio_pad_added })
     }
 }

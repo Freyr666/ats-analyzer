@@ -166,10 +166,12 @@ impl AudioBranch {
             pad.link(&sink_pad);
 
             let spad = SrcPad::new(stream, channel, pid, "audio", bin_c.clone(), src_pad);
-
+            let aspad = spad.clone();
+            
             pad_added_c.lock().unwrap().emit(&spad);
-            audio_pad_added_c.lock().unwrap().emit(&spad);
+            audio_pad_added_c.lock().unwrap().emit(&aspad);
             pads_c.lock().unwrap().push(spad);
+            pads_c.lock().unwrap().push(aspad);
         });
 
         bin.sync_children_states();

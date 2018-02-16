@@ -84,16 +84,25 @@ impl GraphState {
             //println!("Stream");
             if let Some(root) = Root::new(self.pipeline.clone().upcast(), s.clone()) {
                 //println!("New root");
-                let pipe = self.pipeline.clone();
-                let wm = self.wm.clone();
+                let pipe   = self.pipeline.clone();
+                let wm     = self.wm.clone();
+                let apipe  = self.pipeline.clone();
+                let arends = self.arends.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
                     //println!("Pad added");
                     wm.lock().unwrap().plug(p);
                     //pipe.set_state(gst::State::Playing);
                     gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
                 });
+                
+                root.audio_pad_added.lock().unwrap().connect(move |p| {
+                    let arend = Renderer::<AudioR>::new((5005 + p.stream + p.pid) as i32, apipe.clone().upcast());
+                    arend.plug(p);
+                    arends.lock().unwrap().push(arend);
+                });
             }
         };
+        // TODO replace with retain_state
         self.pipeline.set_state(gst::State::Playing);
         Ok(())
     }
