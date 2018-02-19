@@ -12,21 +12,15 @@ use chatterer::MsgType;
 #[derive(Serialize,Deserialize,Debug)]
 #[repr(C)]
 struct Params {
-    frozen_pix: f32,
-    black_pix:  f32,
-    blocks:     f32,
-    avg_bright: f32,
-    avg_diff:   f32,
-    time:       i64,
+    shortt: f64,
+    moment: f64,
+    time:   i64,
 }
 
 #[repr(C)]
 enum Parameter {
-    Black,
-    Luma,
-    Freeze,
-    Diff,
-    Blocky,
+    Silence,
+    Loudness,
     ParamNumber,
 }
 
@@ -41,11 +35,8 @@ struct ErrorFlags {
 #[derive(Serialize,Deserialize,Debug)]
 struct Errors<'a> {
     #[serde(bound(deserialize = "&'a [ErrorFlags]: Deserialize<'de>"))]
-    black:  &'a [ErrorFlags],
-    luma:   &'a [ErrorFlags],
-    freeze: &'a [ErrorFlags],
-    diff:   &'a [ErrorFlags],
-    blocky: &'a [ErrorFlags],
+    silence:  &'a [ErrorFlags],
+    loudness: &'a [ErrorFlags],
 } 
 
 #[derive(Serialize,Deserialize,Debug)]
@@ -59,7 +50,7 @@ struct Msg<'a> {
     errors:     Errors<'a>
 }
 
-pub struct VideoData {
+pub struct AudioData {
     stream:     u32,
     channel:    u32,
     pid:        u32,
@@ -67,56 +58,47 @@ pub struct VideoData {
     mmap:       *mut gst_sys::GstMapInfo,
 }
 
-unsafe impl Send for VideoData {}
+unsafe impl Send for AudioData {}
 
-//unsafe impl Sync for VideoData {}
+// unsafe impl Sync for AudioData {}
 
-impl VideoData {
+impl AudioData {
 
-    pub fn new (stream: u32, channel: u32, pid: u32, format: MsgType, sender: Sender<Vec<u8>>) -> VideoData {
+    pub fn new (stream: u32, channel: u32, pid: u32, format: MsgType, sender: Sender<Vec<u8>>) -> AudioData {
         let mmap :  *mut gst_sys::GstMapInfo;
         unsafe {
             mmap = libc::malloc(mem::size_of::<gst_sys::GstMapInfo>()) as *mut gst_sys::GstMapInfo;
         }
-        VideoData { stream, channel, pid, notif: Notifier::new("video_data", format, sender), mmap }
+        AudioData { stream, channel, pid, notif: Notifier::new("audio_data", format, sender), mmap }
     }
 
     pub fn send_msg (&self, dsz: u64, dbuf: gst::Buffer, esz: u64, ebuf: gst::Buffer) {
         let parameters: &[Params];
         unsafe {
             if gst_sys::gst_buffer_map(dbuf.as_mut_ptr(), self.mmap, gst_sys::GstMapFlags::READ) == 0 {
-                panic!("video_data: dbuf mmap failure");
+                panic!("audio_data: dbuf mmap failure");
             }
             let pointer: *const Params = (*self.mmap).data as *const Params;
             parameters = slice::from_raw_parts(pointer, (dsz as usize));
         }
         
         let mut errors = Errors {
-            black:  &[],
-            luma:   &[],
-            freeze: &[],
-            diff:   &[],
-            blocky: &[]
+            silence:  &[],
+            loudness: &[],
         };
         unsafe {
             if gst_sys::gst_buffer_map(ebuf.as_mut_ptr(), self.mmap, gst_sys::GstMapFlags::READ) == 0 {
-                panic!("video_data: ebuf mmap failure");
+                panic!("audio_data: ebuf mmap failure");
             }
             let pointer: *const ErrorFlags = (*self.mmap).data as *const ErrorFlags;
             for i in 0..(Parameter::ParamNumber as usize) {
                 let p = pointer.offset((i * (esz as usize)) as isize);
                 match i {
-                    i if i == (Parameter::Black as usize) =>
-                        errors.black = slice::from_raw_parts(p, (esz as usize)),
-                    i if i == (Parameter::Blocky as usize) =>
-                        errors.blocky = slice::from_raw_parts(p, (esz as usize)),
-                    i if i == (Parameter::Diff as usize)
-                        => errors.diff = slice::from_raw_parts(p, (esz as usize)),
-                    i if i == (Parameter::Freeze as usize)
-                        => errors.freeze = slice::from_raw_parts(p, (esz as usize)),
-                    i if i == (Parameter::Luma as usize)
-                        => errors.luma = slice::from_raw_parts(p, (esz as usize)),
-                    _ => panic!("video_data: too much params")
+                    i if i == (Parameter::Silence as usize) =>
+                        errors.silence = slice::from_raw_parts(p, (esz as usize)),
+                    i if i == (Parameter::Loudness as usize) =>
+                        errors.loudness = slice::from_raw_parts(p, (esz as usize)),
+                    _ => panic!("audio_data: too much params")
                 }
             }
         }
@@ -128,7 +110,7 @@ impl VideoData {
 
 }
 
-impl Drop for VideoData {
+impl Drop for AudioData {
     fn drop(&mut self) {
         unsafe {
             libc::free(self.mmap as *mut libc::c_void);

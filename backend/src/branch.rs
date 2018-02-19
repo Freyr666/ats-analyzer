@@ -6,6 +6,7 @@ use gst;
 use std::str::Split;
 use pad::SrcPad;
 use video_data::VideoData;
+use audio_data::AudioData;
 use signals::Signal;
 use chatterer::MsgType;
 
@@ -65,8 +66,10 @@ impl VideoBranch {
         let decoder   = common.decoder;
         let bin       = common.bin;
         let sink      = common.sink;
-        let vdata     = Arc::new(Mutex::new(VideoData::new(stream, channel, pid, format, sender)));
         let pad_added = Arc::new(Mutex::new(Signal::new()));
+
+        // TODO consider lock removal
+        let vdata     = Arc::new(Mutex::new(VideoData::new(stream, channel, pid, format, sender)));        
 
         let bin_c = bin.clone();
         let pads_c = pads.clone();
@@ -141,7 +144,7 @@ pub struct AudioBranch {
 }
 
 impl AudioBranch {
-    pub fn new (stream: u32, channel: u32, pid: u32) -> AudioBranch {
+    pub fn new (stream: u32, channel: u32, pid: u32, format: MsgType, sender: Sender<Vec<u8>>) -> AudioBranch {
         let common = CommonBranch::new();
         
         let pads      = Arc::new(Mutex::new(Vec::new()));
@@ -151,6 +154,9 @@ impl AudioBranch {
         let sink      = common.sink;
         let pad_added = Arc::new(Mutex::new(Signal::new()));
         let audio_pad_added = Arc::new(Mutex::new(Signal::new()));
+
+        // TODO consider lock removal
+        let adata = Arc::new(Mutex::new(AudioData::new(stream, channel, pid, format, sender)));
         
         let bin_c = bin.clone();
         let pads_c = pads.clone();
@@ -167,16 +173,26 @@ impl AudioBranch {
 
             if *typ != "audio" { return };
 
-            let deint = gst::ElementFactory::make("deinterlace",None).unwrap();
+            let conv = gst::ElementFactory::make("audioconvert",None).unwrap();
 
-            let sink_pad = deint.get_static_pad("sink").unwrap();
+            let sink_pad = conv.get_static_pad("sink").unwrap();
             let src_pad  = analyser_c.get_static_pad("src").unwrap();
 
-            bin_c.add_many(&[&deint, &analyser_c]).unwrap();
-            deint.link(&analyser_c).unwrap();
+            bin_c.add_many(&[&conv, &analyser_c]).unwrap();
+            conv.link(&analyser_c).unwrap();
 
-            deint.sync_state_with_parent();
+            conv.sync_state_with_parent();
             analyser_c.sync_state_with_parent();
+
+            let adata = adata.clone();
+            analyser_c.connect("data", true, move |vals| {
+                let dsz: u64       = vals[1].get::<u64>().expect("Expect dsz");
+                let d: gst::Buffer = vals[2].get::<gst::Buffer>().expect("Expect d");
+                let esz: u64       = vals[3].get::<u64>().expect("Expect esz");
+                let e: gst::Buffer = vals[4].get::<gst::Buffer>().expect("Expect e");
+                adata.lock().unwrap().send_msg(dsz, d, esz, e);
+                None
+            });
 
             pad.link(&sink_pad);
 
@@ -215,7 +231,7 @@ impl Branch {
     pub fn new(stream: u32, channel: u32, pid: u32, typ: &str, format: MsgType, sender: Sender<Vec<u8>>) -> Option<Branch> {
         match typ {
             "video" => Some(Branch::Video(VideoBranch::new(stream, channel, pid, format, sender))),
-           // "audio" => Some(Branch::Audio(AudioBranch::new(stream, channel, pid))),
+            "audio" => Some(Branch::Audio(AudioBranch::new(stream, channel, pid, format, sender))),
             _       => None
         }
     }

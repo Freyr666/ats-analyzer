@@ -24,6 +24,7 @@ pub mod streams;
 pub mod preferences;
 pub mod pad;
 pub mod video_data;
+pub mod audio_data;
 pub mod branch;
 pub mod root;
 pub mod wm;
