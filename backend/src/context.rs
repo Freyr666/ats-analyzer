@@ -67,10 +67,14 @@ impl Context {
         let mainloop    = glib::MainLoop::new(None, false);
         let mut control = Control::new().unwrap();
         
-        let mut probes  = vec![Probe::new(0, "udp://224.1.2.2:1234"), Probe::new(1, "udp://224.1.2.3:1235")];
+        let mut probes  = Vec::new();
 
-        let mut streams = Streams::new(MsgType::Json, control.sender.clone());
-        let mut graph   = Graph::new(MsgType::Json, control.sender.clone()).unwrap();
+        for sid in 0..i.uris.len() {
+            probes.push(Probe::new(sid as i32,&i.uris[sid]));
+        };
+
+        let mut streams = Streams::new(i.msg_type, control.sender.clone());
+        let mut graph   = Graph::new(i.msg_type, control.sender.clone()).unwrap();
         let preferences = Preferences::new();
         
         for probe in &mut probes {
