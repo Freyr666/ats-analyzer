@@ -58,7 +58,7 @@ impl Streams {
     pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Streams {
         let update     = Arc::new(Mutex::new(Msg::new()));
         let structures = Arc::new(Mutex::new(vec![]));
-        let chat       = Arc::new(Mutex::new(Notifier::new("streams", format, sender )));
+        let chat       = Arc::new(Mutex::new(Notifier::new("structures", format, sender )));
         Streams { format, chat, update, structures }
     }
 
