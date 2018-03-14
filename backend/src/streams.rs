@@ -19,7 +19,7 @@ pub struct Streams {
 }
 
 impl Addressable for Streams {
-    fn get_name (&self) -> &str { "streams" }
+    fn get_name (&self) -> &str { "structures" }
     fn get_format (&self) -> MsgType { self.format }
 }
 
