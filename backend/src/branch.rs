@@ -98,11 +98,8 @@ impl VideoBranch {
 
             let vdata = vdata.clone();
             analyser_c.connect("data", true, move |vals| {
-                let dsz: u64       = vals[1].get::<u64>().expect("Expect dsz");
-                let d: gst::Buffer = vals[2].get::<gst::Buffer>().expect("Expect d");
-                let esz: u64       = vals[3].get::<u64>().expect("Expect esz");
-                let e: gst::Buffer = vals[4].get::<gst::Buffer>().expect("Expect e");
-                vdata.lock().unwrap().send_msg(dsz, d, esz, e);
+                let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
+                vdata.lock().unwrap().send_msg(d);
                 None
             });
 
