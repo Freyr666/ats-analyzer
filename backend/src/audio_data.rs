@@ -11,32 +11,39 @@ use chatterer::MsgType;
 
 #[derive(Serialize,Deserialize,Debug)]
 #[repr(C)]
-struct Params {
-    shortt: f64,
-    moment: f64,
-    time:   i64,
+struct Param {
+    min: f64,
+    max: f64,
+    avg: f64,
 }
 
 #[repr(C)]
 enum Parameter {
-    Silence,
-    Loudness,
+    SilenceShortt,
+    SilenceMoment,
+    LoudnessShortt,
+    LoudnessMoment,
     ParamNumber,
 }
 
 #[derive(Serialize,Deserialize,Debug)]
 #[repr(C)]
-struct ErrorFlags {
-    cont: bool,
-    peak: bool,
-    time: i64,
+struct Error {
+    counter:   i32,
+    size:      i32,
+    params:    Param,
+    timestamp: i64,
+    peak_flag: bool,
+    cont_flag: bool,
 }
 
 #[derive(Serialize,Deserialize,Debug)]
 struct Errors<'a> {
-    #[serde(bound(deserialize = "&'a [ErrorFlags]: Deserialize<'de>"))]
-    silence:  &'a [ErrorFlags],
-    loudness: &'a [ErrorFlags],
+    #[serde(bound(deserialize = "&'a Error: Deserialize<'de>"))]
+    silence_shortt:  &'a Error,
+    silence_moment:  &'a Error,
+    loudness_shortt: &'a Error,
+    loudness_moment: &'a Error,
 } 
 
 #[derive(Serialize,Deserialize,Debug)]
@@ -44,8 +51,6 @@ struct Msg<'a> {
     stream:     u32,
     channel:    u32,
     pid:        u32,
-    #[serde(bound(deserialize = "&'a [Params]: Deserialize<'de>"))]
-    parameters: &'a [Params],
     #[serde(bound(deserialize = "Errors<'a>: Deserialize<'de>"))]
     errors:     Errors<'a>
 }
@@ -72,40 +77,26 @@ impl AudioData {
         AudioData { stream, channel, pid, notif: Notifier::new("audio_data", format, sender), mmap }
     }
 
-    pub fn send_msg (&self, dsz: u64, dbuf: gst::Buffer, esz: u64, ebuf: gst::Buffer) {
-        let parameters: &[Params];
+    pub fn send_msg (&self, buf: gst::Buffer) {
         unsafe {
-            if gst_sys::gst_buffer_map(dbuf.as_mut_ptr(), self.mmap, gst_sys::GstMapFlags::READ) == 0 {
-                panic!("audio_data: dbuf mmap failure");
+            if gst_sys::gst_buffer_map(buf.as_mut_ptr(), self.mmap, gst_sys::GstMapFlags::READ) == 0 {
+                panic!("audio_data: buf mmap failure");
             }
-            let pointer: *const Params = (*self.mmap).data as *const Params;
-            parameters = slice::from_raw_parts(pointer, (dsz as usize));
-        }
-        
-        let mut errors = Errors {
-            silence:  &[],
-            loudness: &[],
-        };
-        unsafe {
-            if gst_sys::gst_buffer_map(ebuf.as_mut_ptr(), self.mmap, gst_sys::GstMapFlags::READ) == 0 {
-                panic!("audio_data: ebuf mmap failure");
-            }
-            let pointer: *const ErrorFlags = (*self.mmap).data as *const ErrorFlags;
-            for i in 0..(Parameter::ParamNumber as usize) {
-                let p = pointer.offset((i * (esz as usize)) as isize);
-                match i {
-                    i if i == (Parameter::Silence as usize) =>
-                        errors.silence = slice::from_raw_parts(p, (esz as usize)),
-                    i if i == (Parameter::Loudness as usize) =>
-                        errors.loudness = slice::from_raw_parts(p, (esz as usize)),
-                    _ => panic!("audio_data: too much params")
-                }
-            }
-        }
-        let msg = Msg { stream: self.stream, channel: self.channel, pid: self.pid,
-                        parameters, errors };
+            let pointer: *const Error = (*self.mmap).data as *const Error;
+            let err_buf = slice::from_raw_parts(pointer, (Parameter::ParamNumber as usize));
+            let errors = Errors {
+                silence_shortt:  &err_buf[Parameter::SilenceShortt as usize],
+                silence_moment:  &err_buf[Parameter::SilenceMoment as usize],
+                loudness_shortt: &err_buf[Parameter::LoudnessShortt as usize],
+                loudness_moment: &err_buf[Parameter::LoudnessMoment as usize],
+            };
+            let msg = Msg { stream: self.stream,
+                            channel: self.channel,
+                            pid: self.pid,
+                            errors };
 
-        self.notif.talk(&msg);
+            self.notif.talk(&msg);
+        }
     }
 
 }
