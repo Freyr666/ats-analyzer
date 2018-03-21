@@ -10,17 +10,13 @@ use wm::Wm;
 use pad::{Type,SrcPad};
 use signals::{Signal,Msg};
 use metadata::Structure;
+use settings::Settings;
 use renderer::{VideoR,AudioR,Renderer};
-
-#[derive(Serialize,Deserialize,Debug)]
-pub struct GraphSettings {
-    state: String,
-}
 
 pub struct GraphState {
     format:      MsgType,
     sender:      Sender<Vec<u8>>,
-    settings:    GraphSettings,
+    settings:    Option<Settings>,
     pipeline:    gst::Pipeline,
     bus:         gst::Bus,
     pub wm:      Arc<Mutex<Wm>>,
@@ -52,7 +48,7 @@ impl Replybox<String,String> for Graph {
 
 impl GraphState {
     pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> GraphState {
-        let settings = GraphSettings { state: String::from("") };
+        let settings = None;
         let pipeline = gst::Pipeline::new(None);
         let wm       = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender.clone())));
         let vrend    = None;
@@ -84,7 +80,9 @@ impl GraphState {
         
         for s in s.iter() {
             //println!("Stream");
-            if let Some(root) = Root::new(self.pipeline.clone().upcast(), s.clone(), self.format, self.sender.clone()) {
+            if let Some(root) = Root::new(self.pipeline.clone().upcast(), s.clone(),
+                                          self.settings.clone(),
+                                          self.format, self.sender.clone()) {
                 //println!("New root");
                 let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
@@ -108,6 +106,12 @@ impl GraphState {
         self.pipeline.set_state(gst::State::Playing);
         Ok(())
     }
+
+    pub fn apply_settings (&mut self, s: Settings) -> Result<(),String> {
+        self.settings = Some(s);
+        self.roots.iter_mut().for_each(|root : &mut Root| root.apply_settings(s) );
+        Ok(())
+    }
 }
 
 impl Graph {
@@ -126,6 +130,13 @@ impl Graph {
         let state  = self.state.clone();
         msg.connect(move |s| {
             state.lock().unwrap().apply_streams(s)
+        }).unwrap();
+    }
+
+    pub fn connect_settings (&mut self, msg: &mut Msg<Settings,Result<(),String>>) {
+        let state  = self.state.clone();
+        msg.connect(move |s| {
+            state.lock().unwrap().apply_settings(s)
         }).unwrap();
     }
     

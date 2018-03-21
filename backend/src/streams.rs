@@ -6,7 +6,6 @@ use chatterer::control::{Addressable,Replybox};
 use chatterer::control::message::{Request,Reply};
 use signals::Msg;
 use std::sync::mpsc::Sender;
-use std::str::FromStr;
 use probe::Probe;
 
 
@@ -42,7 +41,7 @@ impl Replybox<Request<Vec<Structure>>,Reply<Vec<Structure>>> for Streams {
                         let mut s = structures.lock().unwrap();
                         *s = data.clone();
                         match signal.lock().unwrap().emit(data) {
-                            None    => Err(String::from_str("Streams are not connected to the graph").unwrap()),
+                            None    => Err(String::from("Streams are not connected to the graph")),
                             Some(r) => match r {
                                 Ok(()) => Ok(Reply::Set),
                                 Err(e) => Err(e),

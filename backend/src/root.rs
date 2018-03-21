@@ -3,6 +3,7 @@ use gst;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
 use metadata::{Channel,Structure};
+use settings::Settings;
 use signals::Signal;
 use chatterer::MsgType;
 use pad::SrcPad;
@@ -13,6 +14,7 @@ pub struct Root {
     bin:           gst::Bin,
     src:           gst::Element,
     tee:           gst::Element,
+    settings:      Arc<Mutex<Option<Settings>>>,
     branches:      Arc<Mutex<Vec<Branch>>>,
     pub pad_added: Arc<Mutex<Signal<SrcPad>>>,
     pub audio_pad_added: Arc<Mutex<Signal<SrcPad>>>,
@@ -22,6 +24,7 @@ impl Root {
 
     fn build_branch (branches: &mut Vec<Branch>,
                      stream: u32, chan: &Channel,
+                     settings: Option<Settings>,
                      added: Arc<Mutex<Signal<SrcPad>>>,
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
                      bin: gst::Bin, pad: &gst::Pad,
@@ -38,7 +41,7 @@ impl Root {
             if !p.to_be_analyzed { return };
         };
 
-        if let Some(branch) = Branch::new(stream, chan.number, pid, typ, format, sender.lock().unwrap().clone()) {
+        if let Some(branch) = Branch::new(stream, chan.number, pid, typ, settings, format, sender.lock().unwrap().clone()) {
             branch.add_to_pipe(&bin);
             branch.plug(&pad);
             match branch {
@@ -54,13 +57,15 @@ impl Root {
         }
     }
     
-    pub fn new(bin: gst::Bin, m: Structure, format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
+    pub fn new(bin: gst::Bin, m: Structure, settings: Option<Settings>,
+               format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
         if ! m.to_be_analyzed() { return None };
 
-        let src = gst::ElementFactory::make("udpsrc", None).unwrap();
-        let tee = gst::ElementFactory::make("tee", None).unwrap();
-        let branches = Arc::new(Mutex::new(Vec::new()));
-        let pad_added = Arc::new(Mutex::new(Signal::new()));
+        let src             = gst::ElementFactory::make("udpsrc", None).unwrap();
+        let tee             = gst::ElementFactory::make("tee", None).unwrap();
+        let settings        = Arc::new(Mutex::new(settings));
+        let branches        = Arc::new(Mutex::new(Vec::new()));
+        let pad_added       = Arc::new(Mutex::new(Signal::new()));
         let audio_pad_added = Arc::new(Mutex::new(Signal::new()));
         
         src.set_property("uri", &m.uri).unwrap();
@@ -92,19 +97,30 @@ impl Root {
             let stream = m.id as u32;
 
             let bin_cc = bin_c.clone();
+            let settings_c = settings.clone();
             let branches_c = branches.clone();
             let pad_added_c = pad_added.clone();
             let audio_pad_added_c = audio_pad_added.clone();
             let sender_c = Mutex::new(sender.clone());
             
             demux.connect_pad_added(move | _, pad | {
+                let settings = settings_c.lock().unwrap();
                 Root::build_branch(&mut branches_c.lock().unwrap(), stream, &chan,
+                                   *settings,
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
                                    bin_cc.clone(), pad,
                                    format, &sender_c);
             });
         };
 
-        Some(Root { bin, src, tee, branches, pad_added, audio_pad_added })
+        Some(Root { bin, src, tee, settings, branches, pad_added, audio_pad_added })
+    }
+
+    pub fn apply_settings(&mut self, s: Settings) {
+        self.branches.lock()
+            .unwrap()
+            .iter_mut()
+            .for_each(|b : &mut Branch| b.apply_settings(s));
+        *self.settings.lock().unwrap() = Some(s);
     }
 }
