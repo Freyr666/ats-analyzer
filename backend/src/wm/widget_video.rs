@@ -80,7 +80,7 @@ impl WidgetVideo {
         if desc.layer == layer { return };
         desc.layer = layer;
         if let Some(ref pad) = self.mixer_pad {
-            pad.set_property("zorder", &(layer+1)).unwrap();
+            pad.set_property("zorder", &((layer+1) as u32)).unwrap();
         };
     }
 
