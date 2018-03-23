@@ -93,7 +93,10 @@ impl WmState {
     }
 
     pub fn set_resolution (&mut self, res: (u32, u32)) {
-
+        let (width,height) = res;
+        self.background_pad.set_property("height", &(height as i32)).unwrap();
+        self.background_pad.set_property("width", &(width as i32)).unwrap();
+        self.resolution = res;
     }
     
     pub fn from_template (&mut self, t: &WmTemplate) -> Result<(),String> {
