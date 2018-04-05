@@ -19,6 +19,10 @@ use std::sync::{Arc,Mutex};
 
 use chatterer::MsgType;
 use chatterer::control::{Addressable,Dispatcher,DispatchTable};
+use chatterer::notif::Notifier;
+
+#[derive(Serialize)]
+enum Status { Ready }
 
 pub struct ContextDispatcher {
     format:      MsgType,
@@ -34,10 +38,11 @@ pub struct Context {
     streams:     Streams,
     graph:       Graph,
     preferences: Preferences,
+    notif:       Notifier,
 }
 
 impl Addressable for ContextDispatcher {
-    fn get_name (&self) -> &str { "context" }
+    fn get_name (&self) -> &str { "backend" }
     fn get_format (&self) -> MsgType { self.format }
 }
 
@@ -64,9 +69,11 @@ impl Context {
     pub fn new (i : &Initial) -> Result<Context, String> {
         gst::init().unwrap();
 
-        let dispatcher  = Arc::new(Mutex::new(ContextDispatcher::new(MsgType::Json)));
         let mainloop    = glib::MainLoop::new(None, false);
         let mut control = Control::new().unwrap();
+
+        let dispatcher  = Arc::new(Mutex::new(ContextDispatcher::new(i.msg_type)));
+        let notif       = Notifier::new("backend", i.msg_type, control.sender.clone());
         
         let mut probes  = Vec::new();
 
@@ -97,10 +104,11 @@ impl Context {
         graph.connect_settings(&mut config.update.lock().unwrap());
         
         Ok(Context { mainloop, dispatcher, probes, control,
-                     config, streams, graph, preferences })
+                     config, streams, graph, preferences, notif })
     }
 
     pub fn run(&self) {
+        self.notif.talk(&Status::Ready);
         self.mainloop.run();
     }
 }
