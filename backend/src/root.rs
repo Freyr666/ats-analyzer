@@ -77,7 +77,6 @@ impl Root {
         let bin_c = bin.clone();
         // let branches_c = branches.clone();
 
-        println!("Channels: {:?}", m.channels);
         for chan in m.channels {
             let demux_name = format!("demux_{}_{}_{}_{}", m.id, chan.number, chan.service_name, chan.provider_name);
 
