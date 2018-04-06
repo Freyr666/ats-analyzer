@@ -77,8 +77,9 @@ impl Root {
         let bin_c = bin.clone();
         // let branches_c = branches.clone();
 
+        println!("Channels: {:?}", m.channels);
         for chan in m.channels {
-            let demux_name = format!("demux_{}_{}", m.id, chan.number);
+            let demux_name = format!("demux_{}_{}_{}_{}", m.id, chan.number, chan.service_name, chan.provider_name);
 
             let queue = gst::ElementFactory::make("queue", None).unwrap();
             let demux = gst::ElementFactory::make("tsdemux", Some(demux_name.as_str())).unwrap();
