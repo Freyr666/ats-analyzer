@@ -11,7 +11,7 @@ pub struct WidgetDesc {
     pub domain:      String,
     pub position:    Position,
     pub layer:       i32,
-    pub aspect:      (u32,u32),
+    pub aspect:      Option<(u32,u32)>,
     pub description: String,
 }
 

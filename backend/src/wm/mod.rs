@@ -1,6 +1,7 @@
 pub mod position;
 pub mod widget;
 pub mod widget_video;
+pub mod widget_soundbar;
 pub mod widget_factory;
 pub mod template;
 
@@ -76,6 +77,21 @@ impl WmState {
             Type::Video => {
                 let uid;
                 let widg = widget_factory::make("video").unwrap();
+                {
+                    let mut widg = widg.lock().unwrap();
+                    widg.add_to_pipe(self.pipe.clone().upcast());
+                    let sink_pad = self.mixer.get_request_pad("sink_%u").unwrap();
+                    widg.plug_src(pad);
+                    widg.plug_sink(sink_pad);
+                    uid = widg.gen_uid();
+                }
+                let signal = widg.lock().unwrap().linked();
+                self.widgets.insert(uid, widg);
+                Some(signal)
+            }
+            Type::Audio => {
+                let uid;
+                let widg = widget_factory::make("audio").unwrap();
                 {
                     let mut widg = widg.lock().unwrap();
                     widg.add_to_pipe(self.pipe.clone().upcast());
