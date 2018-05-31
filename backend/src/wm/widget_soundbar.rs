@@ -17,6 +17,7 @@ pub struct WidgetSoundbar {
     input_pad: Option<gst::Pad>,
     valve:     gst::Element,
     soundbar:  gst::Element,
+    convert:   gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
 }
 
@@ -33,6 +34,7 @@ impl WidgetSoundbar {
         let desc     = Arc::new(Mutex::new(desc));
         let linked   = Arc::new(Mutex::new(Signal::new()));
         let soundbar = gst::ElementFactory::make("soundbar", None).unwrap();
+        let convert  = gst::ElementFactory::make("videoconvert", None).unwrap();
         let valve    = gst::ElementFactory::make("valve", None).unwrap();
         WidgetSoundbar {
             desc,
@@ -40,7 +42,7 @@ impl WidgetSoundbar {
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, soundbar, linked,
+            valve, soundbar, convert, linked,
         }
     }
 
@@ -71,9 +73,10 @@ impl WidgetSoundbar {
 
 impl Widget for WidgetSoundbar {
     fn add_to_pipe (&self, pipe: gst::Bin) {
-        pipe.add_many(&[&self.soundbar, &self.valve]).unwrap();
-        gst::Element::link_many(&[&self.soundbar, &self.valve]).unwrap();
+        pipe.add_many(&[&self.valve, &self.soundbar, &self.convert]).unwrap();
+        gst::Element::link_many(&[&self.valve, &self.soundbar, &self.convert]).unwrap();
         self.soundbar.sync_state_with_parent().unwrap();
+        self.convert.sync_state_with_parent().unwrap();
         self.valve.sync_state_with_parent().unwrap();
     }
 
@@ -92,7 +95,7 @@ impl Widget for WidgetSoundbar {
     }
 
     fn plug_sink (&mut self, sink: gst::Pad) {
-        self.valve.get_static_pad("src").unwrap().link(&sink);
+        self.convert.get_static_pad("src").unwrap().link(&sink);
         if ! self.enabled {
             self.valve.set_property("drop", &false).unwrap();
             sink.set_property("alpha", &0.0).unwrap();
