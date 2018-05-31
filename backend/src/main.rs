@@ -15,7 +15,7 @@ fn set_boxed_logger(logger: Box<Log>) -> Result<(), log::SetLoggerError> {
     log::set_logger(unsafe { &*Box::into_raw(logger) })
 }
 
-struct Logger;
+struct Logger { name: String }
 
 impl log::Log for Logger {
     fn enabled(&self, metadata: &Metadata) -> bool {
@@ -25,7 +25,7 @@ impl log::Log for Logger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            println!("{} - {}", record.level(), record.args());
+            println!("{}: {} - {}", self.name, record.level(), record.args());
         }
     }
 
@@ -33,6 +33,7 @@ impl log::Log for Logger {
 }
 
 fn main() {
+    let args = std::env::args();
     let log_level_filter = match std::env::var("ATS3_LOG_LEVEL") {
         Err (_) => LevelFilter::Off,
         Ok(ref s) => match s.as_str() {
@@ -44,10 +45,9 @@ fn main() {
         },
     };
     
-    set_boxed_logger(Box::new(Logger)).unwrap();
+    set_boxed_logger(Box::new(Logger{ name: String::from("ats3-backend") })).unwrap();
     log::set_max_level(log_level_filter);
     
-    let args = std::env::args();
     let i    = match Initial::new(args) {
         Ok (i) => i,
         Err (Error::HelpOption) => {

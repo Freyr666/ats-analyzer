@@ -40,7 +40,8 @@ pub mod notif {
         }
         
         pub fn talk<T> (&self, data: &T)
-            where T: Serialize {
+        where T: Serialize {
+            debug!("Notifier::{} has sent a notification", self.name);
             self.sender.send(self.serialize_msg(data)).unwrap()
         }    
     }
@@ -109,18 +110,21 @@ pub mod control {
             where T: 'static + DeserializeOwned,
                   R: 'static + Serialize {
             let name  = String::from(r.get_name());
+            let debug_name = name.clone();
             let fmt   = self.get_format();
             let rep   = r.reply();
             
-            let clos = move | buf: Vec<u8> | { 
+            let clos = move | buf: Vec<u8> | {
+                debug!("Replybox::{} was asked", debug_name);
+                
                 let req : Request<T> = match fmt {
                     MsgType::Json    => serde_json::from_slice(&buf).unwrap(),
                     MsgType::Msgpack => serde_msgpack::from_slice(&buf).unwrap(),
                 };
 
                 let rep : Response<R> = match rep(req.data) {
-                    Ok(v)  => Response::Fine(v),
-                    Err(s) => Response::Error(s),
+                    Ok(v)  => { debug!("Replybox::{} has answered", debug_name); Response::Fine(v)},
+                    Err(s) => { error!("Replybox::{} error {}", debug_name, s); Response::Error(s)},
                 };
 
                 match fmt {
@@ -136,7 +140,6 @@ pub mod control {
                 MsgType::Json    => serde_json::from_slice(&r).unwrap(),
                 MsgType::Msgpack => serde_msgpack::from_slice(&r).unwrap(),
             };
-            println!("name: {}", n.name);
             let resp = self.get_respondent(&n.name)?;
             
             Some(resp(r))
