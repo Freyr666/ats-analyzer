@@ -102,7 +102,8 @@ impl Context {
 
         graph.connect_destructive(&mut streams.update.lock().unwrap());
         graph.connect_settings(&mut config.update.lock().unwrap());
-        
+
+        info!("Context was created");
         Ok(Context { mainloop, dispatcher, probes, control,
                      config, streams, graph, preferences, notif })
     }
