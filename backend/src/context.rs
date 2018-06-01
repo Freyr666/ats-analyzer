@@ -98,17 +98,23 @@ impl Context {
         dispatcher.lock().unwrap().add_to_table(&(*wm.lock().unwrap()));
 
         let dis = dispatcher.clone();
-        control.connect(move |s| dis.lock().unwrap().dispatch(s).unwrap());
+        control.connect(move |s| {
+           // debug!("Control message received");
+            let resp = dis.lock().unwrap().dispatch(s).unwrap();
+           // debug!("Control message response ready");
+            resp
+        });
 
         graph.connect_destructive(&mut streams.update.lock().unwrap());
         graph.connect_settings(&mut config.update.lock().unwrap());
-
+        
         info!("Context was created");
         Ok(Context { mainloop, dispatcher, probes, control,
                      config, streams, graph, preferences, notif })
     }
 
     pub fn run(&self) {
+        thread::sleep_ms(500); // a very dirty hack indeed
         self.notif.talk(&Status::Ready);
         self.mainloop.run();
     }

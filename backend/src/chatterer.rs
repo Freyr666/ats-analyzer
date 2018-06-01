@@ -136,10 +136,12 @@ pub mod control {
         }
         
         fn dispatch (&self, r: Vec<u8>) -> Option<Vec<u8>> {
+            debug!("Dispatcher::dispatch got message");
             let n : Name = match self.get_format() {
                 MsgType::Json    => serde_json::from_slice(&r).unwrap(),
                 MsgType::Msgpack => serde_msgpack::from_slice(&r).unwrap(),
             };
+            debug!("Dispatcher::dispatch got message for {}", n.name);
             let resp = self.get_respondent(&n.name)?;
             
             Some(resp(r))

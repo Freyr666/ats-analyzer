@@ -22,8 +22,9 @@ impl Control {
         let (sender, receiver): (Sender<Vec<u8>>, Receiver<Vec<u8>>) = channel();
         let received       = Arc::new(Mutex::new(Msg::new()));
         
-        in_socket.bind("ipc:///tmp/ats_qoe_in");
-        out_socket.bind("ipc:///tmp/ats_qoe_out");
+        in_socket.bind("ipc:///tmp/ats_qoe_in").unwrap();
+        out_socket.bind("ipc:///tmp/ats_qoe_out").unwrap();
+        
         let r = received.clone();
         
         thread::Builder::new().name("recv_thread".to_string()).spawn(move || {
@@ -37,8 +38,11 @@ impl Control {
 
         thread::Builder::new().name("send_thread".to_string()).spawn(move || {
             for msg in receiver {
-                //println!("Msg: {}", String::from_utf8_lossy(&msg));
-                out_socket.send(&msg,0).unwrap();
+               // println!("Msg: {}", String::from_utf8_lossy(&msg));
+                match out_socket.send(&msg,0) {
+                    Ok (()) => debug!("Control::send success"),
+                    Err (e) => error!("Control::send error: {}", e),
+                }
             }
         }).unwrap();
 
