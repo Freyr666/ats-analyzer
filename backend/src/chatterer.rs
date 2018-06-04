@@ -41,7 +41,7 @@ pub mod notif {
         
         pub fn talk<T> (&self, data: &T)
         where T: Serialize {
-            debug!("Notifier::{} has sent a notification", self.name);
+            // debug!("Notifier::{} has sent a notification", self.name);
             self.sender.send(self.serialize_msg(data)).unwrap()
         }    
     }
