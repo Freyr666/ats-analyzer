@@ -17,6 +17,7 @@ pub struct WidgetSoundbar {
     input_pad: Option<gst::Pad>,
     valve:     gst::Element,
     soundbar:  gst::Element,
+    caps:      gst::Element,
     convert:   gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
 }
@@ -34,7 +35,8 @@ impl WidgetSoundbar {
         let desc     = Arc::new(Mutex::new(desc));
         let linked   = Arc::new(Mutex::new(Signal::new()));
         let soundbar = gst::ElementFactory::make("soundbar", None).unwrap();
-        let convert  = gst::ElementFactory::make("videoconvert", None).unwrap();
+        let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
+        let convert  = gst::ElementFactory::make("videoconvert", None).unwrap(); // TODO to be removed
         let valve    = gst::ElementFactory::make("valve", None).unwrap();
         WidgetSoundbar {
             desc,
@@ -42,7 +44,7 @@ impl WidgetSoundbar {
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, soundbar, convert, linked,
+            valve, soundbar, caps, convert, linked,
         }
     }
 
@@ -60,9 +62,9 @@ impl WidgetSoundbar {
         if desc.position == position { return };
         desc.position = position;
         if let Some(ref pad) = self.mixer_pad {
-            // let cps = format!("video/x-raw,pixel-aspect-ratio=1/1,height={},width={}",
-            //                  position.get_height(), position.get_width());
-            // self.caps.set_property("caps", &gst::Caps::from_string(&cps).unwrap()).unwrap();
+            let cps = format!("video/x-raw,height={},width={}",
+                              position.get_height(), position.get_width());
+            self.caps.set_property("caps", &gst::Caps::from_string(&cps).unwrap()).unwrap();
             pad.set_property("height", &(position.get_height() as i32)).unwrap();
             pad.set_property("width", &(position.get_width() as i32)).unwrap();
             pad.set_property("xpos", &(position.get_x() as i32)).unwrap();
@@ -73,9 +75,10 @@ impl WidgetSoundbar {
 
 impl Widget for WidgetSoundbar {
     fn add_to_pipe (&self, pipe: gst::Bin) {
-        pipe.add_many(&[&self.valve, &self.soundbar, &self.convert]).unwrap();
-        gst::Element::link_many(&[&self.valve, &self.soundbar, &self.convert]).unwrap();
+        pipe.add_many(&[&self.valve, &self.soundbar, &self.caps, &self.convert]).unwrap();
+        gst::Element::link_many(&[&self.valve, &self.soundbar, &self.caps, &self.convert]).unwrap();
         self.soundbar.sync_state_with_parent().unwrap();
+        self.caps.sync_state_with_parent().unwrap();
         self.convert.sync_state_with_parent().unwrap();
         self.valve.sync_state_with_parent().unwrap();
     }
