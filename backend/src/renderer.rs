@@ -1,5 +1,6 @@
 use gst;
 use gst::prelude::*;
+use glib;
 use std::marker::PhantomData;
 use pad::SrcPad;
 
@@ -15,6 +16,10 @@ pub struct Renderer<T> {
     p:       PhantomData<T>,
 }
 
+fn enum_to_val(cls: &str, val: i32) -> glib::Value {
+    glib::EnumClass::new(glib::Type::from_name(cls).unwrap()).unwrap().to_value(val).unwrap()
+}
+
 impl Renderer<VideoR> {
     pub fn new (port: i32, bin: gst::Bin) -> Renderer<VideoR> {
         let encoder =
@@ -27,7 +32,8 @@ impl Renderer<VideoR> {
         encoder.sync_state_with_parent().unwrap();
         pay.sync_state_with_parent().unwrap();
         output.sync_state_with_parent().unwrap();
-        encoder.set_property("rate-control", &2); // may not exist
+        encoder.set_property("rate-control", &enum_to_val("GstVaapiRateControlVP8", 2)).unwrap(); // may not exist
+        encoder.set_property("bitrate", &10000u32).unwrap();
         output.set_property("host", &"127.0.0.1").unwrap();
         output.set_property("port", &port).unwrap();
         output.set_property("async", &false).unwrap();
