@@ -44,7 +44,7 @@ impl WidgetSoundbar {
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, soundbar, caps, linked,
+            valve, soundbar, caps, convert, linked,
         }
     }
 
