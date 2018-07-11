@@ -18,7 +18,7 @@ pub struct WidgetSoundbar {
     valve:     gst::Element,
     soundbar:  gst::Element,
     caps:      gst::Element,
-    convert:   gst::Element,
+    // convert:   gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
 }
 
@@ -36,7 +36,7 @@ impl WidgetSoundbar {
         let linked   = Arc::new(Mutex::new(Signal::new()));
         let soundbar = gst::ElementFactory::make("soundbar", None).unwrap();
         let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
-        let convert  = gst::ElementFactory::make("videoconvert", None).unwrap(); // TODO to be removed
+        // let convert  = gst::ElementFactory::make("videoconvert", None).unwrap(); // TODO to be removed
         let valve    = gst::ElementFactory::make("valve", None).unwrap();
         WidgetSoundbar {
             desc,
@@ -44,7 +44,7 @@ impl WidgetSoundbar {
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, soundbar, caps, convert, linked,
+            valve, soundbar, caps, linked,
         }
     }
 
@@ -75,11 +75,11 @@ impl WidgetSoundbar {
 
 impl Widget for WidgetSoundbar {
     fn add_to_pipe (&self, pipe: gst::Bin) {
-        pipe.add_many(&[&self.valve, &self.soundbar, &self.caps, &self.convert]).unwrap();
-        gst::Element::link_many(&[&self.valve, &self.soundbar, &self.caps, &self.convert]).unwrap();
+        pipe.add_many(&[&self.valve, &self.soundbar, &self.caps]).unwrap();
+        gst::Element::link_many(&[&self.valve, &self.soundbar, &self.caps]).unwrap();
         self.soundbar.sync_state_with_parent().unwrap();
         self.caps.sync_state_with_parent().unwrap();
-        self.convert.sync_state_with_parent().unwrap();
+        // self.convert.sync_state_with_parent().unwrap();
         self.valve.sync_state_with_parent().unwrap();
     }
 
@@ -98,7 +98,7 @@ impl Widget for WidgetSoundbar {
     }
 
     fn plug_sink (&mut self, sink: gst::Pad) {
-        self.convert.get_static_pad("src").unwrap().link(&sink);
+        self.caps.get_static_pad("src").unwrap().link(&sink);
         if ! self.enabled {
             self.valve.set_property("drop", &false).unwrap();
             sink.set_property("alpha", &0.0).unwrap();
