@@ -79,7 +79,7 @@ impl Widget for WidgetSoundbar {
         gst::Element::link_many(&[&self.valve, &self.soundbar, &self.caps, &self.convert]).unwrap();
         self.soundbar.sync_state_with_parent().unwrap();
         self.caps.sync_state_with_parent().unwrap();
-        // self.convert.sync_state_with_parent().unwrap();
+        self.convert.sync_state_with_parent().unwrap();
         self.valve.sync_state_with_parent().unwrap();
     }
 
