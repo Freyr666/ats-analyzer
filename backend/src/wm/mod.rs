@@ -52,11 +52,11 @@ fn enum_to_val(cls: &str, val: i32) -> glib::Value {
 
 impl WmState {
     pub fn new (pipe: gst::Pipeline, resolution: (u32, u32)) -> WmState {
-        let background     = gst::ElementFactory::make("videotestsrc", None).unwrap();
-        let mixer          = gst::ElementFactory::make("compositor", None).unwrap();
+        let background     = gst::ElementFactory::make("gltestsrc", None).unwrap();
+        let mixer          = gst::ElementFactory::make("glvideomixer", None).unwrap();
         background.set_property("is_live", &true).unwrap();
-        background.set_property("pattern", &enum_to_val("GstVideoTestSrcPattern", 2)).unwrap();
-        mixer.set_property("background", &enum_to_val("GstCompositorBackground", 1)).unwrap();
+        background.set_property("pattern", &enum_to_val("GstGLTestSrcPattern", 2)).unwrap();
+        mixer.set_property("background", &enum_to_val("GstGLVideoMixerBackground", 1)).unwrap();
         pipe.add_many(&[&background,&mixer]).unwrap();
         
         let background_pad = mixer.get_request_pad("sink_%u").unwrap();

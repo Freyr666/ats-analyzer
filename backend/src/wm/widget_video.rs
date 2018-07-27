@@ -18,6 +18,8 @@ pub struct WidgetVideo {
     mixer_pad: Option<gst::Pad>,
     input_pad: Option<gst::Pad>,
     valve:     gst::Element,
+    upload:    gst::Element,
+    conv:      gst::Element,
     scale:     gst::Element,
     caps:      gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
@@ -33,19 +35,21 @@ impl WidgetVideo {
             description: String::from("video widget"),
             layer: 0,
         };
-        let desc  = Arc::new(Mutex::new(desc));
+        let desc   = Arc::new(Mutex::new(desc));
         let linked = Arc::new(Mutex::new(Signal::new()));
-        let valve = gst::ElementFactory::make("valve", None).unwrap();
-        let scale = gst::ElementFactory::make("videoscale", None).unwrap();
+        let valve  = gst::ElementFactory::make("valve", None).unwrap();
+        let upload = gst::ElementFactory::make("glupload", None).unwrap();
+        let conv   = gst::ElementFactory::make("glcolorconvert", None).unwrap();
+        let scale = gst::ElementFactory::make("glcolorscale", None).unwrap();
         let caps  = gst::ElementFactory::make("capsfilter", None).unwrap();
-        caps.set_property("caps", &gst::Caps::from_str("video/x-raw,pixel-aspect-ratio=1/1").unwrap()).unwrap();
+        caps.set_property("caps", &gst::Caps::from_str("video/x-raw(memory:GLMemory),format=RGBA,pixel-aspect-ratio=1/1").unwrap()).unwrap();
         WidgetVideo {
             desc,
             enabled:   false,
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, scale, caps,
+            valve, upload, conv, scale, caps,
             linked,
         }
     }
@@ -89,9 +93,6 @@ impl WidgetVideo {
         if desc.position == position { return };
         desc.position = position;
         if let Some(ref pad) = self.mixer_pad {
-            let cps = format!("video/x-raw,pixel-aspect-ratio=1/1,height={},width={}",
-                              position.get_height(), position.get_width());
-            self.caps.set_property("caps", &gst::Caps::from_string(&cps).unwrap()).unwrap();
             pad.set_property("height", &(position.get_height() as i32)).unwrap();
             pad.set_property("width", &(position.get_width() as i32)).unwrap();
             pad.set_property("xpos", &(position.get_x() as i32)).unwrap();
@@ -102,10 +103,12 @@ impl WidgetVideo {
 
 impl Widget for WidgetVideo {
     fn add_to_pipe(&self, pipe: gst::Bin) {
-        pipe.add_many(&[&self.valve, &self.scale, &self.caps]).unwrap();
-        gst::Element::link_many(&[&self.valve, &self.scale, &self.caps]).unwrap();
+        pipe.add_many(&[&self.valve, &self.upload, &self.conv, &self.scale, &self.caps]).unwrap();
+        gst::Element::link_many(&[&self.valve, &self.upload, &self.conv, &self.scale, &self.caps]).unwrap();
         self.valve.sync_state_with_parent().unwrap();
+        self.upload.sync_state_with_parent().unwrap();
         self.scale.sync_state_with_parent().unwrap();
+        self.conv.sync_state_with_parent().unwrap();
         self.caps.sync_state_with_parent().unwrap();
     }
     
