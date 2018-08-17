@@ -53,7 +53,7 @@ impl Root {
             };
 
             branches.push(branch);
-            bin.set_state(gst::State::Playing);
+            //bin.set_state(gst::State::Playing);
         }
     }
     
