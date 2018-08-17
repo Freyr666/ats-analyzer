@@ -11,6 +11,7 @@ use pad::{Type,SrcPad};
 use signals::{Signal,Msg};
 use metadata::Structure;
 use settings::Settings;
+use audio_mux::Mux;
 use renderer::{VideoR,AudioR,Renderer};
 
 pub struct GraphState {
@@ -20,9 +21,10 @@ pub struct GraphState {
     pipeline:    gst::Pipeline,
     bus:         gst::Bus,
     pub wm:      Arc<Mutex<Wm>>,
+    pub mux:     Arc<Mutex<Mux>>,
     roots:       Vec<Root>,
     vrend:       Option<Renderer<VideoR>>,
-    arends:      Arc<Mutex<Vec<Renderer<AudioR>>>>,
+    arend:       Option<Renderer<AudioR>>,
 }
 
 pub struct Graph {
@@ -51,11 +53,12 @@ impl GraphState {
         let settings = None;
         let pipeline = gst::Pipeline::new(None);
         let wm       = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender.clone())));
+        let mux      = Arc::new(Mutex::new(Mux::new(pipeline.clone(), format, sender.clone())));
         let vrend    = None;
-        let arends   = Arc::new(Mutex::new(Vec::new()));
+        let arend    = None;
         let bus      = pipeline.get_bus().unwrap();
         let roots    = Vec::new();
-        GraphState { settings, pipeline, wm, bus, roots, arends, vrend, format, sender }
+        GraphState { settings, pipeline, wm, mux, bus, roots, arend, vrend, format, sender }
     }
 
     pub fn reset (&mut self) {
@@ -63,11 +66,13 @@ impl GraphState {
         self.roots    = Vec::new();
         self.pipeline = gst::Pipeline::new(None);
         self.wm.lock().unwrap().reset(self.pipeline.clone());
+        self.mux.lock().unwrap().reset(self.pipeline.clone());
         self.vrend    = Some(Renderer::<VideoR>::new(5004, self.pipeline.clone().upcast()));
-        self.arends   = Arc::new(Mutex::new(Vec::new()));
+        self.arend    = Some(Renderer::<AudioR>::new(5005, self.pipeline.clone().upcast()));
         self.bus      = self.pipeline.get_bus().unwrap();
 
         self.vrend.iter().for_each(|rend| rend.plug(self.wm.lock().unwrap().src_pad().clone()));
+        self.arend.iter().for_each(|rend| rend.plug(self.mux.lock().unwrap().src_pad().clone()));
     }
 
     pub fn set_state (&self, st: gst::State) {
@@ -86,8 +91,8 @@ impl GraphState {
                 //println!("New root");
                 let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
+                let mux    = self.mux.clone();
                 let apipe  = self.pipeline.clone();
-                let arends = self.arends.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
                     //println!("Pad added");
                     wm.lock().unwrap().plug(p);
@@ -96,9 +101,7 @@ impl GraphState {
                 });
                 
                 root.audio_pad_added.lock().unwrap().connect(move |p| {
-                    let arend = Renderer::<AudioR>::new((5005 + p.stream + p.pid) as i32, apipe.clone().upcast());
-                    arend.plug(p);
-                    arends.lock().unwrap().push(arend);
+                    mux.lock().unwrap().plug(p);
                 });
             }
         };

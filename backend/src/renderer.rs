@@ -71,7 +71,7 @@ impl Renderer<AudioR> {
         Renderer::<AudioR> { port, encoder, pay, output, p: PhantomData }
     }
 
-    pub fn plug (&self, p: &SrcPad) {
-        p.pad.link(&self.encoder.get_static_pad("sink").unwrap());
+    pub fn plug (&self, pad: gst::Pad) {
+        pad.link(&self.encoder.get_static_pad("sink").unwrap());
     }
 }

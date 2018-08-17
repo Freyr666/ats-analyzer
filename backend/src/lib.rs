@@ -27,6 +27,7 @@ pub mod probe;
 pub mod streams;
 pub mod preferences;
 pub mod pad;
+pub mod audio_mux;
 pub mod video_data;
 pub mod audio_data;
 pub mod branch;
