@@ -91,8 +91,8 @@ impl GraphState {
                 root.pad_added.lock().unwrap().connect(move |p| {
                     //println!("Pad added");
                     wm.lock().unwrap().plug(p);
-                    //pipe.set_state(gst::State::Playing);
-                    gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
+                    pipe.set_state(gst::State::Playing);
+                    //gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
                 });
                 
                 root.audio_pad_added.lock().unwrap().connect(move |p| {

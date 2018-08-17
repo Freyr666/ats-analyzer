@@ -21,6 +21,8 @@ pub struct WidgetVideo {
     upload:    gst::Element,
     conv:      gst::Element,
     scale:     gst::Element,
+    deint:     gst::Element,
+    queue:     gst::Element,
     caps:      gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
 }
@@ -41,7 +43,11 @@ impl WidgetVideo {
         let upload = gst::ElementFactory::make("glupload", None).unwrap();
         let conv   = gst::ElementFactory::make("glcolorconvert", None).unwrap();
         let scale = gst::ElementFactory::make("glcolorscale", None).unwrap();
+        let deint = gst::ElementFactory::make("gldeinterlace", None).unwrap();
+        let queue = gst::ElementFactory::make("queue", None).unwrap();
         let caps  = gst::ElementFactory::make("capsfilter", None).unwrap();
+        queue.set_property("max-size-buffers", &20000);
+        queue.set_property("max-size-bytes", &12000000);
         caps.set_property("caps", &gst::Caps::from_str("video/x-raw(memory:GLMemory),format=RGBA,pixel-aspect-ratio=1/1").unwrap()).unwrap();
         WidgetVideo {
             desc,
@@ -49,7 +55,7 @@ impl WidgetVideo {
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, upload, conv, scale, caps,
+            valve, upload, conv, scale, deint, caps, queue,
             linked,
         }
     }
@@ -103,12 +109,14 @@ impl WidgetVideo {
 
 impl Widget for WidgetVideo {
     fn add_to_pipe(&self, pipe: gst::Bin) {
-        pipe.add_many(&[&self.valve, &self.upload, &self.conv, &self.scale, &self.caps]).unwrap();
-        gst::Element::link_many(&[&self.valve, &self.upload, &self.conv, &self.scale, &self.caps]).unwrap();
+        pipe.add_many(&[&self.valve, &self.upload, &self.conv, &self.scale, &self.deint, &self.caps, &self.queue]).unwrap();
+        gst::Element::link_many(&[&self.valve, &self.upload, &self.conv, &self.scale, &self.deint, &self.caps, &self.queue]).unwrap();
         self.valve.sync_state_with_parent().unwrap();
         self.upload.sync_state_with_parent().unwrap();
         self.scale.sync_state_with_parent().unwrap();
+        self.deint.sync_state_with_parent().unwrap();
         self.conv.sync_state_with_parent().unwrap();
+        self.queue.sync_state_with_parent().unwrap();
         self.caps.sync_state_with_parent().unwrap();
     }
     
@@ -134,9 +142,9 @@ impl Widget for WidgetVideo {
     }
     
     fn plug_sink (&mut self, sink: gst::Pad) {
-        self.caps.get_static_pad("src").unwrap().link(&sink);
+        self.queue.get_static_pad("src").unwrap().link(&sink);
         if ! self.enabled {
-            self.valve.set_property("drop", &false).unwrap();
+            self.valve.set_property("drop", &true).unwrap();
             sink.set_property("alpha", &0.0).unwrap();
         }
         self.mixer_pad = Some(sink.clone());
@@ -146,12 +154,13 @@ impl Widget for WidgetVideo {
         if self.enabled == enabled { return };
         self.enabled = enabled;
         if let Some(ref pad) = self.mixer_pad {
-            if enabled {
-                pad.set_property("alpha", &1.0).unwrap();
-            } else {
-                pad.set_property("alpha", &0.0).unwrap();
-            }
+           if enabled {
+               pad.set_property("alpha", &1.0).unwrap();
+           } else {
+               pad.set_property("alpha", &0.0).unwrap();
+           }
         };
+        // Valve does not work with GL yet
         if enabled {
             self.valve.set_property("drop", &false).unwrap();
         } else {

@@ -1,5 +1,6 @@
 use gst;
 use gst::prelude::*;
+use std::str::FromStr;
 use std::sync::{Arc,Mutex};
 use signals::Signal;
 use pad::SrcPad;
@@ -19,7 +20,8 @@ pub struct WidgetSoundbar {
     soundbar:  gst::Element,
     upload:    gst::Element,
     //conv:      gst::Element,
-    //caps:      gst::Element,
+    caps:      gst::Element,
+    queue:     gst::Element,
     //convert:   gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
 }
@@ -38,16 +40,20 @@ impl WidgetSoundbar {
         let linked   = Arc::new(Mutex::new(Signal::new()));
         let soundbar = gst::ElementFactory::make("soundbar", None).unwrap();
         let upload   = gst::ElementFactory::make("glupload", None).unwrap();
-        //let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
+        let queue = gst::ElementFactory::make("queue", None).unwrap();
+        let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
         //let convert  = gst::ElementFactory::make("", None).unwrap(); // TODO to be removed
         let valve    = gst::ElementFactory::make("valve", None).unwrap();
+        queue.set_property("max-size-buffers", &20000);
+        queue.set_property("max-size-bytes", &12000000);
+        caps.set_property("caps", &gst::Caps::from_str("video/x-raw").unwrap()).unwrap();
         WidgetSoundbar {
             desc,
             enabled:   false,
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, soundbar, upload, linked,
+            valve, soundbar, upload, caps, queue, linked,
         }
     }
 
@@ -65,6 +71,9 @@ impl WidgetSoundbar {
         if desc.position == position { return };
         desc.position = position;
         if let Some(ref pad) = self.mixer_pad {
+            let cps = format!("video/x-raw,height={},width={}",
+                              position.get_height(), position.get_width());
+            self.caps.set_property("caps", &gst::Caps::from_string(&cps).unwrap()).unwrap();
             pad.set_property("height", &(position.get_height() as i32)).unwrap();
             pad.set_property("width", &(position.get_width() as i32)).unwrap();
             pad.set_property("xpos", &(position.get_x() as i32)).unwrap();
@@ -75,11 +84,14 @@ impl WidgetSoundbar {
 
 impl Widget for WidgetSoundbar {
     fn add_to_pipe (&self, pipe: gst::Bin) {
-        pipe.add_many(&[&self.valve, &self.soundbar, &self.upload,]).unwrap();
-        gst::Element::link_many(&[&self.valve, &self.soundbar, &self.upload]).unwrap();
+        // TODO fix valve after soundbar
+        pipe.add_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload, &self.queue]).unwrap();
+        gst::Element::link_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload, &self.queue]).unwrap();
         self.soundbar.sync_state_with_parent().unwrap();
         self.upload.sync_state_with_parent().unwrap();
         self.valve.sync_state_with_parent().unwrap();
+        self.queue.sync_state_with_parent().unwrap();
+        self.caps.sync_state_with_parent().unwrap();
     }
 
     fn plug_src (&mut self, src: &SrcPad) {
@@ -87,7 +99,7 @@ impl Widget for WidgetSoundbar {
         self.stream  = src.stream;
         self.channel = src.channel;
         self.pid     = src.pid;
-        let in_pad   = self.valve.get_static_pad("sink").unwrap();
+        let in_pad   = self.soundbar.get_static_pad("sink").unwrap();
         self.input_pad = Some(in_pad.clone());
 
         self.desc.lock().unwrap().domain = format!("s{}_c{}", src.stream, src.channel);
@@ -97,9 +109,9 @@ impl Widget for WidgetSoundbar {
     }
 
     fn plug_sink (&mut self, sink: gst::Pad) {
-        self.upload.get_static_pad("src").unwrap().link(&sink);
+        self.queue.get_static_pad("src").unwrap().link(&sink);
         if ! self.enabled {
-            self.valve.set_property("drop", &false).unwrap();
+            self.valve.set_property("drop", &true).unwrap();
             sink.set_property("alpha", &0.0).unwrap();
         }
         self.mixer_pad = Some(sink.clone());
@@ -115,6 +127,7 @@ impl Widget for WidgetSoundbar {
                 pad.set_property("alpha", &0.0).unwrap();
             }
         };
+        // Valve does not work with GL yet
         if enabled {
             self.valve.set_property("drop", &false).unwrap();
         } else {

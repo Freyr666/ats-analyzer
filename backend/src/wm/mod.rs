@@ -34,8 +34,8 @@ pub struct WmState {
     widgets:    HashMap<String,Arc<Mutex<Widget + Send>>>,
 
     pipe:           gst::Pipeline,
-    background:     gst::Element,
-    background_pad: gst::Pad,
+    caps:           gst::Element,
+    download:       gst::Element,
     mixer:          gst::Element,
 }
 
@@ -51,25 +51,26 @@ fn enum_to_val(cls: &str, val: i32) -> glib::Value {
 }
 
 impl WmState {
+    fn resolution_caps ((width,height) : (u32, u32)) -> String {
+        format!("video/x-raw(ANY),height={},width={}", height, width)
+    }
+    
     pub fn new (pipe: gst::Pipeline, resolution: (u32, u32)) -> WmState {
-        let background     = gst::ElementFactory::make("gltestsrc", None).unwrap();
-        let mixer          = gst::ElementFactory::make("glvideomixer", None).unwrap();
-        background.set_property("is_live", &true).unwrap();
-        background.set_property("pattern", &enum_to_val("GstGLTestSrcPattern", 2)).unwrap();
-        mixer.set_property("background", &enum_to_val("GstGLVideoMixerBackground", 1)).unwrap();
-        pipe.add_many(&[&background,&mixer]).unwrap();
+        let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
+        let download = gst::ElementFactory::make("gldownload", None).unwrap();
+        let mixer    = gst::ElementFactory::make("glvideomixer", None).unwrap();
         
-        let background_pad = mixer.get_request_pad("sink_%u").unwrap();
-        background_pad.set_property("zorder", &1u32).unwrap();
-        let (width, height) = resolution;
-        background_pad.set_property("height", &(height as i32)).unwrap();
-        background_pad.set_property("width", &(width as i32)).unwrap();
+        mixer.set_property("background", &enum_to_val("GstGLVideoMixerBackground", 1)).unwrap();
+        mixer.set_property("async-handling", &true).unwrap();
+        mixer.set_property("latency", &100000000i64).unwrap();
+        caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(resolution)).unwrap()).unwrap();
 
-        let in_pad = background.get_static_pad("src").unwrap();
-        in_pad.link(&background_pad);
+        pipe.add_many(&[&mixer,&caps,&download]).unwrap();
+        mixer.link(&caps).unwrap();
+        caps.link(&download).unwrap();
         
         WmState { resolution, layout: HashMap::new(), widgets: HashMap::new(),
-                  pipe, background, background_pad, mixer }
+                  pipe, caps, download, mixer }
     }
 
     pub fn plug (&mut self, pad: &SrcPad) -> Option<Arc<Mutex<Signal<()>>>> {
@@ -89,7 +90,7 @@ impl WmState {
                 self.widgets.insert(uid, widg);
                 Some(signal)
             }
-            Type::Audio => {
+            Type::Audio => None, /* {
                 let uid;
                 let widg = widget_factory::make("audio").unwrap();
                 {
@@ -103,15 +104,14 @@ impl WmState {
                 let signal = widg.lock().unwrap().linked();
                 self.widgets.insert(uid, widg);
                 Some(signal)
-            }
+            } */
             _ => None
         }
     }
 
     pub fn set_resolution (&mut self, res: (u32, u32)) {
-        let (width,height) = res;
-        self.background_pad.set_property("height", &(height as i32)).unwrap();
-        self.background_pad.set_property("width", &(width as i32)).unwrap();
+        self.caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(res))
+                               .unwrap()).unwrap();
         self.resolution = res;
     }
     
@@ -138,6 +138,7 @@ impl WmState {
         }
         self.set_resolution(t.resolution);
         self.pipe.set_state(gst::State::Playing);
+        gst::debug_bin_to_dot_file(&self.pipe, gst::DebugGraphDetails::VERBOSE, "wm");
         Ok(())
     }
     
@@ -209,7 +210,7 @@ impl Wm {
     }
 
     pub fn src_pad (&self) -> gst::Pad {
-        self.state.lock().unwrap().mixer.get_static_pad("src").unwrap()
+        self.state.lock().unwrap().download.get_static_pad("src").unwrap()
     }
 
     pub fn plug (&mut self, pad: &SrcPad) {

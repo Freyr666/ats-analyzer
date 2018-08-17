@@ -25,22 +25,29 @@ impl Renderer<VideoR> {
         let mut vaapi = true;
         let encoder =
             gst::ElementFactory::make("vaapivp8enc", None)
-            .unwrap_or({ vaapi = false; gst::ElementFactory::make("vp8enc", None).unwrap() });
+            .unwrap();//_or({ vaapi = false; gst::ElementFactory::make("vp8enc", None).unwrap() });
         let pay     = gst::ElementFactory::make("rtpvp8pay", None).unwrap();
         let output  = gst::ElementFactory::make("udpsink", None).unwrap();
-        bin.add_many(&[&encoder,&pay,&output]).unwrap();
-        gst::Element::link_many(&[&encoder,&pay,&output]).unwrap();
+        let queue   = gst::ElementFactory::make("queue2", None).unwrap();
+        bin.add_many(&[&encoder,&pay,&queue,&output]).unwrap();
+        gst::Element::link_many(&[&encoder,&pay,&queue,&output]).unwrap();
         encoder.sync_state_with_parent().unwrap();
         pay.sync_state_with_parent().unwrap();
         output.sync_state_with_parent().unwrap();
+        queue.sync_state_with_parent().unwrap();
         if vaapi {
+            println!("Set vaapi params");
             encoder.set_property("rate-control", &enum_to_val("GstVaapiRateControlVP8", 2)).unwrap(); // may not exist
-            encoder.set_property("bitrate", &10000u32).unwrap();
+            encoder.set_property("bitrate", &8000u32).unwrap();
+            encoder.set_property("quality-level", &7u32).unwrap();
         };
+        queue.set_property("max-size-buffers", &200000000);
+        //queue.set_property("max-size-bytes", &4096);
         output.set_property("host", &"127.0.0.1").unwrap();
         output.set_property("port", &port).unwrap();
         output.set_property("async", &false).unwrap();
-        output.set_property("sync", &false).unwrap();
+        //output.set_property("sync", &false).unwrap();
+        //output.set_property("blocksize", &4096000u32).unwrap();
         Renderer::<VideoR> { port, encoder, pay, output, p: PhantomData }
     }
 
