@@ -18,7 +18,6 @@ pub struct WidgetVideo {
     mixer_pad: Option<gst::Pad>,
     input_pad: Option<gst::Pad>,
     valve:     gst::Element,
-    upload:    gst::Element,
     conv:      gst::Element,
     scale:     gst::Element,
     deint:     gst::Element,
@@ -40,7 +39,6 @@ impl WidgetVideo {
         let desc   = Arc::new(Mutex::new(desc));
         let linked = Arc::new(Mutex::new(Signal::new()));
         let valve  = gst::ElementFactory::make("valve", None).unwrap();
-        let upload = gst::ElementFactory::make("glupload", None).unwrap();
         let conv   = gst::ElementFactory::make("glcolorconvert", None).unwrap();
         let scale = gst::ElementFactory::make("glcolorscale", None).unwrap();
         let deint = gst::ElementFactory::make("gldeinterlace", None).unwrap();
@@ -55,7 +53,7 @@ impl WidgetVideo {
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, upload, conv, scale, deint, caps, queue,
+            valve, conv, scale, deint, caps, queue,
             linked,
         }
     }
@@ -109,10 +107,9 @@ impl WidgetVideo {
 
 impl Widget for WidgetVideo {
     fn add_to_pipe(&self, pipe: gst::Bin) {
-        pipe.add_many(&[&self.valve, &self.upload, &self.conv, &self.scale, &self.deint, &self.caps, &self.queue]).unwrap();
-        gst::Element::link_many(&[&self.valve, &self.upload, &self.conv, &self.scale, &self.deint, &self.caps, &self.queue]).unwrap();
+        pipe.add_many(&[&self.valve, &self.conv, &self.scale, &self.deint, &self.caps, &self.queue]).unwrap();
+        gst::Element::link_many(&[&self.valve, &self.conv, &self.scale, &self.deint, &self.caps, &self.queue]).unwrap();
         self.valve.sync_state_with_parent().unwrap();
-        self.upload.sync_state_with_parent().unwrap();
         self.scale.sync_state_with_parent().unwrap();
         self.deint.sync_state_with_parent().unwrap();
         self.conv.sync_state_with_parent().unwrap();

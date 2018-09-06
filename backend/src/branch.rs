@@ -64,7 +64,7 @@ impl VideoBranch {
         let common = CommonBranch::new();
 
         let pads      = Arc::new(Mutex::new(Vec::new()));
-        let analyser  = gst::ElementFactory::make("identity",None).unwrap(); //videoanalysis
+        let analyser  = gst::ElementFactory::make("videoanalysis",None).unwrap(); //videoanalysis
         let decoder   = common.decoder;
         let bin       = common.bin;
         let sink      = common.sink;
@@ -89,15 +89,15 @@ impl VideoBranch {
 
             if *typ != "video" { return };
 
-            //let deint = gst::ElementFactory::make("deinterlace",None).unwrap();
+            let upload = gst::ElementFactory::make("glupload",None).unwrap();
 
-            let sink_pad = analyser_c.get_static_pad("sink").unwrap();
+            let sink_pad = upload.get_static_pad("sink").unwrap();
             let src_pad  = analyser_c.get_static_pad("src").unwrap();
 
-            bin_c.add_many(&[/*&deint,*/ &analyser_c]).unwrap();
-            //deint.link(&analyser_c).unwrap();
+            bin_c.add_many(&[&upload, &analyser_c]).unwrap();
+            upload.link(&analyser_c).unwrap();
 
-            //deint.sync_state_with_parent();
+            upload.sync_state_with_parent();
             analyser_c.sync_state_with_parent();
 
             let vdata = vdata.clone();
@@ -133,36 +133,35 @@ impl VideoBranch {
 
     pub fn apply_settings (analyser: &gst::Element, s: Option<Settings>) {
         if let Some(s) = s {
-            // let vset = s.video;
-            // analyser.set_property("loss", &vset.loss).unwrap();
-            // analyser.set_property("black-pixel-lb", &vset.black.black_pixel).unwrap();
-            // analyser.set_property("pixel-diff-lb", &vset.freeze.pixel_diff).unwrap();
-            // analyser.set_property("black-cont", &vset.black.black.cont).unwrap();
-            // analyser.set_property("black-cont-en", &vset.black.black.cont_en).unwrap();
-            // analyser.set_property("black-peak", &vset.black.black.peak).unwrap();
-            // analyser.set_property("black-peak-en", &vset.black.black.peak_en).unwrap();
-            // analyser.set_property("black-duration", &vset.black.black.duration).unwrap();
-            // analyser.set_property("luma-cont", &vset.black.luma.cont).unwrap();
-            // analyser.set_property("luma-cont-en", &vset.black.luma.cont_en).unwrap();
-            // analyser.set_property("luma-peak", &vset.black.luma.peak).unwrap();
-            // analyser.set_property("luma-peak-en", &vset.black.luma.peak_en).unwrap();
-            // analyser.set_property("luma-duration", &vset.black.luma.duration).unwrap();
-            // analyser.set_property("freeze-cont", &vset.freeze.freeze.cont).unwrap();
-            // analyser.set_property("freeze-cont-en", &vset.freeze.freeze.cont_en).unwrap();
-            // analyser.set_property("freeze-peak", &vset.freeze.freeze.peak).unwrap();
-            // analyser.set_property("freeze-peak-en", &vset.freeze.freeze.peak_en).unwrap();
-            // analyser.set_property("freeze-duration", &vset.freeze.freeze.duration).unwrap();
-            // analyser.set_property("diff-cont", &vset.freeze.diff.cont).unwrap();
-            // analyser.set_property("diff-cont-en", &vset.freeze.diff.cont_en).unwrap();
-            // analyser.set_property("diff-peak", &vset.freeze.diff.peak).unwrap();
-            // analyser.set_property("diff-peak-en", &vset.freeze.diff.peak_en).unwrap();
-            // analyser.set_property("diff-duration", &vset.freeze.diff.duration).unwrap();
-            // analyser.set_property("blocky-cont", &vset.blocky.blocky.cont).unwrap();
-            // analyser.set_property("blocky-cont-en", &vset.blocky.blocky.cont_en).unwrap();
-            // analyser.set_property("blocky-peak", &vset.blocky.blocky.peak).unwrap();
-            // analyser.set_property("blocky-peak-en", &vset.blocky.blocky.peak_en).unwrap();
-            // analyser.set_property("blocky-duration", &vset.blocky.blocky.duration).unwrap();
-            // analyser.set_property("mark-blocks", &vset.blocky.mark_blocks).unwrap();
+            let vset = s.video;
+            analyser.set_property("loss", &vset.loss).unwrap();
+            analyser.set_property("black-pixel-lb", &vset.black.black_pixel).unwrap();
+            analyser.set_property("pixel-diff-lb", &vset.freeze.pixel_diff).unwrap();
+            analyser.set_property("black-cont", &vset.black.black.cont).unwrap();
+            analyser.set_property("black-cont-en", &vset.black.black.cont_en).unwrap();
+            analyser.set_property("black-peak", &vset.black.black.peak).unwrap();
+            analyser.set_property("black-peak-en", &vset.black.black.peak_en).unwrap();
+            analyser.set_property("black-duration", &vset.black.black.duration).unwrap();
+            analyser.set_property("luma-cont", &vset.black.luma.cont).unwrap();
+            analyser.set_property("luma-cont-en", &vset.black.luma.cont_en).unwrap();
+            analyser.set_property("luma-peak", &vset.black.luma.peak).unwrap();
+            analyser.set_property("luma-peak-en", &vset.black.luma.peak_en).unwrap();
+            analyser.set_property("luma-duration", &vset.black.luma.duration).unwrap();
+            analyser.set_property("freeze-cont", &vset.freeze.freeze.cont).unwrap();
+            analyser.set_property("freeze-cont-en", &vset.freeze.freeze.cont_en).unwrap();
+            analyser.set_property("freeze-peak", &vset.freeze.freeze.peak).unwrap();
+            analyser.set_property("freeze-peak-en", &vset.freeze.freeze.peak_en).unwrap();
+            analyser.set_property("freeze-duration", &vset.freeze.freeze.duration).unwrap();
+            analyser.set_property("diff-cont", &vset.freeze.diff.cont).unwrap();
+            analyser.set_property("diff-cont-en", &vset.freeze.diff.cont_en).unwrap();
+            analyser.set_property("diff-peak", &vset.freeze.diff.peak).unwrap();
+            analyser.set_property("diff-peak-en", &vset.freeze.diff.peak_en).unwrap();
+            analyser.set_property("diff-duration", &vset.freeze.diff.duration).unwrap();
+            analyser.set_property("blocky-cont", &vset.blocky.blocky.cont).unwrap();
+            analyser.set_property("blocky-cont-en", &vset.blocky.blocky.cont_en).unwrap();
+            analyser.set_property("blocky-peak", &vset.blocky.blocky.peak).unwrap();
+            analyser.set_property("blocky-peak-en", &vset.blocky.blocky.peak_en).unwrap();
+            analyser.set_property("blocky-duration", &vset.blocky.blocky.duration).unwrap();
         }
     }
 }

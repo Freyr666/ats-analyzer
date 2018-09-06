@@ -32,7 +32,6 @@ pub struct Freeze {
 #[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Blocky {
     pub blocky      : Setting,
-    pub mark_blocks : bool,
 }
 
 #[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
