@@ -28,7 +28,7 @@ impl Renderer<VideoR> {
             .unwrap();//_or({ vaapi = false; gst::ElementFactory::make("vp8enc", None).unwrap() });
         let pay     = gst::ElementFactory::make("rtpvp8pay", None).unwrap();
         let output  = gst::ElementFactory::make("udpsink", None).unwrap();
-        let queue   = gst::ElementFactory::make("queue2", None).unwrap();
+        let queue   = gst::ElementFactory::make("queue", None).unwrap();
         bin.add_many(&[&encoder,&pay,&queue,&output]).unwrap();
         gst::Element::link_many(&[&encoder,&pay,&queue,&output]).unwrap();
         encoder.sync_state_with_parent().unwrap();
@@ -41,8 +41,9 @@ impl Renderer<VideoR> {
             encoder.set_property("bitrate", &8000u32).unwrap();
             encoder.set_property("quality-level", &7u32).unwrap();
         };
-        queue.set_property("max-size-buffers", &200000000);
-        //queue.set_property("max-size-bytes", &4096);
+        queue.set_property("max-size-time", &0u64).unwrap();
+        queue.set_property("max-size-buffers", &0u32).unwrap();
+        queue.set_property("max-size-bytes", &0u32).unwrap();
         output.set_property("host", &"127.0.0.1").unwrap();
         output.set_property("port", &port).unwrap();
         output.set_property("async", &false).unwrap();

@@ -10,6 +10,7 @@ use wm::widget::{Widget,WidgetDesc};
 
 pub struct WidgetVideo {
     desc:      Arc<Mutex<WidgetDesc>>,
+    par:       Arc<Mutex<Option<(u32,u32)>>>,
     enabled:   bool,
     uid:       Option<String>,
     stream:    u32,
@@ -19,11 +20,16 @@ pub struct WidgetVideo {
     input_pad: Option<gst::Pad>,
     valve:     gst::Element,
     conv:      gst::Element,
-    scale:     gst::Element,
+    //scale:     gst::Element,
     deint:     gst::Element,
-    queue:     gst::Element,
+    //queue:     gst::Element,
     caps:      gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
+}
+
+struct Asp {
+    asp: (u32, u32),
+    par: (u32, u32),
 }
 
 impl WidgetVideo {
@@ -37,23 +43,24 @@ impl WidgetVideo {
             layer: 0,
         };
         let desc   = Arc::new(Mutex::new(desc));
+        let par    = Arc::new(Mutex::new(None));
         let linked = Arc::new(Mutex::new(Signal::new()));
         let valve  = gst::ElementFactory::make("valve", None).unwrap();
         let conv   = gst::ElementFactory::make("glcolorconvert", None).unwrap();
-        let scale = gst::ElementFactory::make("glcolorscale", None).unwrap();
+        //let scale = gst::ElementFactory::make("glcolorscale", None).unwrap();
         let deint = gst::ElementFactory::make("gldeinterlace", None).unwrap();
-        let queue = gst::ElementFactory::make("queue", None).unwrap();
+        //let queue = gst::ElementFactory::make("queue", None).unwrap();
         let caps  = gst::ElementFactory::make("capsfilter", None).unwrap();
-        queue.set_property("max-size-buffers", &20000);
-        queue.set_property("max-size-bytes", &12000000);
-        caps.set_property("caps", &gst::Caps::from_str("video/x-raw(memory:GLMemory),format=RGBA,pixel-aspect-ratio=1/1").unwrap()).unwrap();
+        //queue.set_property("max-size-buffers", &20000);
+       // queue.set_property("max-size-bytes", &12000000);
+        caps.set_property("caps", &gst::Caps::from_str("video/x-raw(ANY),format=RGBA").unwrap()).unwrap();
         WidgetVideo {
-            desc,
+            desc, par,
             enabled:   false,
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, conv, scale, deint, caps, queue,
+            valve, conv, /*scale, */ deint, caps, //queue,
             linked,
         }
     }
@@ -69,7 +76,7 @@ impl WidgetVideo {
         x
     }
 
-    fn retrieve_aspect (pad: &gst::Pad) -> Option<(u32, u32)> {
+    fn retrieve_aspect (pad: &gst::Pad) -> Option<Asp> {
         if let Some(ref caps) = pad.get_current_caps() {
             let vi = VideoInfo::from_caps(caps).unwrap();
             let (width, height) = (vi.width(), vi.height());
@@ -77,7 +84,7 @@ impl WidgetVideo {
             let x = width * (par_n as u32);
             let y = height * (par_d as u32);
             let gcd = WidgetVideo::gcd(x, y);
-            Some((x/gcd, y/gcd))
+            Some(Asp { asp: (x/gcd, y/gcd), par: (par_n as u32, par_d as u32) })
         } else {
             None
         }
@@ -96,9 +103,15 @@ impl WidgetVideo {
         let mut desc = self.desc.lock().unwrap();
         if desc.position == position { return };
         desc.position = position;
+        let (height, width) : (i32, i32) = if let Some(par) = *self.par.lock().unwrap() {
+            let (par_n, par_d) = par;
+            (position.get_height()  as i32, (position.get_width() * par_d / par_n) as i32)
+        } else {
+            (position.get_height() as i32, position.get_width() as i32)
+        };
         if let Some(ref pad) = self.mixer_pad {
-            pad.set_property("height", &(position.get_height() as i32)).unwrap();
-            pad.set_property("width", &(position.get_width() as i32)).unwrap();
+            pad.set_property("height", &height).unwrap();
+            pad.set_property("width", &width).unwrap();
             pad.set_property("xpos", &(position.get_x() as i32)).unwrap();
             pad.set_property("ypos", &(position.get_y() as i32)).unwrap();
         };
@@ -107,13 +120,13 @@ impl WidgetVideo {
 
 impl Widget for WidgetVideo {
     fn add_to_pipe(&self, pipe: gst::Bin) {
-        pipe.add_many(&[&self.valve, &self.conv, &self.scale, &self.deint, &self.caps, &self.queue]).unwrap();
-        gst::Element::link_many(&[&self.valve, &self.conv, &self.scale, &self.deint, &self.caps, &self.queue]).unwrap();
+        pipe.add_many(&[&self.valve, &self.conv, /*&self.scale,*/ &self.deint, &self.caps/*, &self.queue*/]).unwrap();
+        gst::Element::link_many(&[&self.valve, &self.conv, /*&self.scale,*/ &self.deint, &self.caps/*, &self.queue*/]).unwrap();
         self.valve.sync_state_with_parent().unwrap();
-        self.scale.sync_state_with_parent().unwrap();
+        //self.scale.sync_state_with_parent().unwrap();
         self.deint.sync_state_with_parent().unwrap();
         self.conv.sync_state_with_parent().unwrap();
-        self.queue.sync_state_with_parent().unwrap();
+        //self.queue.sync_state_with_parent().unwrap();
         self.caps.sync_state_with_parent().unwrap();
     }
     
@@ -128,10 +141,12 @@ impl Widget for WidgetVideo {
         self.desc.lock().unwrap().domain = format!("s{}_c{}", src.stream, src.channel);
 
         let desc   = self.desc.clone();
+        let par    = self.par.clone();
         let linked = self.linked.clone();
         in_pad.connect_property_caps_notify(move |pad| {
             if let Some (aspect) = WidgetVideo::retrieve_aspect(pad) {
-                desc.lock().unwrap().aspect = Some(aspect); // TODO fix that
+                desc.lock().unwrap().aspect = Some(aspect.asp); // TODO fix that
+                *par.lock().unwrap() = Some(aspect.par);
                 linked.lock().unwrap().emit(&());
             }
         });
@@ -139,7 +154,7 @@ impl Widget for WidgetVideo {
     }
     
     fn plug_sink (&mut self, sink: gst::Pad) {
-        self.queue.get_static_pad("src").unwrap().link(&sink);
+        self.caps.get_static_pad("src").unwrap().link(&sink);
         if ! self.enabled {
             self.valve.set_property("drop", &true).unwrap();
             sink.set_property("alpha", &0.0).unwrap();

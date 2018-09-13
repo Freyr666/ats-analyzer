@@ -84,8 +84,9 @@ impl Root {
             let demux = gst::ElementFactory::make("tsdemux", Some(demux_name.as_str())).unwrap();
 
             demux.set_property("program-number", &(chan.number as i32)).unwrap();
-            queue.set_property("max-size-buffers", &200000u32).unwrap();
-            queue.set_property("max-size-bytes", &429496729u32).unwrap();
+            queue.set_property("max-size-time", &0u64).unwrap();
+            queue.set_property("max-size-buffers", &0u32).unwrap();
+            queue.set_property("max-size-bytes", &0u32).unwrap();
 
             let sinkpad = queue.get_static_pad("sink").unwrap();
             let srcpad  = tee.get_request_pad("src_%u").unwrap();

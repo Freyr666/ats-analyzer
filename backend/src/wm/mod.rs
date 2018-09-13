@@ -189,8 +189,8 @@ impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
                             Err(String::from("can't acquire wm layout"))
                         },
                     Request::Set(templ) => match auxilary(templ) {
-                        Ok(()) => Ok(Reply::Set),
-                        Err(e) => Err(e),
+                            Ok(()) => Ok(Reply::Set),
+                            Err(e) => Err(e),
                     }
                 }
             })

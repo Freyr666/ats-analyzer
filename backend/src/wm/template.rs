@@ -14,7 +14,7 @@ pub struct WmTemplatePartial {
     layout:     Vec<(String,ContainerTemplate)>,
 }
 
-#[derive(Serialize,Deserialize,Clone)]
+#[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct WmTemplate {
     pub resolution: (u32, u32),
     pub layout:     Vec<(String,ContainerTemplate)>,

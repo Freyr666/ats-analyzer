@@ -10,6 +10,7 @@ use video_data::VideoData;
 use audio_data::AudioData;
 use signals::Signal;
 use chatterer::MsgType;
+use std::str::FromStr;
 
 struct CommonBranch {
     decoder: gst::Element,
@@ -20,21 +21,16 @@ struct CommonBranch {
 impl CommonBranch {
     pub fn new () -> CommonBranch {
         let bin   = gst::Bin::new(None);
-        let queue = gst::ElementFactory::make("queue", None).unwrap();
 
         for el in &["vaapih264dec", "vaapimpeg2dec", "vaapidecodebin"] {
             gst::ElementFactory::find(&el).map(|f| f.set_rank(0));
         };
 
         let decoder = gst::ElementFactory::make("decodebin",None).unwrap();
-
-        queue.set_property("max-size-buffers", &20000);
-        queue.set_property("max-size-bytes", &12000000);
         
-        bin.add_many(&[&queue, &decoder]).unwrap();
-        queue.link(&decoder).unwrap();
+        bin.add_many(&[/*&queue,*/ &decoder]).unwrap();
 
-        let p = queue.get_static_pad("sink").unwrap();
+        let p = decoder.get_static_pad("sink").unwrap();
         let sink_ghost = gst::GhostPad::new(Some("sink"), &p).unwrap();
 
         sink_ghost.set_active(true).unwrap();
@@ -58,6 +54,10 @@ pub struct VideoBranch {
     pub pad_added: Arc<Mutex<Signal<SrcPad>>>,
 }
 
+fn enum_to_val(cls: &str, val: i32) -> glib::Value {
+    glib::EnumClass::new(glib::Type::from_name(cls).unwrap()).unwrap().to_value(val).unwrap()
+}
+
 impl VideoBranch {
     pub fn new (stream: u32, channel: u32, pid: u32,
                 settings: Option<Settings>, format: MsgType, sender: Sender<Vec<u8>>) -> VideoBranch {
@@ -70,6 +70,8 @@ impl VideoBranch {
         let sink      = common.sink;
         let pad_added = Arc::new(Mutex::new(Signal::new()));
 
+        analyser.set_property("latency", &3u32).unwrap();
+        
         VideoBranch::apply_settings(&analyser, settings);
         // TODO consider lock removal
         let vdata     = Arc::new(Mutex::new(VideoData::new(stream, channel, pid, format, sender)));        
@@ -89,14 +91,20 @@ impl VideoBranch {
 
             if *typ != "video" { return };
 
+            let queue  = gst::ElementFactory::make("queue", None).unwrap();
             let upload = gst::ElementFactory::make("glupload",None).unwrap();
 
-            let sink_pad = upload.get_static_pad("sink").unwrap();
+            let sink_pad = queue.get_static_pad("sink").unwrap();
             let src_pad  = analyser_c.get_static_pad("src").unwrap();
 
-            bin_c.add_many(&[&upload, &analyser_c]).unwrap();
-            upload.link(&analyser_c).unwrap();
+            queue.set_property("max-size-time", &0u64).unwrap();
+            queue.set_property("max-size-buffers", &0u32).unwrap();
+            queue.set_property("max-size-bytes", &0u32).unwrap();
 
+            bin_c.add_many(&[&queue, &upload, &analyser_c]).unwrap();
+            gst::Element::link_many(&[&queue,  &upload, &analyser_c]).unwrap();
+
+            queue.sync_state_with_parent();
             upload.sync_state_with_parent();
             analyser_c.sync_state_with_parent();
 
