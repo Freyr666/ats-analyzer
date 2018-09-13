@@ -90,7 +90,7 @@ impl WmState {
                 self.widgets.insert(uid, widg);
                 Some(signal)
             }
-            Type::Audio => None, /* {
+            Type::Audio => {
                 let uid;
                 let widg = widget_factory::make("audio").unwrap();
                 {
@@ -104,7 +104,7 @@ impl WmState {
                 let signal = widg.lock().unwrap().linked();
                 self.widgets.insert(uid, widg);
                 Some(signal)
-            } */
+            }
             _ => None
         }
     }

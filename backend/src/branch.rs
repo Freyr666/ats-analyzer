@@ -221,15 +221,21 @@ impl AudioBranch {
             let typ = &caps_toks[0];
 
             if *typ != "audio" { return };
-
+            
+            let queue  = gst::ElementFactory::make("queue", None).unwrap();
             let conv = gst::ElementFactory::make("audioconvert",None).unwrap();
 
-            let sink_pad = conv.get_static_pad("sink").unwrap();
+            let sink_pad = queue.get_static_pad("sink").unwrap();
             let src_pad  = analyser_c.get_static_pad("src").unwrap();
 
-            bin_c.add_many(&[&conv, &analyser_c]).unwrap();
-            conv.link(&analyser_c).unwrap();
+            queue.set_property("max-size-time", &0u64).unwrap();
+            queue.set_property("max-size-buffers", &0u32).unwrap();
+            queue.set_property("max-size-bytes", &0u32).unwrap();
 
+            bin_c.add_many(&[&queue, &conv, &analyser_c]).unwrap();
+            gst::Element::link_many(&[&queue, &conv, &analyser_c]).unwrap();
+
+            queue.sync_state_with_parent();
             conv.sync_state_with_parent();
             analyser_c.sync_state_with_parent();
 
@@ -251,7 +257,6 @@ impl AudioBranch {
             pads_c.lock().unwrap().push(aspad);
         });
 
-        bin.sync_children_states();
         AudioBranch { stream, channel, pid, pads,
                       analyser, decoder, bin, sink,
                       pad_added, audio_pad_added }
