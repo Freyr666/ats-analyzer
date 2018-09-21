@@ -144,7 +144,7 @@ impl Structure {
     }
 
     pub fn find_pid_by_num (&self, pid: u32) -> Option<&Pid> {
-        for c in self.channels.iter() {
+        for c in &self.channels {
             if let Some(p) = c.find_pid(pid) {
                 return Some(p)
             }
@@ -153,7 +153,7 @@ impl Structure {
     }
 
     pub fn find_pid_by_num_mut (&mut self, pid: u32) -> Option<&mut Pid> {
-        for c in self.channels.iter_mut() {
+        for c in &mut self.channels {
             if let Some(p) = c.find_pid_mut(pid) {
                 return Some(p)
             }

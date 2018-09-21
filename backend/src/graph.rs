@@ -52,7 +52,7 @@ impl GraphState {
         let settings = None;
         let pipeline = gst::Pipeline::new(None);
         let wm       = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender.clone())));
-        let mux      = Arc::new(Mutex::new(Mux::new(pipeline.clone(), format, sender.clone())));
+        let mux      = Arc::new(Mutex::new(Mux::new(&pipeline, format, sender.clone())));
         let vrend    = None;
         let arend    = None;
         let bus      = pipeline.get_bus().unwrap();
@@ -66,7 +66,7 @@ impl GraphState {
         self.roots    = Vec::new();
         self.pipeline = gst::Pipeline::new(None);
         self.wm.lock().unwrap().reset(self.pipeline.clone());
-        self.mux.lock().unwrap().reset(self.pipeline.clone());
+        self.mux.lock().unwrap().reset(&self.pipeline);
         self.vrend    = Some(Renderer::<VideoR>::new(5004, self.pipeline.clone().upcast()));
         self.arend    = Some(Renderer::<AudioR>::new(5005, self.pipeline.clone().upcast()));
         self.bus      = self.pipeline.get_bus().unwrap();
@@ -86,7 +86,7 @@ impl GraphState {
         
         for s in s.iter() {
             //println!("Stream");
-            if let Some(root) = Root::new(self.pipeline.clone().upcast(), s.clone(),
+            if let Some(root) = Root::new(&self.pipeline.clone().upcast(), s.clone(),
                                           self.settings.clone(),
                                           self.format, self.sender.clone()) {
                 //println!("New root");

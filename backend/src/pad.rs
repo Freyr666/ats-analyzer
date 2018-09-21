@@ -12,13 +12,13 @@ pub struct SrcPad {
     pub channel: u32,
     pub pid: u32,
 
-    bin: gst::Bin,
+    bin: gst::Bin, // TODO remove
     tee: gst::Element,
     pub pad: gst::Pad,
 }
 
 impl SrcPad {
-    pub fn new(stream: u32, channel: u32, pid: u32, typ: &str, bin: gst::Bin, pad: gst::Pad) -> SrcPad {
+    pub fn new(stream: u32, channel: u32, pid: u32, typ: &str, bin: gst::Bin, pad: &gst::Pad) -> SrcPad {
         let typ = match typ {
             "video" => Type::Video,
             "audio" => Type::Audio,

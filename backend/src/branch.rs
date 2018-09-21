@@ -20,7 +20,9 @@ impl CommonBranch {
         let bin   = gst::Bin::new(None);
 
         for el in &["vaapih264dec", "vaapimpeg2dec", "vaapidecodebin"] {
-            gst::ElementFactory::find(&el).map(|f| f.set_rank(0));
+            if let Some(f) = gst::ElementFactory::find(&el) {
+                f.set_rank(0)
+            }
         };
 
         let decoder = gst::ElementFactory::make("decodebin",None).unwrap();
@@ -81,7 +83,7 @@ impl VideoBranch {
         decoder.connect_pad_added(move | _, pad | {
             let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
             let caps_toks: Vec<&str> = pcaps.split('/').collect();
-            if caps_toks.len() == 0 { return };
+            if caps_toks.is_empty() { return };
 
             let typ = &caps_toks[0];
 
@@ -108,13 +110,13 @@ impl VideoBranch {
             // TODO add err check
             analyser_c.connect("data", true, move |vals| {
                 let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
-                vdata.lock().unwrap().send_msg(d);
+                vdata.lock().unwrap().send_msg(&d);
                 None
             }).unwrap();
 
-            pad.link(&sink_pad);
+            let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream, channel, pid, "video", bin_c.clone(), src_pad);
+            let spad = SrcPad::new(stream, channel, pid, "video", bin_c.clone(), &src_pad);
 
             pad_added_c.lock().unwrap().emit(&spad);
             pads_c.lock().unwrap().push(spad);
@@ -126,12 +128,12 @@ impl VideoBranch {
     }
 
     pub fn plug(&self, src_pad: &gst::Pad) {
-        src_pad.link(&self.sink);
+        let _ = src_pad.link(&self.sink); // TODO
         self.bin.sync_state_with_parent().unwrap();
     }
 
     pub fn add_to_pipe (&self, b: &gst::Bin) {
-        b.add(&self.bin);
+        b.add(&self.bin).unwrap();
         self.bin.sync_state_with_parent().unwrap();
         self.bin.sync_children_states().unwrap();
     }
@@ -209,11 +211,12 @@ impl AudioBranch {
         let analyser_c = analyser.clone();
         let pad_added_c = pad_added.clone();
         let audio_pad_added_c = audio_pad_added.clone();
-        
+
+        // TODO replace gst::pad with Pad
         decoder.connect_pad_added(move | _, pad | {
             let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
             let caps_toks: Vec<&str> = pcaps.split('/').collect();
-            if caps_toks.len() == 0 { return };
+            if caps_toks.is_empty() { return };
 
             let typ = &caps_toks[0];
 
@@ -239,13 +242,13 @@ impl AudioBranch {
             let adata = adata.clone();
             analyser_c.connect("data", true, move |vals| {
                 let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
-                adata.lock().unwrap().send_msg(d);
+                adata.lock().unwrap().send_msg(&d);
                 None
-            });
+            }).unwrap();
 
-            pad.link(&sink_pad);
+            let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream, channel, pid, "audio", bin_c.clone(), src_pad);
+            let spad = SrcPad::new(stream, channel, pid, "audio", bin_c.clone(), &src_pad);
             let aspad = spad.clone();
             
             pad_added_c.lock().unwrap().emit(&spad);
@@ -260,12 +263,12 @@ impl AudioBranch {
     }
 
     pub fn plug(&self, src_pad: &gst::Pad) {
-        src_pad.link(&self.sink);
+        let _ = src_pad.link(&self.sink); // TODO
         self.bin.sync_state_with_parent().unwrap();
     }
 
     pub fn add_to_pipe (&self, b: &gst::Bin) {
-        b.add(&self.bin);
+        b.add(&self.bin).unwrap();
         self.bin.sync_state_with_parent().unwrap();
         self.bin.sync_children_states().unwrap();
     }

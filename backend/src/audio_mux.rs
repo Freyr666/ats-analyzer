@@ -29,7 +29,7 @@ pub struct Mux {
 }
 
 impl MuxState {
-    fn new (pipe: gst::Pipeline) -> MuxState {
+    fn new (pipe: &gst::Pipeline) -> MuxState {
         let sources  = HashMap::new ();
         let chosen   = None;
         let selector = gst::ElementFactory::make("input-selector", None).unwrap();
@@ -40,23 +40,24 @@ impl MuxState {
     fn info (&self) -> MuxInfo {
         let chosen  = self.chosen.clone ();
         let mut sources = Vec::with_capacity (self.sources.capacity());
-        for (s,_) in &self.sources {
+        for s in self.sources.keys() {
             sources.push(s.clone());
         };
         MuxInfo { chosen, sources }
     }
 
     fn apply (&mut self, choice: String) -> Result<(),String> {
-        if self.chosen.as_ref().map_or(true, |x| { *x != choice }) {
-            if let Some(p) = self.sources.get(&choice) {
-                self.chosen = Some(choice);
-                self.selector.set_property("active-pad", &p).unwrap();
-                Ok(())
-            } else {
-                Err(String::from("Pid not found"))
-            }
-        } else {
-            Ok (())
+        match self.chosen {
+            Some(ref chosen) if *chosen == choice => Ok (()),
+            _ => {
+                if let Some(p) = self.sources.get(&choice) {
+                    self.chosen = Some(choice);
+                    self.selector.set_property("active-pad", &p).unwrap();
+                    Ok(())
+                } else {
+                    Err(String::from("Pid not found"))
+                }
+            },
         }
     }
 
@@ -64,7 +65,7 @@ impl MuxState {
         let name = format!("{}_{}_({})", pad.pid, pad.channel, pad.stream);
         if ! self.sources.contains_key (&name) {
             let sink = self.selector.get_request_pad("sink_%u").unwrap();
-            pad.pad.link(&sink);
+            let _ = pad.pad.link(&sink); // TODO 
             // choose the first appeared pad
             if self.chosen.is_none() {
                 self.chosen = Some(name.clone());
@@ -112,13 +113,13 @@ impl Replybox<Request<String>,Reply<MuxInfo>> for Mux {
 }
 
 impl Mux {
-    pub fn new (pipe: gst::Pipeline, format: MsgType, sender: Sender<Vec<u8>>) -> Mux {
+    pub fn new (pipe: &gst::Pipeline, format: MsgType, sender: Sender<Vec<u8>>) -> Mux {
         let chat  = Arc::new (Mutex::new (Notifier::new("mux", format, sender )));
         let state = Arc::new (Mutex::new (MuxState::new(pipe)));
         Mux { format, chat, state }
     }
 
-    pub fn reset (&mut self, pipe: gst::Pipeline) {
+    pub fn reset (&mut self, pipe: &gst::Pipeline) {
         *self.state.lock().unwrap() = MuxState::new(pipe);
         self.chat.lock().unwrap().talk(&self.state.lock().unwrap().info());
     }

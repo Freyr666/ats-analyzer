@@ -144,11 +144,11 @@ impl Widget for WidgetVideo {
                 linked.lock().unwrap().emit(&());
             }
         });
-        src.pad.link(&in_pad.clone());
+        let _ = src.pad.link(&in_pad.clone()); // TODO
     }
     
     fn plug_sink (&mut self, sink: gst::Pad) {
-        self.caps.get_static_pad("src").unwrap().link(&sink);
+        let _ = self.caps.get_static_pad("src").unwrap().link(&sink); // TODO
         if ! self.enabled {
             self.valve.set_property("drop", &true).unwrap();
             sink.set_property("alpha", &0.0).unwrap();

@@ -77,7 +77,7 @@ impl AudioData {
         AudioData { stream, channel, pid, notif: Notifier::new("audio_data", format, sender), mmap }
     }
 
-    pub fn send_msg (&self, buf: gst::Buffer) {
+    pub fn send_msg (&self, buf: &gst::Buffer) {
         unsafe {
             if gst_sys::gst_buffer_map(buf.as_mut_ptr(), self.mmap, gst_sys::GstMapFlags::READ) == 0 {
                 panic!("audio_data: buf mmap failure");

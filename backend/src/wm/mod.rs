@@ -135,7 +135,7 @@ impl WmState {
             self.layout.insert(cname.clone(), Container { position, widgets } );
         }
         self.set_resolution(t.resolution);
-        self.pipe.set_state(gst::State::Playing);
+        let _ = self.pipe.set_state(gst::State::Playing); // TODO
         gst::debug_bin_to_dot_file(&self.pipe, gst::DebugGraphDetails::VERBOSE, "wm");
         Ok(())
     }

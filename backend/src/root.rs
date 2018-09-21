@@ -24,14 +24,14 @@ impl Root {
                      settings: Option<Settings>,
                      added: Arc<Mutex<Signal<SrcPad>>>,
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
-                     bin: gst::Bin, pad: &gst::Pad,
+                     bin: &gst::Bin, pad: &gst::Pad,
                      format: MsgType, sender: &Mutex<Sender<Vec<u8>>>) {
         let pname = pad.get_name();
         let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
         let name_toks: Vec<&str> = pname.split('_').collect();
         let caps_toks: Vec<&str> = pcaps.split('/').collect();
         
-        if name_toks.len() != 3 || caps_toks.len() == 0 { return };
+        if name_toks.len() != 3 || caps_toks.is_empty() { return };
         let typ = caps_toks[0];
         let pid = u32::from_str_radix(name_toks[2], 16).unwrap();
         if let Some (p) = chan.find_pid(pid){
@@ -54,7 +54,7 @@ impl Root {
         }
     }
     
-    pub fn new(bin: gst::Bin, m: Structure, settings: Option<Settings>,
+    pub fn new(bin: &gst::Bin, m: Structure, settings: Option<Settings>,
                format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
         if ! m.to_be_analyzed() { return None };
 
@@ -104,7 +104,7 @@ impl Root {
                 Root::build_branch(&mut branches_c.lock().unwrap(), stream, &chan,
                                    *settings,
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
-                                   bin_cc.clone(), pad,
+                                   &bin_cc, pad,
                                    format, &sender_c);
             });
         };
