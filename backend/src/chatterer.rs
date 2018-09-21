@@ -72,6 +72,8 @@ pub mod control {
         Error(String)
     }
 
+    pub type ReplyCallback<T,R> = Box<Fn(T)->Result<R,String> + Send + Sync>;
+
     pub mod message {        
         #[derive(Deserialize, Debug)]
         #[serde(tag = "method", content = "body")]
@@ -96,7 +98,7 @@ pub mod control {
     pub trait Replybox<T,R>: Addressable
         where T: DeserializeOwned,
               R: Serialize {    
-        fn reply (&self) -> Box<Fn(T)->Result<R,String> + Send + Sync>;
+        fn reply (&self) -> ReplyCallback<T,R>;
     }
     
     pub trait DispatchTable {

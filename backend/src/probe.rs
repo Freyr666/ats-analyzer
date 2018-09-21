@@ -1,5 +1,4 @@
 use std::sync::{Arc,Mutex};
-use std::rc::Rc;
 use signals::Signal;
 use metadata::Structure;
 use std::str::FromStr;
@@ -29,7 +28,7 @@ impl Probe {
         let pipeline = gst::Pipeline::new(None);
 
         src.set_property("uri", &uri).unwrap();
-        src.set_property("timeout", &5000000000u64).unwrap();
+        src.set_property("timeout", &5_000_000_000u64).unwrap();
         
         pipeline.add_many(&[&src, &parse, &sink]).unwrap();
 
@@ -52,8 +51,7 @@ impl Probe {
                                 signal.lock().unwrap().emit(&s)
                             };
                         }
-                    } else {
-                        if let Some(s) = msg.get_structure() {
+                    } else if let Some(s) = msg.get_structure() {
                             if s.get_name() == "GstUDPSrcTimeout" &&
                                 ! structure.is_empty() {
                                     structure.clear();
@@ -61,7 +59,6 @@ impl Probe {
                                     let _ = pipe.set_state(gst::State::Playing);
                                     signal.lock().unwrap().emit(&structure)
                                 }
-                        }
                     },
                 _ => ()
             };

@@ -8,8 +8,7 @@ use chatterer::control::message::{Request,Reply};
 use chatterer::notif::Notifier;
 use gst::prelude::*;
 use gst;
-use glib;
-use pad::{Type,SrcPad};
+use pad::SrcPad;
 
 #[derive(Serialize,Deserialize,Clone)]
 struct MuxInfo {

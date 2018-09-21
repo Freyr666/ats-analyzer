@@ -11,9 +11,6 @@ use branch::Branch;
 use std::u32;
 
 pub struct Root {
-    bin:           gst::Bin,
-    src:           gst::Element,
-    tee:           gst::Element,
     settings:      Arc<Mutex<Option<Settings>>>,
     branches:      Arc<Mutex<Vec<Branch>>>,
     pub pad_added: Arc<Mutex<Signal<SrcPad>>>,
@@ -69,13 +66,10 @@ impl Root {
         let audio_pad_added = Arc::new(Mutex::new(Signal::new()));
         
         src.set_property("uri", &m.uri).unwrap();
-        src.set_property("buffer-size", &2147483647).unwrap();
+        src.set_property("buffer-size", &2_147_483_647).unwrap();
 
         bin.add_many(&[&src, &tee]).unwrap();
         src.link(&tee).unwrap();
-
-        let bin_c = bin.clone();
-        // let branches_c = branches.clone();
 
         for chan in m.channels {
             let demux_name = format!("demux_{}_{}_{}_{}", m.id, chan.number, chan.service_name, chan.provider_name);
@@ -91,13 +85,14 @@ impl Root {
             let sinkpad = queue.get_static_pad("sink").unwrap();
             let srcpad  = tee.get_request_pad("src_%u").unwrap();
 
-            bin_c.add_many(&[&queue,&demux]).unwrap();
+            bin.add_many(&[&queue,&demux]).unwrap();
             queue.link(&demux).unwrap();
 
-            srcpad.link(&sinkpad);
+            // TODO check
+            let _ = srcpad.link(&sinkpad);
             let stream = m.id as u32;
 
-            let bin_cc = bin_c.clone();
+            let bin_cc = bin.clone();
             let settings_c = settings.clone();
             let branches_c = branches.clone();
             let pad_added_c = pad_added.clone();
@@ -114,7 +109,7 @@ impl Root {
             });
         };
 
-        Some(Root { bin, src, tee, settings, branches, pad_added, audio_pad_added })
+        Some(Root { settings, branches, pad_added, audio_pad_added })
     }
 
     pub fn apply_settings(&mut self, s: Settings) {

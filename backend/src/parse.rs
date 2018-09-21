@@ -1,11 +1,7 @@
-use gst::prelude::*;
 use gst_mpegts_sys::*;
-use glib_sys::*;
-use gobject_sys::*;
 use metadata::{Channel,Pid,Structure};
 use std::slice;
 use std::str::FromStr;
-use std::mem;
 use std::ptr;
 use std::ffi;
 use libc;
@@ -173,11 +169,11 @@ pub unsafe fn table (section: *mut GstMpegtsSection, metadata: &mut Structure) -
     
     match (*section).section_type {
         GST_MPEGTS_SECTION_PAT => { dump_pat(section, metadata);
-                                    return Some (metadata.clone()) },
+                                    Some (metadata.clone()) },
         GST_MPEGTS_SECTION_PMT => { dump_pmt(section, metadata);
-                                    return Some (metadata.clone()) },
+                                    Some (metadata.clone()) },
         GST_MPEGTS_SECTION_SDT => { dump_sdt(section, metadata);
-                                    return Some (metadata.clone()) },
-        _ => return None
+                                    Some (metadata.clone()) },
+        _ => None
     }
 }

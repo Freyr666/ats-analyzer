@@ -25,7 +25,6 @@ pub mod metadata;
 pub mod parse;
 pub mod probe;
 pub mod streams;
-pub mod preferences;
 pub mod pad;
 pub mod audio_mux;
 pub mod video_data;

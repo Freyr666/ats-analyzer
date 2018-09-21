@@ -18,7 +18,8 @@ fn set_boxed_logger(logger: Box<Log>) -> Result<(), log::SetLoggerError> {
 struct Logger { name: String }
 
 impl log::Log for Logger {
-    fn enabled(&self, metadata: &Metadata) -> bool {
+    // TODO remove metadata
+    fn enabled(&self, _metadata: &Metadata) -> bool {
         // metadata.level() <= Level::Info
         true
     }

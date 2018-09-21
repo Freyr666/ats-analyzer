@@ -6,14 +6,10 @@ use probe::Probe;
 use control::Control;
 use streams::{Streams};
 use graph::Graph;
-use preferences::Preferences;
-use std::thread;
-use std::str::FromStr;
-use std::fmt::Display;
+use std::{thread,time};
 use std::boxed::Box;
 use std::collections::HashMap;
 use gst;
-use gst::prelude::*;
 use glib;
 use std::sync::{Arc,Mutex};
 
@@ -30,14 +26,7 @@ pub struct ContextDispatcher {
 }
 
 pub struct Context {
-    dispatcher:  Arc<Mutex<ContextDispatcher>>,
     mainloop:    glib::MainLoop,
-    config:      Configuration,
-    probes:      Vec<Probe>,
-    control:     Control,
-    streams:     Streams,
-    graph:       Graph,
-    preferences: Preferences,
     notif:       Notifier,
 }
 
@@ -81,10 +70,9 @@ impl Context {
             probes.push(Probe::new(sid as i32,&i.uris[sid]));
         };
 
-        let mut config  = Configuration::new(i.msg_type, control.sender.clone());
+        let     config  = Configuration::new(i.msg_type, control.sender.clone());
         let mut streams = Streams::new(i.msg_type, control.sender.clone());
         let mut graph   = Graph::new(i.msg_type, control.sender.clone()).unwrap();
-        let preferences = Preferences::new();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
@@ -99,22 +87,21 @@ impl Context {
 
         let dis = dispatcher.clone();
         control.connect(move |s| {
-           // debug!("Control message received");
-            let resp = dis.lock().unwrap().dispatch(s).unwrap();
-           // debug!("Control message response ready");
-            resp
+            // debug!("Control message received");
+            dis.lock().unwrap().dispatch(s).unwrap()
+            // debug!("Control message response ready");
         });
 
         graph.connect_destructive(&mut streams.update.lock().unwrap());
         graph.connect_settings(&mut config.update.lock().unwrap());
         
         info!("Context was created");
-        Ok(Context { mainloop, dispatcher, probes, control,
-                     config, streams, graph, preferences, notif })
+        Ok(Context { mainloop, notif })
     }
 
     pub fn run(&self) {
-        thread::sleep_ms(500); // a very dirty hack indeed
+        // TODO fi this hack
+        thread::sleep(time::Duration::from_millis(500)); // a very dirty hack indeed
         self.notif.talk(&Status::Ready);
         self.mainloop.run();
     }

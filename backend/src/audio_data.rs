@@ -83,7 +83,7 @@ impl AudioData {
                 panic!("audio_data: buf mmap failure");
             }
             let pointer: *const Error = (*self.mmap).data as *const Error;
-            let err_buf = slice::from_raw_parts(pointer, (Parameter::ParamNumber as usize));
+            let err_buf = slice::from_raw_parts(pointer, Parameter::ParamNumber as usize);
             let errors = Errors {
                 silence_shortt:  &err_buf[Parameter::SilenceShortt as usize],
                 silence_moment:  &err_buf[Parameter::SilenceMoment as usize],

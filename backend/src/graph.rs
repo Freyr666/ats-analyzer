@@ -7,8 +7,7 @@ use chatterer::notif::Notifier;
 use chatterer::control::{Addressable,Replybox};
 use root::Root;
 use wm::Wm;
-use pad::{Type,SrcPad};
-use signals::{Signal,Msg};
+use signals::Msg;
 use metadata::Structure;
 use settings::Settings;
 use audio_mux::Mux;
@@ -62,7 +61,8 @@ impl GraphState {
     }
 
     pub fn reset (&mut self) {
-        self.pipeline.set_state(gst::State::Null);
+        // TODO check
+        let _ = self.pipeline.set_state(gst::State::Null);
         self.roots    = Vec::new();
         self.pipeline = gst::Pipeline::new(None);
         self.wm.lock().unwrap().reset(self.pipeline.clone());
@@ -76,7 +76,8 @@ impl GraphState {
     }
 
     pub fn set_state (&self, st: gst::State) {
-        self.pipeline.set_state(st);
+        // TODO check
+        let _ = self.pipeline.set_state(st);
     }
 
     pub fn apply_streams (&mut self, s: Vec<Structure>) -> Result<(),String> {
@@ -92,11 +93,11 @@ impl GraphState {
                 let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
                 let mux    = self.mux.clone();
-                let apipe  = self.pipeline.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
                     //println!("Pad added");
                     wm.lock().unwrap().plug(p);
-                    pipe.set_state(gst::State::Playing);
+                    // TODO check
+                    let _ = pipe.set_state(gst::State::Playing);
                     //gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
                 });
                 
@@ -106,7 +107,7 @@ impl GraphState {
             }
         };
         // TODO replace with retain_state
-        self.pipeline.set_state(gst::State::Playing);
+        let _ = self.pipeline.set_state(gst::State::Playing);
         Ok(())
     }
 
