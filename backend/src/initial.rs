@@ -34,21 +34,21 @@ pub enum UriError {
 }
 
 pub fn uri_error_to_string(e : &UriError) -> String {
-    match e {
-        &UriError::Prefix                  => String::from("Bad prefix"),
-        &UriError::OctetValue(ref v,ref o) => format!("bad value ({}) in ip octet = {}", v, o + 1),
-        &UriError::OctetMissing(ref o)     => format!("ip octet {} is missing", o + 1),
-        &UriError::OctetNumber (ref o)     => format!("bad number ({}) of ip octets", o + 1),
-        &UriError::BadSymbol(ref s)        => format!("bad symbol: {}",s),
-        &UriError::PortValue(ref v)        => format!("bad port value ({})",v),
-        &UriError::PortMissing             => String::from("port value missing after semicolon"),
+    match *e {
+        UriError::Prefix                  => String::from("Bad prefix"),
+        UriError::OctetValue(ref v,ref o) => format!("bad value ({}) in ip octet = {}", v, o + 1),
+        UriError::OctetMissing(ref o)     => format!("ip octet {} is missing", o + 1),
+        UriError::OctetNumber (ref o)     => format!("bad number ({}) of ip octets", o + 1),
+        UriError::BadSymbol(ref s)        => format!("bad symbol: {}",s),
+        UriError::PortValue(ref v)        => format!("bad port value ({})",v),
+        UriError::PortMissing             => String::from("port value missing after semicolon"),
     }
 }
 
 pub fn check_ip_octet(v : i32, octet : i32) -> Result<i32, UriError> {
-    if octet > 3             { return Err (UriError::OctetNumber(octet)) }
-    else if v < 0 || v > 255 { return Err (UriError::OctetValue(v,octet)) }
-    else                     { return Ok (v) }
+    if octet > 3             { Err (UriError::OctetNumber(octet)) }
+    else if v < 0 || v > 255 { Err (UriError::OctetValue(v,octet)) }
+    else                     { Ok (v) }
 }
 
 pub fn validate_uri(uri : &str) -> Result<&str, UriError> {
@@ -64,7 +64,7 @@ pub fn validate_uri(uri : &str) -> Result<&str, UriError> {
     for sym in trimmed.chars() {
         if sym >= '0' && sym <= '9' {
             val     = (val * 10) + ((sym.to_digit(10).unwrap()) as i32);
-            sym_cnt = sym_cnt + 1;
+            sym_cnt += 1;
         }
         else if sym == '.' {
             match state {
@@ -74,7 +74,7 @@ pub fn validate_uri(uri : &str) -> Result<&str, UriError> {
                       Ok (_)  => (),
                       Err (e) => return Err (e),
                   };
-                  octet   = octet + 1;
+                  octet   += 1;
                   val     = 0;
                   sym_cnt = 0;
                 },
@@ -103,19 +103,19 @@ pub fn validate_uri(uri : &str) -> Result<&str, UriError> {
     };
     match state {
         UriParserState::Ip   =>
-        { if sym_cnt == 0    { return Err (UriError::OctetMissing(octet)) }
-          else if octet != 3 { return Err (UriError::OctetNumber(octet)) }
+        { if sym_cnt == 0    { Err (UriError::OctetMissing(octet)) }
+          else if octet != 3 { Err (UriError::OctetNumber(octet)) }
           else {
               match check_ip_octet(val,octet) {
-                  Ok (_)  => return Ok (uri),
-                  Err (e) => return Err (e),
+                  Ok (_)  => Ok (uri),
+                  Err (e) => Err (e),
               }
           }
         }
         UriParserState::Port =>
-        { if sym_cnt == 0                { return Err (UriError::PortMissing) }
-          else if val < 0 || val > 65535 { return Err (UriError::PortValue(val)) }
-          else                           { return Ok (uri) }
+        { if sym_cnt == 0                { Err (UriError::PortMissing) }
+          else if val < 0 || val > 65535 { Err (UriError::PortValue(val)) }
+          else                           { Ok (uri) }
         },
     }
 }
@@ -135,7 +135,7 @@ impl Initial {
         for arg in args {
             match state {
                 ArgsParserState::Positional =>
-                { if arg.starts_with("-") {
+                { if arg.starts_with('-') {
                     match arg.as_str() {
                         "-h" | "--help"    => return Err (Error::HelpOption),
                         "-m" | "--msgtype" => state = ArgsParserState::MsgType,

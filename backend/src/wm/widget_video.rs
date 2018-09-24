@@ -20,9 +20,7 @@ pub struct WidgetVideo {
     input_pad: Option<gst::Pad>,
     valve:     gst::Element,
     conv:      gst::Element,
-    //scale:     gst::Element,
     deint:     gst::Element,
-    //queue:     gst::Element,
     caps:      gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
 }
@@ -47,12 +45,8 @@ impl WidgetVideo {
         let linked = Arc::new(Mutex::new(Signal::new()));
         let valve  = gst::ElementFactory::make("valve", None).unwrap();
         let conv   = gst::ElementFactory::make("glcolorconvert", None).unwrap();
-        //let scale = gst::ElementFactory::make("glcolorscale", None).unwrap();
         let deint = gst::ElementFactory::make("gldeinterlace", None).unwrap();
-        //let queue = gst::ElementFactory::make("queue", None).unwrap();
         let caps  = gst::ElementFactory::make("capsfilter", None).unwrap();
-        //queue.set_property("max-size-buffers", &20000);
-       // queue.set_property("max-size-bytes", &12000000);
         caps.set_property("caps", &gst::Caps::from_str("video/x-raw(ANY),format=RGBA").unwrap()).unwrap();
         WidgetVideo {
             desc, par,
@@ -60,7 +54,7 @@ impl WidgetVideo {
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, conv, /*scale, */ deint, caps, //queue,
+            valve, conv, deint, caps,
             linked,
         }
     }
@@ -150,11 +144,11 @@ impl Widget for WidgetVideo {
                 linked.lock().unwrap().emit(&());
             }
         });
-        src.pad.link(&in_pad.clone());
+        let _ = src.pad.link(&in_pad.clone()); // TODO
     }
     
     fn plug_sink (&mut self, sink: gst::Pad) {
-        self.caps.get_static_pad("src").unwrap().link(&sink);
+        let _ = self.caps.get_static_pad("src").unwrap().link(&sink); // TODO
         if ! self.enabled {
             self.valve.set_property("drop", &true).unwrap();
             sink.set_property("alpha", &0.0).unwrap();

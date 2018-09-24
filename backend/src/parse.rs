@@ -1,11 +1,7 @@
-use gst::prelude::*;
 use gst_mpegts_sys::*;
-use glib_sys::*;
-use gobject_sys::*;
 use metadata::{Channel,Pid,Structure};
 use std::slice;
 use std::str::FromStr;
-use std::mem;
 use std::ptr;
 use std::ffi;
 use libc;
@@ -63,12 +59,12 @@ unsafe fn dump_pat (section: *mut GstMpegtsSection, metadata: &mut Structure) {
     let sz = (*pat).len as usize;
     let patp = slice::from_raw_parts((*pat).pdata, sz);
 
-    for p in 0..sz {
-        let prog = patp[p] as *mut GstMpegtsPatProgram;
+    for p in patp.iter().take(sz) {
+        let prog = *p as *mut GstMpegtsPatProgram;
 
         if prog.is_null() { break }
 
-        let num = (*prog).program_number as u32;
+        let num = u32::from((*prog).program_number);
         
         if num == 0 { continue }
 
@@ -83,24 +79,24 @@ unsafe fn dump_pmt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
 
     if pmt.is_null() { panic!("pmt table is empty") }
 
-    let channel = if metadata.channel_exists ((*pmt).program_number as u32) {
-        metadata.find_channel_mut_unsafe((*pmt).program_number as u32)
+    let channel = if metadata.channel_exists (u32::from((*pmt).program_number)) {
+        metadata.find_channel_mut_unsafe(u32::from((*pmt).program_number))
     } else {
         // TODO check if channel be unique
-        metadata.add_channel(Channel::new_empty((*pmt).program_number as u32));
-        metadata.find_channel_mut_unsafe((*pmt).program_number as u32)
+        metadata.add_channel(Channel::new_empty(u32::from((*pmt).program_number)));
+        metadata.find_channel_mut_unsafe(u32::from((*pmt).program_number))
     };
 
     let sz = (*(*pmt).streams).len as usize;
     let streams = slice::from_raw_parts((*(*pmt).streams).pdata, sz);
 
-    for s in 0..sz {
-        let stream = streams[s] as *mut GstMpegtsPMTStream;
+    for s in streams.iter().take(sz) {
+        let stream = *s as *mut GstMpegtsPMTStream;
 
         if stream.is_null() { break }
         if (*stream).stream_type == 0x86 { continue } /* Unknown type */
-        let pid = (*stream).pid as u32;
-        let stream_type = (*stream).stream_type as u32;
+        let pid = u32::from((*stream).pid);
+        let stream_type = u32::from((*stream).stream_type);
 
         /* Getting pid's codec type */
         let stream_type_name = String::from_str(stream_name (stream_type as i32)).unwrap();
@@ -110,7 +106,9 @@ unsafe fn dump_pmt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
             pid.stream_type = stream_type;
             pid.stream_type_name = stream_type_name;
         } else {
-            channel.append_pid(Pid::new((*stream).pid as u32, (*stream).stream_type as u32, stream_type_name));
+            channel.append_pid(Pid::new(u32::from((*stream).pid),
+                                        u32::from((*stream).stream_type),
+                                        stream_type_name));
         };
     }
 }
@@ -123,14 +121,14 @@ unsafe fn dump_sdt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
     let sz = (*(*sdt).services).len as usize;
     let services = slice::from_raw_parts((*(*sdt).services).pdata, sz);
     
-    for c in 0..sz {
-        let service = services[c] as *mut GstMpegtsSDTService;
+    for c in services.iter().take(sz) {
+        let service = *c as *mut GstMpegtsSDTService;
 
         if service.is_null() { break }
         
         if (*service).service_id == 0 { continue }
 
-        let service_id = (*service).service_id as u32;
+        let service_id = u32::from((*service).service_id);
 
         let channel = if metadata.channel_exists (service_id) {
             metadata.find_channel_mut_unsafe(service_id)
@@ -143,12 +141,12 @@ unsafe fn dump_sdt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
         let desc_sz = (*(*service).descriptors).len as usize;
         let descriptors = slice::from_raw_parts((*(*service).descriptors).pdata, desc_sz);
 
-        for d in 0..desc_sz {
-            let desc = descriptors[d] as *mut GstMpegtsDescriptor;
+        for d in descriptors.iter().take(desc_sz) {
+            let desc = *d as *mut GstMpegtsDescriptor;
 
             if desc.is_null() { break }
 
-            if (*desc).tag as i32 == GST_MTS_DESC_DVB_SERVICE {
+            if i32::from((*desc).tag) == GST_MTS_DESC_DVB_SERVICE {
 
                 let mut service_name_c : *mut libc::c_char = ptr::null_mut();
                 let mut provider_name_c : *mut libc::c_char = ptr::null_mut();
@@ -173,11 +171,11 @@ pub unsafe fn table (section: *mut GstMpegtsSection, metadata: &mut Structure) -
     
     match (*section).section_type {
         GST_MPEGTS_SECTION_PAT => { dump_pat(section, metadata);
-                                    return Some (metadata.clone()) },
+                                    Some (metadata.clone()) },
         GST_MPEGTS_SECTION_PMT => { dump_pmt(section, metadata);
-                                    return Some (metadata.clone()) },
+                                    Some (metadata.clone()) },
         GST_MPEGTS_SECTION_SDT => { dump_sdt(section, metadata);
-                                    return Some (metadata.clone()) },
-        _ => return None
+                                    Some (metadata.clone()) },
+        _ => None
     }
 }

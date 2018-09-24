@@ -1,5 +1,6 @@
 use std::collections::LinkedList;
 
+#[derive(Default)]
 pub struct Signal<T> {
     callbacks: LinkedList<Box<Fn(&T) + Send + Sync + 'static>>
 }
@@ -15,7 +16,7 @@ impl<T> Signal<T> {
     }
 
     pub fn emit(&self, v: &T) {
-        for f in self.callbacks.iter() {
+        for f in &self.callbacks {
             f(v)
         }
     }
@@ -25,6 +26,7 @@ impl<T> Signal<T> {
     }
 }
 
+#[derive(Default)]
 pub struct Msg<T,R> {
     callback: Option<Box<Fn(T)->R + Send + Sync + 'static>>
 }
@@ -38,7 +40,10 @@ impl<T,R> Msg<T,R> {
         where F: Fn(T)->R + Send + Sync + 'static {
         match self.callback {
             Some(_) => Err(String::from("Connected")),
-            None    => Ok(self.callback = Some(Box::new(f)))
+            None    => {
+                self.callback = Some(Box::new(f));
+                Ok(())
+            }
         }
     }
 

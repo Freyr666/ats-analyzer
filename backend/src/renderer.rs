@@ -2,16 +2,12 @@ use gst;
 use gst::prelude::*;
 use glib;
 use std::marker::PhantomData;
-use pad::SrcPad;
 
 pub struct VideoR {}
 pub struct AudioR {}
 
 pub struct Renderer<T> {
-    port:    i32,
     encoder: gst::Element,
-    pay:     gst::Element,
-    output:  gst::Element,
 
     p:       PhantomData<T>,
 }
@@ -22,7 +18,7 @@ fn enum_to_val(cls: &str, val: i32) -> glib::Value {
 
 impl Renderer<VideoR> {
     pub fn new (port: i32, bin: gst::Bin) -> Renderer<VideoR> {
-        let mut vaapi = true;
+        //let mut vaapi = true;
         let encoder =
             gst::ElementFactory::make("vaapivp9enc", None) //vaapivp8enc
             .unwrap();//_or({ vaapi = false; gst::ElementFactory::make("vp8enc", None).unwrap() });
@@ -35,12 +31,12 @@ impl Renderer<VideoR> {
         pay.sync_state_with_parent().unwrap();
         output.sync_state_with_parent().unwrap();
         //queue.sync_state_with_parent().unwrap();
-        if vaapi {
+        //if vaapi {
             //println!("Set vaapi params");
             //encoder.set_property("rate-control", &enum_to_val("GstVaapiRateControlVP8", 2)).unwrap(); // may not exist
-            encoder.set_property("bitrate", &8000u32).unwrap();
+        encoder.set_property("bitrate", &8000u32).unwrap();
             //encoder.set_property("quality-level", &7u32).unwrap();
-        };
+        //};
         //queue.set_property("max-size-time", &0u64).unwrap();
         //queue.set_property("max-size-buffers", &0u32).unwrap();
         //queue.set_property("max-size-bytes", &0u32).unwrap();
@@ -49,11 +45,12 @@ impl Renderer<VideoR> {
         output.set_property("async", &false).unwrap();
         //output.set_property("sync", &false).unwrap();
         //output.set_property("blocksize", &4096000u32).unwrap();
-        Renderer::<VideoR> { port, encoder, pay, output, p: PhantomData }
+        Renderer::<VideoR> { encoder, p: PhantomData }
     }
 
     pub fn plug (&self, pad: gst::Pad) {
-        pad.link(&self.encoder.get_static_pad("sink").unwrap());
+        // TODO check
+        let _ = pad.link(&self.encoder.get_static_pad("sink").unwrap());
     }
 }
 
@@ -69,10 +66,11 @@ impl Renderer<AudioR> {
         output.sync_state_with_parent().unwrap();
         output.set_property("host", &"127.0.0.1").unwrap();
         output.set_property("port", &port).unwrap();
-        Renderer::<AudioR> { port, encoder, pay, output, p: PhantomData }
+        Renderer::<AudioR> { encoder, p: PhantomData }
     }
 
     pub fn plug (&self, pad: gst::Pad) {
-        pad.link(&self.encoder.get_static_pad("sink").unwrap());
+        // TODO check
+        let _ = pad.link(&self.encoder.get_static_pad("sink").unwrap());
     }
 }

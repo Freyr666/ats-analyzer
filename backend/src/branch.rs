@@ -1,16 +1,13 @@
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
 use gst::prelude::*;
-use glib;
 use gst;
-use std::str::Split;
 use pad::SrcPad;
 use settings::Settings;
 use video_data::VideoData;
 use audio_data::AudioData;
 use signals::Signal;
 use chatterer::MsgType;
-use std::str::FromStr;
 
 struct CommonBranch {
     decoder: gst::Element,
@@ -23,7 +20,9 @@ impl CommonBranch {
         let bin   = gst::Bin::new(None);
 
         for el in &["vaapih264dec", "vaapimpeg2dec", "vaapidecodebin"] {
-            gst::ElementFactory::find(&el).map(|f| f.set_rank(0));
+            if let Some(f) = gst::ElementFactory::find(&el) {
+                f.set_rank(0)
+            }
         };
 
         let decoder = gst::ElementFactory::make("decodebin",None).unwrap();
@@ -54,9 +53,9 @@ pub struct VideoBranch {
     pub pad_added: Arc<Mutex<Signal<SrcPad>>>,
 }
 
-fn enum_to_val(cls: &str, val: i32) -> glib::Value {
-    glib::EnumClass::new(glib::Type::from_name(cls).unwrap()).unwrap().to_value(val).unwrap()
-}
+//fn enum_to_val(cls: &str, val: i32) -> glib::Value {
+//    glib::EnumClass::new(glib::Type::from_name(cls).unwrap()).unwrap().to_value(val).unwrap()
+//}
 
 impl VideoBranch {
     pub fn new (stream: u32, channel: u32, pid: u32,
@@ -77,7 +76,6 @@ impl VideoBranch {
         let vdata     = Arc::new(Mutex::new(VideoData::new(stream, channel, pid, format, sender)));        
 
         let bin_c = bin.clone();
-        let settings_c = settings.clone();
         let pads_c = pads.clone();
         let analyser_c = analyser.clone();
         let pad_added_c = pad_added.clone();
@@ -85,7 +83,7 @@ impl VideoBranch {
         decoder.connect_pad_added(move | _, pad | {
             let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
             let caps_toks: Vec<&str> = pcaps.split('/').collect();
-            if caps_toks.len() == 0 { return };
+            if caps_toks.is_empty() { return };
 
             let typ = &caps_toks[0];
 
@@ -104,20 +102,21 @@ impl VideoBranch {
             bin_c.add_many(&[&queue, &upload, &analyser_c]).unwrap();
             gst::Element::link_many(&[&queue,  &upload, &analyser_c]).unwrap();
 
-            queue.sync_state_with_parent();
-            upload.sync_state_with_parent();
-            analyser_c.sync_state_with_parent();
+            queue.sync_state_with_parent().unwrap();
+            upload.sync_state_with_parent().unwrap();
+            analyser_c.sync_state_with_parent().unwrap();
 
             let vdata = vdata.clone();
+            // TODO add err check
             analyser_c.connect("data", true, move |vals| {
                 let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
-                vdata.lock().unwrap().send_msg(d);
+                vdata.lock().unwrap().send_msg(&d);
                 None
-            });
+            }).unwrap();
 
-            pad.link(&sink_pad);
+            let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream, channel, pid, "video", bin_c.clone(), src_pad);
+            let spad = SrcPad::new(stream, channel, pid, "video", bin_c.clone(), &src_pad);
 
             pad_added_c.lock().unwrap().emit(&spad);
             pads_c.lock().unwrap().push(spad);
@@ -129,14 +128,14 @@ impl VideoBranch {
     }
 
     pub fn plug(&self, src_pad: &gst::Pad) {
-        src_pad.link(&self.sink);
-        self.bin.sync_state_with_parent();
+        let _ = src_pad.link(&self.sink); // TODO
+        self.bin.sync_state_with_parent().unwrap();
     }
 
     pub fn add_to_pipe (&self, b: &gst::Bin) {
-        b.add(&self.bin);
-        self.bin.sync_state_with_parent();
-        self.bin.sync_children_states();
+        b.add(&self.bin).unwrap();
+        self.bin.sync_state_with_parent().unwrap();
+        self.bin.sync_children_states().unwrap();
     }
 
     pub fn apply_settings (analyser: &gst::Element, s: Option<Settings>) {
@@ -212,11 +211,12 @@ impl AudioBranch {
         let analyser_c = analyser.clone();
         let pad_added_c = pad_added.clone();
         let audio_pad_added_c = audio_pad_added.clone();
-        
+
+        // TODO replace gst::pad with Pad
         decoder.connect_pad_added(move | _, pad | {
             let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
             let caps_toks: Vec<&str> = pcaps.split('/').collect();
-            if caps_toks.len() == 0 { return };
+            if caps_toks.is_empty() { return };
 
             let typ = &caps_toks[0];
 
@@ -235,20 +235,20 @@ impl AudioBranch {
             bin_c.add_many(&[&queue, &conv, &analyser_c]).unwrap();
             gst::Element::link_many(&[&queue, &conv, &analyser_c]).unwrap();
 
-            queue.sync_state_with_parent();
-            conv.sync_state_with_parent();
-            analyser_c.sync_state_with_parent();
+            queue.sync_state_with_parent().unwrap();
+            conv.sync_state_with_parent().unwrap();
+            analyser_c.sync_state_with_parent().unwrap();
 
             let adata = adata.clone();
             analyser_c.connect("data", true, move |vals| {
                 let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
-                adata.lock().unwrap().send_msg(d);
+                adata.lock().unwrap().send_msg(&d);
                 None
-            });
+            }).unwrap();
 
-            pad.link(&sink_pad);
+            let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream, channel, pid, "audio", bin_c.clone(), src_pad);
+            let spad = SrcPad::new(stream, channel, pid, "audio", bin_c.clone(), &src_pad);
             let aspad = spad.clone();
             
             pad_added_c.lock().unwrap().emit(&spad);
@@ -263,14 +263,14 @@ impl AudioBranch {
     }
 
     pub fn plug(&self, src_pad: &gst::Pad) {
-        src_pad.link(&self.sink);
-        self.bin.sync_state_with_parent();
+        let _ = src_pad.link(&self.sink); // TODO
+        self.bin.sync_state_with_parent().unwrap();
     }
 
     pub fn add_to_pipe (&self, b: &gst::Bin) {
-        b.add(&self.bin);
-        self.bin.sync_state_with_parent();
-        self.bin.sync_children_states();
+        b.add(&self.bin).unwrap();
+        self.bin.sync_state_with_parent().unwrap();
+        self.bin.sync_children_states().unwrap();
     }
 
     pub fn apply_settings (analyser: &gst::Element, s: Option<Settings>) {

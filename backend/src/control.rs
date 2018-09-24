@@ -1,13 +1,10 @@
 use std::thread;
-use std::io::{self, Read};
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::*;
-use std::str::FromStr;
 use signals::Msg;
 use zmq;
 
 pub struct Control {
-    ctx:        zmq::Context,
    // out_socket: zmq::Socket,
     pub sender:     Sender<Vec<u8>>,
     pub received: Arc<Mutex<Msg<Vec<u8>,Vec<u8>>>>
@@ -22,9 +19,8 @@ impl Control {
         let (sender, receiver): (Sender<Vec<u8>>, Receiver<Vec<u8>>) = channel();
         let received       = Arc::new(Mutex::new(Msg::new()));
         
-        in_socket.connect("ipc:///tmp/ats_qoe_in").unwrap();
-        out_socket.connect("ipc:///tmp/ats_qoe_out").unwrap();
-        
+        in_socket.bind("ipc:///tmp/ats_qoe_in").unwrap();
+        out_socket.bind("ipc:///tmp/ats_qoe_out").unwrap();
         let r = received.clone();
         
         thread::Builder::new().name("recv_thread".to_string()).spawn(move || {
@@ -46,7 +42,7 @@ impl Control {
             }
         }).unwrap();
 
-        Ok (Control { ctx, sender, received })
+        Ok (Control { sender, received })
     }
 
    // pub fn send(&self, buf: &Vec<u8>) {

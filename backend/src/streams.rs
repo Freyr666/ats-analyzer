@@ -61,7 +61,8 @@ impl Streams {
         Streams { format, chat, update, structures }
     }
 
-    fn set_data (chat: &Notifier, structures: &mut Vec<Structure>, s: &Structure, update: &Msg<Vec<Structure>,Result<(),String>>) {
+    // TODO remove update
+    fn set_data (chat: &Notifier, structures: &mut Vec<Structure>, s: &Structure, _update: &Msg<Vec<Structure>,Result<(),String>>) {
         if structures.is_empty()
             || ! (structures.iter().any(|st| st.id == s.id)) {
                 structures.push(s.clone())

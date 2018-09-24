@@ -104,7 +104,7 @@ impl Replybox<Request<Settings>,Reply<Settings>> for Configuration {
                         },
                     Request::Set(data) => {
                         let mut s = settings.lock().unwrap();
-                        *s = Some(data.clone());
+                        *s = Some(data);
                         match signal.lock().unwrap().emit(data) {
                             None    => Err(String::from("Settings are not connected to the graph")),
                             Some(r) => match r {
