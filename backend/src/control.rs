@@ -22,8 +22,8 @@ impl Control {
         let (sender, receiver): (Sender<Vec<u8>>, Receiver<Vec<u8>>) = channel();
         let received       = Arc::new(Mutex::new(Msg::new()));
         
-        in_socket.bind("ipc:///tmp/ats_qoe_in").unwrap();
-        out_socket.bind("ipc:///tmp/ats_qoe_out").unwrap();
+        in_socket.connect("ipc:///tmp/ats_qoe_in").unwrap();
+        out_socket.connect("ipc:///tmp/ats_qoe_out").unwrap();
         
         let r = received.clone();
         

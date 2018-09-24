@@ -24,9 +24,9 @@ impl Renderer<VideoR> {
     pub fn new (port: i32, bin: gst::Bin) -> Renderer<VideoR> {
         let mut vaapi = true;
         let encoder =
-            gst::ElementFactory::make("vaapivp8enc", None) //vaapivp8enc
+            gst::ElementFactory::make("vaapivp9enc", None) //vaapivp8enc
             .unwrap();//_or({ vaapi = false; gst::ElementFactory::make("vp8enc", None).unwrap() });
-        let pay     = gst::ElementFactory::make("rtpvp8pay", None).unwrap(); //rtpvp8pay
+        let pay     = gst::ElementFactory::make("rtpvp9pay", None).unwrap(); //rtpvp8pay
         let output  = gst::ElementFactory::make("udpsink", None).unwrap();
         //let queue   = gst::ElementFactory::make("queue", None).unwrap();
         bin.add_many(&[&encoder,&pay,/*&queue,*/&output]).unwrap();
@@ -36,10 +36,10 @@ impl Renderer<VideoR> {
         output.sync_state_with_parent().unwrap();
         //queue.sync_state_with_parent().unwrap();
         if vaapi {
-            println!("Set vaapi params");
-            encoder.set_property("rate-control", &enum_to_val("GstVaapiRateControlVP8", 2)).unwrap(); // may not exist
+            //println!("Set vaapi params");
+            //encoder.set_property("rate-control", &enum_to_val("GstVaapiRateControlVP8", 2)).unwrap(); // may not exist
             encoder.set_property("bitrate", &8000u32).unwrap();
-            encoder.set_property("quality-level", &7u32).unwrap();
+            //encoder.set_property("quality-level", &7u32).unwrap();
         };
         //queue.set_property("max-size-time", &0u64).unwrap();
         //queue.set_property("max-size-buffers", &0u32).unwrap();

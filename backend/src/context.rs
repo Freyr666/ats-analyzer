@@ -114,7 +114,7 @@ impl Context {
     }
 
     pub fn run(&self) {
-        thread::sleep_ms(500); // a very dirty hack indeed
+        //thread::sleep_ms(500); // a very dirty hack indeed
         self.notif.talk(&Status::Ready);
         self.mainloop.run();
     }
