@@ -107,10 +107,22 @@ impl VideoBranch {
             analyser_c.sync_state_with_parent().unwrap();
 
             let vdata = vdata.clone();
+            let vdata_lost  = vdata.clone();
+            let vdata_found = vdata.clone();
             // TODO add err check
             analyser_c.connect("data", true, move |vals| {
                 let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
                 vdata.lock().unwrap().send_msg(&d);
+                None
+            }).unwrap();
+
+            analyser_c.connect("stream-lost", true, move |_| {
+                vdata_lost.lock().unwrap().send_lost();
+                None
+            }).unwrap();
+
+            analyser_c.connect("stream-found", true, move |_| {
+                vdata_found.lock().unwrap().send_found();
                 None
             }).unwrap();
 
@@ -240,12 +252,25 @@ impl AudioBranch {
             analyser_c.sync_state_with_parent().unwrap();
 
             let adata = adata.clone();
+            let adata_lost  = adata.clone();
+            let adata_found = adata.clone();
+            
             analyser_c.connect("data", true, move |vals| {
                 let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
                 adata.lock().unwrap().send_msg(&d);
                 None
             }).unwrap();
 
+            analyser_c.connect("stream-lost", true, move |_| {
+                adata_lost.lock().unwrap().send_lost();
+                None
+            }).unwrap();
+
+            analyser_c.connect("stream-found", true, move |_| {
+                adata_found.lock().unwrap().send_found();
+                None
+            }).unwrap();
+            
             let _ = pad.link(&sink_pad); // TODO
 
             let spad = SrcPad::new(stream, channel, pid, "audio", bin_c.clone(), &src_pad);
