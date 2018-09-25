@@ -1,5 +1,6 @@
 #![allow(unknown_lints)]
 #![allow(new_without_default_derive)]
+#![allow(new_without_default)]
 #![allow(type_complexity)]
 #![allow(borrowed_box)]
 #![allow(single_match)] // TODO remove

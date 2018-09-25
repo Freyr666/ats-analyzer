@@ -127,7 +127,7 @@ impl WmState {
             let position = c.position;
             let mut widgets  = HashMap::new();
             for &(ref wname, ref w) in &c.widgets {
-                let widget = self.widgets.get(wname).unwrap().clone();
+                let widget = self.widgets[wname].clone();
                 widget.lock().unwrap().apply_desc(&w);
                 widget.lock().unwrap().set_enable(true);
                 widgets.insert(wname.clone(), widget);
@@ -173,7 +173,7 @@ impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
                 let widg = state.lock().unwrap().widgets.iter()
                     .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
                     .collect();
-                let temp = WmTemplate::from_partial(templ, widg);
+                let temp = WmTemplate::from_partial(templ, &widg);
                 state.lock().unwrap().from_template(&temp)
             };
             

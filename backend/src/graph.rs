@@ -67,12 +67,12 @@ impl GraphState {
         self.pipeline = gst::Pipeline::new(None);
         self.wm.lock().unwrap().reset(self.pipeline.clone());
         self.mux.lock().unwrap().reset(&self.pipeline);
-        self.vrend    = Some(Renderer::<VideoR>::new(5004, self.pipeline.clone().upcast()));
-        self.arend    = Some(Renderer::<AudioR>::new(5005, self.pipeline.clone().upcast()));
+        self.vrend    = Some(Renderer::<VideoR>::new(5004, &self.pipeline.clone().upcast()));
+        self.arend    = Some(Renderer::<AudioR>::new(5005, &self.pipeline.clone().upcast()));
         self.bus      = self.pipeline.get_bus().unwrap();
 
-        self.vrend.iter().for_each(|rend| rend.plug(self.wm.lock().unwrap().src_pad().clone()));
-        self.arend.iter().for_each(|rend| rend.plug(self.mux.lock().unwrap().src_pad().clone()));
+        self.vrend.iter().for_each(|rend| rend.plug(&self.wm.lock().unwrap().src_pad()));
+        self.arend.iter().for_each(|rend| rend.plug(&self.mux.lock().unwrap().src_pad()));
     }
 
     pub fn set_state (&self, st: gst::State) {
@@ -80,15 +80,14 @@ impl GraphState {
         let _ = self.pipeline.set_state(st);
     }
 
-    pub fn apply_streams (&mut self, s: Vec<Structure>) -> Result<(),String> {
+    pub fn apply_streams (&mut self, s: &[Structure]) -> Result<(),String> {
         //println!("Apply Stream");
         self.reset();
         
-        for s in s.iter() {
+        for s in s {
             //println!("Stream");
             if let Some(root) = Root::new(&self.pipeline.clone().upcast(), s.clone(),
-                                          self.settings.clone(),
-                                          self.format, self.sender.clone()) {
+                                          self.settings, self.format, self.sender.clone()) {
                 //println!("New root");
                 let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
@@ -133,7 +132,7 @@ impl Graph {
     pub fn connect_destructive (&mut self, msg: &mut Msg<Vec<Structure>,Result<(),String>>) {
         let state  = self.state.clone();
         msg.connect(move |s| {
-            state.lock().unwrap().apply_streams(s)
+            state.lock().unwrap().apply_streams(&s)
         }).unwrap();
     }
 

@@ -6,7 +6,6 @@ use probe::Probe;
 use control::Control;
 use streams::{Streams};
 use graph::Graph;
-use std::{thread,time};
 use std::boxed::Box;
 use std::collections::HashMap;
 use gst;

@@ -1,6 +1,5 @@
 use gst;
 use gst::prelude::*;
-use glib;
 use std::marker::PhantomData;
 
 pub struct VideoR {}
@@ -12,12 +11,12 @@ pub struct Renderer<T> {
     p:       PhantomData<T>,
 }
 
-fn enum_to_val(cls: &str, val: i32) -> glib::Value {
-    glib::EnumClass::new(glib::Type::from_name(cls).unwrap()).unwrap().to_value(val).unwrap()
-}
+//fn enum_to_val(cls: &str, val: i32) -> glib::Value {
+//    glib::EnumClass::new(glib::Type::from_name(cls).unwrap()).unwrap().to_value(val).unwrap()
+//}
 
 impl Renderer<VideoR> {
-    pub fn new (port: i32, bin: gst::Bin) -> Renderer<VideoR> {
+    pub fn new (port: i32, bin: &gst::Bin) -> Renderer<VideoR> {
         //let mut vaapi = true;
         let encoder =
             gst::ElementFactory::make("vaapivp9enc", None) //vaapivp8enc
@@ -48,14 +47,14 @@ impl Renderer<VideoR> {
         Renderer::<VideoR> { encoder, p: PhantomData }
     }
 
-    pub fn plug (&self, pad: gst::Pad) {
+    pub fn plug (&self, pad: &gst::Pad) {
         // TODO check
         let _ = pad.link(&self.encoder.get_static_pad("sink").unwrap());
     }
 }
 
 impl Renderer<AudioR> {
-    pub fn new (port: i32, bin: gst::Bin) -> Renderer<AudioR> {
+    pub fn new (port: i32, bin: &gst::Bin) -> Renderer<AudioR> {
         let encoder = gst::ElementFactory::make("opusenc", None).unwrap();
         let pay     = gst::ElementFactory::make("rtpopuspay", None).unwrap();
         let output  = gst::ElementFactory::make("udpsink", None).unwrap();
@@ -69,7 +68,7 @@ impl Renderer<AudioR> {
         Renderer::<AudioR> { encoder, p: PhantomData }
     }
 
-    pub fn plug (&self, pad: gst::Pad) {
+    pub fn plug (&self, pad: &gst::Pad) {
         // TODO check
         let _ = pad.link(&self.encoder.get_static_pad("sink").unwrap());
     }
