@@ -5,10 +5,8 @@ pub mod widget_soundbar;
 pub mod widget_factory;
 pub mod template;
 
-use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
-use std::rc::Rc;
 use std::sync::mpsc::Sender;
 use gst::prelude::*;
 use gst;
@@ -19,7 +17,7 @@ use chatterer::control::message::{Request,Reply};
 use chatterer::MsgType;
 use signals::Signal;
 use pad::{Type,SrcPad};
-use wm::widget::{Widget,WidgetDesc};
+use wm::widget::Widget;
 use wm::position::Position;
 use wm::template::{WmTemplate,WmTemplatePartial,ContainerTemplate};
 
@@ -62,7 +60,7 @@ impl WmState {
         
         mixer.set_property("background", &enum_to_val("GstGLVideoMixerBackground", 1)).unwrap();
         mixer.set_property("async-handling", &true).unwrap();
-        mixer.set_property("latency", &100000000i64).unwrap();
+        mixer.set_property("latency", &100_000_000i64).unwrap();
         caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(resolution)).unwrap()).unwrap();
 
         pipe.add_many(&[&mixer,&caps,&download]).unwrap();
@@ -90,7 +88,7 @@ impl WmState {
                 self.widgets.insert(uid, widg);
                 Some(signal)
             }
-            Type::Audio => None, /* {
+            Type::Audio => {
                 let uid;
                 let widg = widget_factory::make("audio").unwrap();
                 {
@@ -104,7 +102,7 @@ impl WmState {
                 let signal = widg.lock().unwrap().linked();
                 self.widgets.insert(uid, widg);
                 Some(signal)
-            } */
+            }
             _ => None
         }
     }
@@ -129,7 +127,7 @@ impl WmState {
             let position = c.position;
             let mut widgets  = HashMap::new();
             for &(ref wname, ref w) in &c.widgets {
-                let widget = self.widgets.get(wname).unwrap().clone();
+                let widget = self.widgets[wname].clone();
                 widget.lock().unwrap().apply_desc(&w);
                 widget.lock().unwrap().set_enable(true);
                 widgets.insert(wname.clone(), widget);
@@ -137,7 +135,7 @@ impl WmState {
             self.layout.insert(cname.clone(), Container { position, widgets } );
         }
         self.set_resolution(t.resolution);
-        self.pipe.set_state(gst::State::Playing);
+        let _ = self.pipe.set_state(gst::State::Playing); // TODO
         gst::debug_bin_to_dot_file(&self.pipe, gst::DebugGraphDetails::VERBOSE, "wm");
         Ok(())
     }
@@ -175,7 +173,7 @@ impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
                 let widg = state.lock().unwrap().widgets.iter()
                     .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
                     .collect();
-                let temp = WmTemplate::from_partial(templ, widg);
+                let temp = WmTemplate::from_partial(templ, &widg);
                 state.lock().unwrap().from_template(&temp)
             };
             
@@ -189,8 +187,8 @@ impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
                             Err(String::from("can't acquire wm layout"))
                         },
                     Request::Set(templ) => match auxilary(templ) {
-                        Ok(()) => Ok(Reply::Set),
-                        Err(e) => Err(e),
+                            Ok(()) => Ok(Reply::Set),
+                            Err(e) => Err(e),
                     }
                 }
             })

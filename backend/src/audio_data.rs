@@ -77,13 +77,13 @@ impl AudioData {
         AudioData { stream, channel, pid, notif: Notifier::new("audio_data", format, sender), mmap }
     }
 
-    pub fn send_msg (&self, buf: gst::Buffer) {
+    pub fn send_msg (&self, buf: &gst::Buffer) {
         unsafe {
             if gst_sys::gst_buffer_map(buf.as_mut_ptr(), self.mmap, gst_sys::GstMapFlags::READ) == 0 {
                 panic!("audio_data: buf mmap failure");
             }
             let pointer: *const Error = (*self.mmap).data as *const Error;
-            let err_buf = slice::from_raw_parts(pointer, (Parameter::ParamNumber as usize));
+            let err_buf = slice::from_raw_parts(pointer, Parameter::ParamNumber as usize);
             let errors = Errors {
                 silence_shortt:  &err_buf[Parameter::SilenceShortt as usize],
                 silence_moment:  &err_buf[Parameter::SilenceMoment as usize],

@@ -11,9 +11,6 @@ use branch::Branch;
 use std::u32;
 
 pub struct Root {
-    bin:           gst::Bin,
-    src:           gst::Element,
-    tee:           gst::Element,
     settings:      Arc<Mutex<Option<Settings>>>,
     branches:      Arc<Mutex<Vec<Branch>>>,
     pub pad_added: Arc<Mutex<Signal<SrcPad>>>,
@@ -27,14 +24,14 @@ impl Root {
                      settings: Option<Settings>,
                      added: Arc<Mutex<Signal<SrcPad>>>,
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
-                     bin: gst::Bin, pad: &gst::Pad,
+                     bin: &gst::Bin, pad: &gst::Pad,
                      format: MsgType, sender: &Mutex<Sender<Vec<u8>>>) {
         let pname = pad.get_name();
         let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
         let name_toks: Vec<&str> = pname.split('_').collect();
         let caps_toks: Vec<&str> = pcaps.split('/').collect();
         
-        if name_toks.len() != 3 || caps_toks.len() == 0 { return };
+        if name_toks.len() != 3 || caps_toks.is_empty() { return };
         let typ = caps_toks[0];
         let pid = u32::from_str_radix(name_toks[2], 16).unwrap();
         if let Some (p) = chan.find_pid(pid){
@@ -57,7 +54,7 @@ impl Root {
         }
     }
     
-    pub fn new(bin: gst::Bin, m: Structure, settings: Option<Settings>,
+    pub fn new(bin: &gst::Bin, m: Structure, settings: Option<Settings>,
                format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
         if ! m.to_be_analyzed() { return None };
 
@@ -69,13 +66,10 @@ impl Root {
         let audio_pad_added = Arc::new(Mutex::new(Signal::new()));
         
         src.set_property("uri", &m.uri).unwrap();
-        src.set_property("buffer-size", &2147483647).unwrap();
+        src.set_property("buffer-size", &2_147_483_647).unwrap();
 
         bin.add_many(&[&src, &tee]).unwrap();
         src.link(&tee).unwrap();
-
-        let bin_c = bin.clone();
-        // let branches_c = branches.clone();
 
         for chan in m.channels {
             let demux_name = format!("demux_{}_{}_{}_{}", m.id, chan.number, chan.service_name, chan.provider_name);
@@ -84,19 +78,21 @@ impl Root {
             let demux = gst::ElementFactory::make("tsdemux", Some(demux_name.as_str())).unwrap();
 
             demux.set_property("program-number", &(chan.number as i32)).unwrap();
-            queue.set_property("max-size-buffers", &200000u32).unwrap();
-            queue.set_property("max-size-bytes", &429496729u32).unwrap();
+            queue.set_property("max-size-time", &0u64).unwrap();
+            queue.set_property("max-size-buffers", &0u32).unwrap();
+            queue.set_property("max-size-bytes", &0u32).unwrap();
 
             let sinkpad = queue.get_static_pad("sink").unwrap();
             let srcpad  = tee.get_request_pad("src_%u").unwrap();
 
-            bin_c.add_many(&[&queue,&demux]).unwrap();
+            bin.add_many(&[&queue,&demux]).unwrap();
             queue.link(&demux).unwrap();
 
-            srcpad.link(&sinkpad);
+            // TODO check
+            let _ = srcpad.link(&sinkpad);
             let stream = m.id as u32;
 
-            let bin_cc = bin_c.clone();
+            let bin_cc = bin.clone();
             let settings_c = settings.clone();
             let branches_c = branches.clone();
             let pad_added_c = pad_added.clone();
@@ -108,12 +104,12 @@ impl Root {
                 Root::build_branch(&mut branches_c.lock().unwrap(), stream, &chan,
                                    *settings,
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
-                                   bin_cc.clone(), pad,
+                                   &bin_cc, pad,
                                    format, &sender_c);
             });
         };
 
-        Some(Root { bin, src, tee, settings, branches, pad_added, audio_pad_added })
+        Some(Root { settings, branches, pad_added, audio_pad_added })
     }
 
     pub fn apply_settings(&mut self, s: Settings) {

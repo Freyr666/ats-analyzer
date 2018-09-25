@@ -19,10 +19,7 @@ pub struct WidgetSoundbar {
     valve:     gst::Element,
     soundbar:  gst::Element,
     upload:    gst::Element,
-    //conv:      gst::Element,
     caps:      gst::Element,
-    queue:     gst::Element,
-    //convert:   gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
 }
 
@@ -40,12 +37,8 @@ impl WidgetSoundbar {
         let linked   = Arc::new(Mutex::new(Signal::new()));
         let soundbar = gst::ElementFactory::make("soundbar", None).unwrap();
         let upload   = gst::ElementFactory::make("glupload", None).unwrap();
-        let queue = gst::ElementFactory::make("queue", None).unwrap();
         let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
-        //let convert  = gst::ElementFactory::make("", None).unwrap(); // TODO to be removed
         let valve    = gst::ElementFactory::make("valve", None).unwrap();
-        queue.set_property("max-size-buffers", &20000);
-        queue.set_property("max-size-bytes", &12000000);
         caps.set_property("caps", &gst::Caps::from_str("video/x-raw").unwrap()).unwrap();
         WidgetSoundbar {
             desc,
@@ -53,7 +46,7 @@ impl WidgetSoundbar {
             uid:       None,
             stream: 0, channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, soundbar, upload, caps, queue, linked,
+            valve, soundbar, upload, caps, linked,
         }
     }
 
@@ -85,12 +78,11 @@ impl WidgetSoundbar {
 impl Widget for WidgetSoundbar {
     fn add_to_pipe (&self, pipe: gst::Bin) {
         // TODO fix valve after soundbar
-        pipe.add_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload, &self.queue]).unwrap();
-        gst::Element::link_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload, &self.queue]).unwrap();
+        pipe.add_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload]).unwrap();
+        gst::Element::link_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload]).unwrap();
         self.soundbar.sync_state_with_parent().unwrap();
         self.upload.sync_state_with_parent().unwrap();
         self.valve.sync_state_with_parent().unwrap();
-        self.queue.sync_state_with_parent().unwrap();
         self.caps.sync_state_with_parent().unwrap();
     }
 
@@ -104,12 +96,14 @@ impl Widget for WidgetSoundbar {
 
         self.desc.lock().unwrap().domain = format!("s{}_c{}", src.stream, src.channel);
 
-        src.pad.link(&in_pad.clone());
+        // TODO check
+        let _ = src.pad.link(&in_pad.clone());
         self.linked.lock().unwrap().emit(&());
     }
 
     fn plug_sink (&mut self, sink: gst::Pad) {
-        self.queue.get_static_pad("src").unwrap().link(&sink);
+        // TODO check
+        let _ = self.upload.get_static_pad("src").unwrap().link(&sink);
         if ! self.enabled {
             self.valve.set_property("drop", &true).unwrap();
             sink.set_property("alpha", &0.0).unwrap();
@@ -127,7 +121,6 @@ impl Widget for WidgetSoundbar {
                 pad.set_property("alpha", &0.0).unwrap();
             }
         };
-        // Valve does not work with GL yet
         if enabled {
             self.valve.set_property("drop", &false).unwrap();
         } else {

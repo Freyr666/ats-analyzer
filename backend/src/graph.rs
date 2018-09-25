@@ -7,8 +7,7 @@ use chatterer::notif::Notifier;
 use chatterer::control::{Addressable,Replybox};
 use root::Root;
 use wm::Wm;
-use pad::{Type,SrcPad};
-use signals::{Signal,Msg};
+use signals::Msg;
 use metadata::Structure;
 use settings::Settings;
 use audio_mux::Mux;
@@ -53,7 +52,7 @@ impl GraphState {
         let settings = None;
         let pipeline = gst::Pipeline::new(None);
         let wm       = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender.clone())));
-        let mux      = Arc::new(Mutex::new(Mux::new(pipeline.clone(), format, sender.clone())));
+        let mux      = Arc::new(Mutex::new(Mux::new(&pipeline, format, sender.clone())));
         let vrend    = None;
         let arend    = None;
         let bus      = pipeline.get_bus().unwrap();
@@ -62,41 +61,42 @@ impl GraphState {
     }
 
     pub fn reset (&mut self) {
-        self.pipeline.set_state(gst::State::Null);
+        // TODO check
+        let _ = self.pipeline.set_state(gst::State::Null);
         self.roots    = Vec::new();
         self.pipeline = gst::Pipeline::new(None);
         self.wm.lock().unwrap().reset(self.pipeline.clone());
-        self.mux.lock().unwrap().reset(self.pipeline.clone());
-        self.vrend    = Some(Renderer::<VideoR>::new(5004, self.pipeline.clone().upcast()));
-        self.arend    = Some(Renderer::<AudioR>::new(5005, self.pipeline.clone().upcast()));
+        self.mux.lock().unwrap().reset(&self.pipeline);
+        self.vrend    = Some(Renderer::<VideoR>::new(5004, &self.pipeline.clone().upcast()));
+        self.arend    = Some(Renderer::<AudioR>::new(5005, &self.pipeline.clone().upcast()));
         self.bus      = self.pipeline.get_bus().unwrap();
 
-        self.vrend.iter().for_each(|rend| rend.plug(self.wm.lock().unwrap().src_pad().clone()));
-        self.arend.iter().for_each(|rend| rend.plug(self.mux.lock().unwrap().src_pad().clone()));
+        self.vrend.iter().for_each(|rend| rend.plug(&self.wm.lock().unwrap().src_pad()));
+        self.arend.iter().for_each(|rend| rend.plug(&self.mux.lock().unwrap().src_pad()));
     }
 
     pub fn set_state (&self, st: gst::State) {
-        self.pipeline.set_state(st);
+        // TODO check
+        let _ = self.pipeline.set_state(st);
     }
 
-    pub fn apply_streams (&mut self, s: Vec<Structure>) -> Result<(),String> {
+    pub fn apply_streams (&mut self, s: &[Structure]) -> Result<(),String> {
         //println!("Apply Stream");
         self.reset();
         
-        for s in s.iter() {
+        for s in s {
             //println!("Stream");
-            if let Some(root) = Root::new(self.pipeline.clone().upcast(), s.clone(),
-                                          self.settings.clone(),
-                                          self.format, self.sender.clone()) {
+            if let Some(root) = Root::new(&self.pipeline.clone().upcast(), s.clone(),
+                                          self.settings, self.format, self.sender.clone()) {
                 //println!("New root");
                 let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
                 let mux    = self.mux.clone();
-                let apipe  = self.pipeline.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
                     //println!("Pad added");
                     wm.lock().unwrap().plug(p);
-                    pipe.set_state(gst::State::Playing);
+                    // TODO check
+                    let _ = pipe.set_state(gst::State::Playing);
                     //gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
                 });
                 
@@ -106,7 +106,7 @@ impl GraphState {
             }
         };
         // TODO replace with retain_state
-        self.pipeline.set_state(gst::State::Playing);
+        let _ = self.pipeline.set_state(gst::State::Playing);
         Ok(())
     }
 
@@ -132,7 +132,7 @@ impl Graph {
     pub fn connect_destructive (&mut self, msg: &mut Msg<Vec<Structure>,Result<(),String>>) {
         let state  = self.state.clone();
         msg.connect(move |s| {
-            state.lock().unwrap().apply_streams(s)
+            state.lock().unwrap().apply_streams(&s)
         }).unwrap();
     }
 

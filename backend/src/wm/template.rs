@@ -14,7 +14,7 @@ pub struct WmTemplatePartial {
     layout:     Vec<(String,ContainerTemplate)>,
 }
 
-#[derive(Serialize,Deserialize,Clone)]
+#[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct WmTemplate {
     pub resolution: (u32, u32),
     pub layout:     Vec<(String,ContainerTemplate)>,
@@ -23,7 +23,7 @@ pub struct WmTemplate {
 
 impl WmTemplate {
 
-    pub fn from_partial (part: WmTemplatePartial, widgets: HashMap<String,WidgetDesc>) -> WmTemplate {
+    pub fn from_partial (part: WmTemplatePartial, widgets: &HashMap<String,WidgetDesc>) -> WmTemplate {
         let widgets = widgets.iter().map(|(name,w)| (name.clone(), w.clone())).collect();
         WmTemplate { resolution: part.resolution, layout: part.layout, widgets }
     }
