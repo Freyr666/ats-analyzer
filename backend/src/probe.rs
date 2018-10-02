@@ -1,25 +1,27 @@
 use std::sync::{Arc,Mutex};
 use signals::Signal;
 use metadata::Structure;
-use std::str::FromStr;
 use gst;
 use gst::prelude::*;
 use glib;
 //use gst::DebugGraphDetails;
 use gst_mpegts_sys;
 use parse;
+use initial::{Id,Uri};
 
 pub struct Probe {
-    pub stream:   i32,
+    pub stream:   String,
     pub updated:  Arc<Mutex<Signal<Structure>>>,
 
     pipeline:     gst::Pipeline,
 }
 
 impl Probe {
-    pub fn new (stream: i32, uri: &str) -> Probe {        
+    pub fn new (stream : &(Id, Uri)) -> Probe {        
         let updated       = Arc::new(Mutex::new(Signal::new()));
-        let mut structure = Structure::new(String::from_str(uri).unwrap(), stream);
+        let id            = stream.0.clone();
+        let uri           = stream.1.clone();
+        let mut structure = Structure::new(uri.clone(), id.clone());
         
         let src   = gst::ElementFactory::make("udpsrc", None).unwrap();
         let parse = gst::ElementFactory::make("tsparse", None).unwrap();
@@ -65,7 +67,7 @@ impl Probe {
             glib::Continue(true)
         });
         
-        Probe { stream, updated, pipeline }
+        Probe { stream : id, updated, pipeline }
     }
 
     pub fn set_state (&mut self, st: gst::State) {

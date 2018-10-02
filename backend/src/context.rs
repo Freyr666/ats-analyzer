@@ -66,7 +66,7 @@ impl Context {
         let mut probes  = Vec::new();
 
         for sid in 0..i.uris.len() {
-            probes.push(Probe::new(sid as i32,&i.uris[sid]));
+            probes.push(Probe::new(&i.uris[sid]));
         };
 
         let     config  = Configuration::new(i.msg_type, control.sender.clone());

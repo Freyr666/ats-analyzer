@@ -42,7 +42,7 @@ impl CommonBranch {
 
 #[derive(Clone)]
 pub struct VideoBranch {
-    stream:   u32,
+    stream:   String,
     channel:  u32,
     pid:      u32,
     pads:     Arc<Mutex<Vec<SrcPad>>>,
@@ -59,7 +59,7 @@ pub struct VideoBranch {
 //}
 
 impl VideoBranch {
-    pub fn new (stream: u32, channel: u32, pid: u32,
+    pub fn new (stream: String, channel: u32, pid: u32,
                 settings: Option<Settings>, format: MsgType, sender: Sender<Vec<u8>>) -> VideoBranch {
         debug!("VideoBranch::create");
         
@@ -76,8 +76,9 @@ impl VideoBranch {
         
         VideoBranch::apply_settings(&analyser, settings);
         // TODO consider lock removal
-        let vdata     = Arc::new(Mutex::new(VideoData::new(stream, channel, pid, format, sender)));        
+        let vdata     = Arc::new(Mutex::new(VideoData::new(stream.clone(), channel, pid, format, sender)));        
 
+        let stream_id = stream.clone();
         let bin_c = bin.clone();
         let pads_c = pads.clone();
         let analyser_c = analyser.clone();
@@ -132,7 +133,7 @@ impl VideoBranch {
 
             let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream, channel, pid, "video", bin_c.clone(), &src_pad);
+            let spad = SrcPad::new(stream_id.clone(), channel, pid, "video", bin_c.clone(), &src_pad);
 
             debug!("VideoBranch::create emit pad");
             pad_added_c.lock().unwrap().emit(&spad);
@@ -192,7 +193,7 @@ impl VideoBranch {
 
 #[derive(Clone)]
 pub struct AudioBranch {
-    stream:   u32,
+    stream:   String,
     channel:  u32,
     pid:      u32,
     pads:     Arc<Mutex<Vec<SrcPad>>>,
@@ -206,7 +207,7 @@ pub struct AudioBranch {
 }
 
 impl AudioBranch {
-    pub fn new (stream: u32, channel: u32, pid: u32,
+    pub fn new (stream: String, channel: u32, pid: u32,
                 settings: Option<Settings>, format: MsgType, sender: Sender<Vec<u8>>) -> AudioBranch {
         debug!("AudioBranch::create");
         
@@ -223,8 +224,9 @@ impl AudioBranch {
         AudioBranch::apply_settings(&analyser, settings);
 
         // TODO consider lock removal
-        let adata = Arc::new(Mutex::new(AudioData::new(stream, channel, pid, format, sender)));
-        
+        let adata = Arc::new(Mutex::new(AudioData::new(stream.clone(), channel, pid, format, sender)));
+
+        let stream_id = stream.clone();
         let bin_c = bin.clone();
         let pads_c = pads.clone();
         let analyser_c = analyser.clone();
@@ -281,7 +283,7 @@ impl AudioBranch {
             
             let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream, channel, pid, "audio", bin_c.clone(), &src_pad);
+            let spad = SrcPad::new(stream_id.clone(), channel, pid, "audio", bin_c.clone(), &src_pad);
             let aspad = spad.clone();
 
             debug!("AudioBranch::create emit pad");
@@ -336,7 +338,7 @@ pub enum Branch {
 
 impl Branch {
 
-    pub fn new(stream: u32, channel: u32, pid: u32, typ: &str,
+    pub fn new(stream: String, channel: u32, pid: u32, typ: &str,
                settings: Option<Settings>, format: MsgType, sender: Sender<Vec<u8>>) -> Option<Branch> {
         match typ {
             "video" => Some(Branch::Video(VideoBranch::new(stream, channel, pid, settings, format, sender))),

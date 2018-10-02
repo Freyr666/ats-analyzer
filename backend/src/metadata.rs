@@ -42,7 +42,7 @@ pub struct Channel {
 
 #[derive(Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Structure {
-    pub id:       i32, //[@key "stream"] (* TODO replace by id and u32 *)
+    pub id:       String,
     pub uri:      String,
     pub channels: Vec<Channel>
 }
@@ -89,7 +89,7 @@ impl Channel {
 }
 
 impl Structure {
-    pub fn new (uri: String, id: i32) -> Structure {
+    pub fn new (uri: String, id: String) -> Structure {
         Structure { id, uri, channels: vec![] }
     }
 

@@ -48,7 +48,8 @@ struct Errors<'a> {
 
 #[derive(Serialize,Deserialize,Debug)]
 struct Msg<'a> {
-    stream:     u32,
+    #[serde(bound(deserialize = "&'a String: Deserialize<'de>"))]
+    stream:     &'a String,
     channel:    u32,
     pid:        u32,
     #[serde(bound(deserialize = "Errors<'a>: Deserialize<'de>"))]
@@ -56,15 +57,16 @@ struct Msg<'a> {
 }
 
 #[derive(Serialize,Deserialize,Debug)]
-struct MsgStatus {
-    stream:     u32,
+struct MsgStatus<'a> {
+    #[serde(bound(deserialize = "&'a String: Deserialize<'de>"))]
+    stream:     &'a String,
     channel:    u32,
     pid:        u32,
     playing:    bool,
 }
 
 pub struct AudioData {
-    stream:       u32,
+    stream:       String,
     channel:      u32,
     pid:          u32,
     notif:        Notifier,
@@ -78,7 +80,7 @@ unsafe impl Send for AudioData {}
 
 impl AudioData {
 
-    pub fn new (stream: u32, channel: u32, pid: u32, format: MsgType, sender: Sender<Vec<u8>>) -> AudioData {
+    pub fn new (stream: String, channel: u32, pid: u32, format: MsgType, sender: Sender<Vec<u8>>) -> AudioData {
         let mmap :  *mut gst_sys::GstMapInfo;
         unsafe {
             mmap = libc::malloc(mem::size_of::<gst_sys::GstMapInfo>()) as *mut gst_sys::GstMapInfo;
@@ -101,7 +103,7 @@ impl AudioData {
                 loudness_shortt: &err_buf[Parameter::LoudnessShortt as usize],
                 loudness_moment: &err_buf[Parameter::LoudnessMoment as usize],
             };
-            let msg = Msg { stream: self.stream,
+            let msg = Msg { stream: &self.stream,
                             channel: self.channel,
                             pid: self.pid,
                             errors };
@@ -111,7 +113,7 @@ impl AudioData {
     }
 
     pub fn send_lost (&self) {
-        let msg = MsgStatus { stream: self.stream,
+        let msg = MsgStatus { stream: &self.stream,
                               channel: self.channel,
                               pid: self.pid,
                               playing: false };
@@ -119,7 +121,7 @@ impl AudioData {
     }
 
     pub fn send_found (&self) {
-        let msg = MsgStatus { stream: self.stream,
+        let msg = MsgStatus { stream: &self.stream,
                               channel: self.channel,
                               pid: self.pid,
                               playing: true };

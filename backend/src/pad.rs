@@ -8,7 +8,7 @@ pub enum Type {
 
 pub struct SrcPad {
     pub typ: Type,
-    pub stream: u32,
+    pub stream: String,
     pub channel: u32,
     pub pid: u32,
 
@@ -18,7 +18,7 @@ pub struct SrcPad {
 }
 
 impl SrcPad {
-    pub fn new(stream: u32, channel: u32, pid: u32, typ: &str, bin: gst::Bin, pad: &gst::Pad) -> SrcPad {
+    pub fn new(stream: String, channel: u32, pid: u32, typ: &str, bin: gst::Bin, pad: &gst::Pad) -> SrcPad {
         let typ = match typ {
             "video" => Type::Video,
             "audio" => Type::Audio,
@@ -50,7 +50,7 @@ impl Clone for SrcPad {
         let ghost   = gst::GhostPad::new(None, &mid_pad).unwrap();
         ghost.set_active(true).unwrap();
 
-        SrcPad { typ: self.typ, stream: self.stream, channel: self.channel, pid: self.pid,
+        SrcPad { typ: self.typ, stream: self.stream.clone(), channel: self.channel, pid: self.pid,
                  bin: self.bin.clone(), tee: self.tee.clone(), pad: ghost.upcast() }
     }
 }

@@ -7,9 +7,12 @@ pub enum Error {
     WrongOption (String)
 }
 
+pub type Uri = String;
+pub type Id  = String;
+
 #[derive(Debug)]
 pub struct Initial {
-    pub uris:     Vec<String>,
+    pub uris:     Vec<(Id,Uri)>,
     pub msg_type: MsgType
 }
 
@@ -20,6 +23,7 @@ pub enum UriParserState {
 
 pub enum ArgsParserState {
     MsgType,
+    Uri(String),
     Positional
 }
 
@@ -128,7 +132,7 @@ impl Initial {
          * -m msgtype
          */
         let mut mt    : MsgType         = MsgType::Json;
-        let mut uris  : Vec<String>     = Vec::new();
+        let mut uris                    = Vec::new();
         let mut state : ArgsParserState = ArgsParserState::Positional;
         let mut args  : Vec<String>     = args.collect();
         let path      : String          = args.remove(0);
@@ -145,15 +149,19 @@ impl Initial {
                         }
                     };
                 } else {
+                    state = ArgsParserState::Uri(arg);
+                }
+                },
+                ArgsParserState::Uri(id) => {
+                    state = ArgsParserState::Positional;
                     match validate_uri(&arg) {
-                        Ok (uri) => uris.push(String::from(uri)),
+                        Ok (uri) => uris.push((id.clone(), String::from(uri))),
                         Err (e)  =>
                         { let e_str = uri_error_to_string(&e);
                           let s     = format!("{}: bad uri argument ({}), {}", path, arg, e_str);
                           return Err (Error::WrongOption(s))
                         }
                     }
-                }
                 },
                 ArgsParserState::MsgType => {
                     state = ArgsParserState::Positional;
@@ -169,12 +177,18 @@ impl Initial {
             }
         };
 
-        Ok ( Initial { uris, msg_type : mt } )
+        match state {
+            ArgsParserState::Uri(id) => {
+                let s = format!("{}: no uri argument for stream {}", path, id);
+                Err (Error::WrongOption(s))
+            },
+            _ => Ok ( Initial { uris, msg_type : mt } )
+        }
     }
 
     pub fn usage() -> &'static str {
         "Usage:\n\
-         [-opt arg] uri1 [uri2 uri3]\n\
+         [-opt arg] id1 uri1 [id2 uri2 id3 uri3]\n\
          Options:\n\
          \t-m,\t--msgtype\tipc message type [json | msgpack]\n\
          \t-h,\t--help   \thelp\n\
