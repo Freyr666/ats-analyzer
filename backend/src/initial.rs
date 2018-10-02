@@ -152,7 +152,8 @@ impl Initial {
                     state = ArgsParserState::Uri(arg);
                 }
                 },
-                ArgsParserState::Uri(ref id) =>
+                ArgsParserState::Uri(id) => {
+                    state = ArgsParserState::Positional;
                     match validate_uri(&arg) {
                         Ok (uri) => uris.push((id.clone(), String::from(uri))),
                         Err (e)  =>
@@ -160,7 +161,8 @@ impl Initial {
                           let s     = format!("{}: bad uri argument ({}), {}", path, arg, e_str);
                           return Err (Error::WrongOption(s))
                         }
-                    },
+                    }
+                },
                 ArgsParserState::MsgType => {
                     state = ArgsParserState::Positional;
                     match arg.as_str() {
