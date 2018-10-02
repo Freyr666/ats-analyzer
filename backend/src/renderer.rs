@@ -65,6 +65,7 @@ impl Renderer<AudioR> {
         output.sync_state_with_parent().unwrap();
         output.set_property("host", &"127.0.0.1").unwrap();
         output.set_property("port", &port).unwrap();
+        output.set_property("async", &false).unwrap();
         Renderer::<AudioR> { encoder, p: PhantomData }
     }
 

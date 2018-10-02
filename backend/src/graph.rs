@@ -61,14 +61,23 @@ impl GraphState {
     }
 
     pub fn reset (&mut self) {
-        // TODO check
+        debug!("GraphState::reset [pipeline pause]");
+        gst::debug_bin_to_dot_file(&self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_pre_reset");
         let _ = self.pipeline.set_state(gst::State::Null);
-        self.roots    = Vec::new();
+        gst::debug_bin_to_dot_file(& self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_post_reset");
+        debug!("GraphState::reset [pipeline reset]");
         self.pipeline = gst::Pipeline::new(None);
+        debug!("GraphState::reset [root reset]");
+        self.roots    = Vec::new();
+        debug!("GraphState::reset [wm reset]");
         self.wm.lock().unwrap().reset(self.pipeline.clone());
+        debug!("GraphState::reset [audio mux reset]");
         self.mux.lock().unwrap().reset(&self.pipeline);
+        debug!("GraphState::reset [vrend reset]");
         self.vrend    = Some(Renderer::<VideoR>::new(5004, &self.pipeline.clone().upcast()));
+        debug!("GraphState::reset [arend reset]");
         self.arend    = Some(Renderer::<AudioR>::new(5005, &self.pipeline.clone().upcast()));
+        debug!("GraphState::reset [bus reset]");
         self.bus      = self.pipeline.get_bus().unwrap();
 
         self.vrend.iter().for_each(|rend| rend.plug(&self.wm.lock().unwrap().src_pad()));
@@ -81,9 +90,9 @@ impl GraphState {
     }
 
     pub fn apply_streams (&mut self, s: &[Structure]) -> Result<(),String> {
-        //println!("Apply Stream");
+        debug!("Graph::apply_streams [reset]");
         self.reset();
-        
+        debug!("Graph::apply_streams [loop]");
         for s in s {
             //println!("Stream");
             if let Some(root) = Root::new(&self.pipeline.clone().upcast(), s.clone(),
@@ -132,6 +141,7 @@ impl Graph {
     pub fn connect_destructive (&mut self, msg: &mut Msg<Vec<Structure>,Result<(),String>>) {
         let state  = self.state.clone();
         msg.connect(move |s| {
+            debug!("Graph::destructive");
             state.lock().unwrap().apply_streams(&s)
         }).unwrap();
     }

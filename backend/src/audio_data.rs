@@ -55,12 +55,21 @@ struct Msg<'a> {
     errors:     Errors<'a>
 }
 
-pub struct AudioData {
+#[derive(Serialize,Deserialize,Debug)]
+struct MsgStatus {
     stream:     u32,
     channel:    u32,
     pid:        u32,
-    notif:      Notifier,
-    mmap:       *mut gst_sys::GstMapInfo,
+    playing:    bool,
+}
+
+pub struct AudioData {
+    stream:       u32,
+    channel:      u32,
+    pid:          u32,
+    notif:        Notifier,
+    notif_status: Notifier,
+    mmap:         *mut gst_sys::GstMapInfo,
 }
 
 unsafe impl Send for AudioData {}
@@ -74,7 +83,9 @@ impl AudioData {
         unsafe {
             mmap = libc::malloc(mem::size_of::<gst_sys::GstMapInfo>()) as *mut gst_sys::GstMapInfo;
         }
-        AudioData { stream, channel, pid, notif: Notifier::new("audio_data", format, sender), mmap }
+        let notif = Notifier::new("audio_data", format, sender.clone());
+        let notif_status = Notifier::new("stream_lost", format, sender);
+        AudioData { stream, channel, pid, notif, notif_status, mmap }
     }
 
     pub fn send_msg (&self, buf: &gst::Buffer) {
@@ -99,6 +110,21 @@ impl AudioData {
         }
     }
 
+    pub fn send_lost (&self) {
+        let msg = MsgStatus { stream: self.stream,
+                              channel: self.channel,
+                              pid: self.pid,
+                              playing: false };
+        self.notif_status.talk(&msg);
+    }
+
+    pub fn send_found (&self) {
+        let msg = MsgStatus { stream: self.stream,
+                              channel: self.channel,
+                              pid: self.pid,
+                              playing: true };
+        self.notif_status.talk(&msg);
+    }
 }
 
 impl Drop for AudioData {
