@@ -36,7 +36,7 @@ impl Control {
             for msg in receiver {
                // println!("Msg: {}", String::from_utf8_lossy(&msg));
                 match out_socket.send(&msg,0) {
-                    Ok (()) => debug!("Control::send success"),
+                    Ok (()) => (), //debug!("Control::send success"),
                     Err (e) => error!("Control::send error: {}", e),
                 }
             }

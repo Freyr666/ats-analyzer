@@ -62,6 +62,7 @@ impl MuxState {
     }
 
     fn plug (&mut self, pad: &SrcPad) -> bool {
+        debug!("AudioMux::plug");
         let name = format!("{}_{}_({})", pad.pid, pad.channel, pad.stream);
         if ! self.sources.contains_key (&name) {
             let sink = self.selector.get_request_pad("sink_%u").unwrap();

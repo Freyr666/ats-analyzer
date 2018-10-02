@@ -40,6 +40,7 @@ impl Replybox<Request<Vec<Structure>>,Reply<Vec<Structure>>> for Streams {
                     Request::Set(data) => {
                         let mut s = structures.lock().unwrap();
                         *s = data.clone();
+                        debug!("Streams::set");
                         match signal.lock().unwrap().emit(data) {
                             None    => Err(String::from("Streams are not connected to the graph")),
                             Some(r) => match r {

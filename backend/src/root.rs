@@ -50,7 +50,6 @@ impl Root {
             };
 
             branches.push(branch);
-            //bin.set_state(gst::State::Playing);
         }
     }
     

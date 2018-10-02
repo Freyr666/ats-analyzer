@@ -28,7 +28,8 @@ impl CommonBranch {
         let decoder = gst::ElementFactory::make("decodebin",None).unwrap();
         
         bin.add_many(&[/*&queue,*/ &decoder]).unwrap();
-
+        decoder.sync_state_with_parent().unwrap();
+        
         let p = decoder.get_static_pad("sink").unwrap();
         let sink_ghost = gst::GhostPad::new(Some("sink"), &p).unwrap();
 
@@ -60,6 +61,8 @@ pub struct VideoBranch {
 impl VideoBranch {
     pub fn new (stream: u32, channel: u32, pid: u32,
                 settings: Option<Settings>, format: MsgType, sender: Sender<Vec<u8>>) -> VideoBranch {
+        debug!("VideoBranch::create");
+        
         let common = CommonBranch::new();
 
         let pads      = Arc::new(Mutex::new(Vec::new()));
@@ -81,6 +84,7 @@ impl VideoBranch {
         let pad_added_c = pad_added.clone();
         
         decoder.connect_pad_added(move | _, pad | {
+            debug!("VideoBranch::create encoder initialized");
             let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
             let caps_toks: Vec<&str> = pcaps.split('/').collect();
             if caps_toks.is_empty() { return };
@@ -130,6 +134,7 @@ impl VideoBranch {
 
             let spad = SrcPad::new(stream, channel, pid, "video", bin_c.clone(), &src_pad);
 
+            debug!("VideoBranch::create emit pad");
             pad_added_c.lock().unwrap().emit(&spad);
             pads_c.lock().unwrap().push(spad);
         });
@@ -147,7 +152,7 @@ impl VideoBranch {
     pub fn add_to_pipe (&self, b: &gst::Bin) {
         b.add(&self.bin).unwrap();
         self.bin.sync_state_with_parent().unwrap();
-        self.bin.sync_children_states().unwrap();
+       // self.bin.sync_children_states().unwrap();
     }
 
     pub fn apply_settings (analyser: &gst::Element, s: Option<Settings>) {
@@ -203,6 +208,8 @@ pub struct AudioBranch {
 impl AudioBranch {
     pub fn new (stream: u32, channel: u32, pid: u32,
                 settings: Option<Settings>, format: MsgType, sender: Sender<Vec<u8>>) -> AudioBranch {
+        debug!("AudioBranch::create");
+        
         let common = CommonBranch::new();
 
         let pads      = Arc::new(Mutex::new(Vec::new()));
@@ -226,6 +233,7 @@ impl AudioBranch {
 
         // TODO replace gst::pad with Pad
         decoder.connect_pad_added(move | _, pad | {
+            debug!("AudioBranch::create encoder initialized");
             let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
             let caps_toks: Vec<&str> = pcaps.split('/').collect();
             if caps_toks.is_empty() { return };
@@ -254,7 +262,7 @@ impl AudioBranch {
             let adata = adata.clone();
             let adata_lost  = adata.clone();
             let adata_found = adata.clone();
-            
+
             analyser_c.connect("data", true, move |vals| {
                 let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
                 adata.lock().unwrap().send_msg(&d);
@@ -275,7 +283,8 @@ impl AudioBranch {
 
             let spad = SrcPad::new(stream, channel, pid, "audio", bin_c.clone(), &src_pad);
             let aspad = spad.clone();
-            
+
+            debug!("AudioBranch::create emit pad");
             pad_added_c.lock().unwrap().emit(&spad);
             audio_pad_added_c.lock().unwrap().emit(&aspad);
             pads_c.lock().unwrap().push(spad);
@@ -312,8 +321,8 @@ impl AudioBranch {
             analyser.set_property("loudness-peak", &aset.loudness.loudness.peak).unwrap();
             analyser.set_property("loudness-peak-en", &aset.loudness.loudness.peak_en).unwrap();
             analyser.set_property("loudness-duration", &aset.loudness.loudness.duration).unwrap();
-            analyser.set_property("adv-diff", &aset.adv.adv_diff).unwrap();
-            analyser.set_property("adv-buff", &aset.adv.adv_buf).unwrap();
+            //analyser.set_property("adv-diff", &aset.adv.adv_diff).unwrap();
+            //analyser.set_property("adv-buff", &aset.adv.adv_buf).unwrap();
         }
     }
 
