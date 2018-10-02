@@ -20,7 +20,7 @@ pub struct Root {
 impl Root {
 
     fn build_branch (branches: &mut Vec<Branch>,
-                     stream: u32, chan: &Channel,
+                     stream: String, chan: &Channel,
                      settings: Option<Settings>,
                      added: Arc<Mutex<Signal<SrcPad>>>,
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
@@ -70,8 +70,11 @@ impl Root {
         bin.add_many(&[&src, &tee]).unwrap();
         src.link(&tee).unwrap();
 
+        let id = m.id.clone();
+
         for chan in m.channels {
-            let demux_name = format!("demux_{}_{}_{}_{}", m.id, chan.number, chan.service_name, chan.provider_name);
+            let demux_name = format!("demux_{}_{}_{}_{}",
+                                     id.clone(), chan.number, chan.service_name, chan.provider_name);
 
             let queue = gst::ElementFactory::make("queue", None).unwrap();
             let demux = gst::ElementFactory::make("tsdemux", Some(demux_name.as_str())).unwrap();
@@ -89,8 +92,8 @@ impl Root {
 
             // TODO check
             let _ = srcpad.link(&sinkpad);
-            let stream = m.id as u32;
-
+            
+            let stream = id.clone();
             let bin_cc = bin.clone();
             let settings_c = settings.clone();
             let branches_c = branches.clone();
@@ -100,7 +103,7 @@ impl Root {
             
             demux.connect_pad_added(move | _, pad | {
                 let settings = settings_c.lock().unwrap();
-                Root::build_branch(&mut branches_c.lock().unwrap(), stream, &chan,
+                Root::build_branch(&mut branches_c.lock().unwrap(), stream.clone(), &chan,
                                    *settings,
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
                                    &bin_cc, pad,

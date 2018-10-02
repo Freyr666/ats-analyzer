@@ -11,7 +11,7 @@ pub struct WidgetSoundbar {
     desc:      Arc<Mutex<WidgetDesc>>,
     enabled:   bool,
     uid:       Option<String>,
-    stream:    u32,
+    stream:    String,
     channel:   u32,
     pid:       u32,
     mixer_pad: Option<gst::Pad>,
@@ -44,7 +44,7 @@ impl WidgetSoundbar {
             desc,
             enabled:   false,
             uid:       None,
-            stream: 0, channel: 0, pid: 0,
+            stream: String::default(), channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
             valve, soundbar, upload, caps, linked,
         }
@@ -88,7 +88,7 @@ impl Widget for WidgetSoundbar {
 
     fn plug_src (&mut self, src: &SrcPad) {
         if self.input_pad.is_some() { return }; //is plugged already
-        self.stream  = src.stream;
+        self.stream  = src.stream.clone();
         self.channel = src.channel;
         self.pid     = src.pid;
         let in_pad   = self.soundbar.get_static_pad("sink").unwrap();

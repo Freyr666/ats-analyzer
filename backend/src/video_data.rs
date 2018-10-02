@@ -50,7 +50,8 @@ struct Errors<'a> {
 
 #[derive(Serialize,Deserialize,Debug)]
 struct Msg<'a> {
-    stream:     u32,
+    #[serde(bound(deserialize = "&'a String: Deserialize<'de>"))]
+    stream:     &'a String,
     channel:    u32,
     pid:        u32,
     #[serde(bound(deserialize = "Errors<'a>: Deserialize<'de>"))]
@@ -58,15 +59,16 @@ struct Msg<'a> {
 }
 
 #[derive(Serialize,Deserialize,Debug)]
-struct MsgStatus {
-    stream:     u32,
+struct MsgStatus<'a> {
+    #[serde(bound(deserialize = "&'a String: Deserialize<'de>"))]
+    stream:     &'a String,
     channel:    u32,
     pid:        u32,
     playing:    bool,
 }
 
 pub struct VideoData {
-    stream:       u32,
+    stream:       String,
     channel:      u32,
     pid:          u32,
     notif:        Notifier,
@@ -80,7 +82,7 @@ unsafe impl Send for VideoData {}
 
 impl VideoData {
 
-    pub fn new (stream: u32, channel: u32, pid: u32, format: MsgType, sender: Sender<Vec<u8>>) -> VideoData {
+    pub fn new (stream: String, channel: u32, pid: u32, format: MsgType, sender: Sender<Vec<u8>>) -> VideoData {
         let mmap :  *mut gst_sys::GstMapInfo;
         unsafe {
             mmap = libc::malloc(mem::size_of::<gst_sys::GstMapInfo>()) as *mut gst_sys::GstMapInfo;
@@ -106,7 +108,7 @@ impl VideoData {
                 blocky: &err_buf[Parameter::Blocky as usize],
             };
 
-            let msg = Msg { stream: self.stream,
+            let msg = Msg { stream: &self.stream,
                             channel: self.channel,
                             pid: self.pid,
                             errors };
@@ -116,7 +118,7 @@ impl VideoData {
     }
 
     pub fn send_lost (&self) {
-        let msg = MsgStatus { stream: self.stream,
+        let msg = MsgStatus { stream: &self.stream,
                               channel: self.channel,
                               pid: self.pid,
                               playing: false };
@@ -124,7 +126,7 @@ impl VideoData {
     }
 
     pub fn send_found (&self) {
-        let msg = MsgStatus { stream: self.stream,
+        let msg = MsgStatus { stream: &self.stream,
                               channel: self.channel,
                               pid: self.pid,
                               playing: true };
