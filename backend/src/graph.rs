@@ -17,6 +17,7 @@ pub struct GraphState {
     format:      MsgType,
     sender:      Sender<Vec<u8>>,
     settings:    Option<Settings>,
+    structure:   Option<Vec<Structure>>,
     pipeline:    gst::Pipeline,
     bus:         gst::Bus,
     pub wm:      Arc<Mutex<Wm>>,
@@ -38,26 +39,32 @@ impl Addressable for Graph {
     fn get_format(&self) -> MsgType { self.format }
 }
 
-impl Replybox<String,String> for Graph {
-    fn reply (&self) -> Box<Fn(String)->Result<String,String> + Send + Sync> {
-        Box::new(move |name| {
-            let s = String::from("Hello, ");
-            Ok(s + &name)
+impl Replybox<(),Option<Vec<Structure>>> for Graph {
+    fn reply (&self) -> Box<Fn(())->Result<Option<Vec<Structure>>,String> + Send + Sync> {
+        let state = self.state.clone();
+        
+        Box::new(move |()| {
+            if let Ok (s) = state.lock() {
+                Ok (s.structure.clone())
+            } else {
+                Err (String::from("can't acquire graph state applied structure"))
+            }
         })
     }
 }
 
 impl GraphState {
     pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> GraphState {
-        let settings = None;
-        let pipeline = gst::Pipeline::new(None);
-        let wm       = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender.clone())));
-        let mux      = Arc::new(Mutex::new(Mux::new(&pipeline, format, sender.clone())));
-        let vrend    = None;
-        let arend    = None;
-        let bus      = pipeline.get_bus().unwrap();
-        let roots    = Vec::new();
-        GraphState { settings, pipeline, wm, mux, bus, roots, arend, vrend, format, sender }
+        let settings  = None;
+        let structure = None;
+        let pipeline  = gst::Pipeline::new(None);
+        let wm        = Arc::new(Mutex::new(Wm::new(pipeline.clone(), format, sender.clone())));
+        let mux       = Arc::new(Mutex::new(Mux::new(&pipeline, format, sender.clone())));
+        let vrend     = None;
+        let arend     = None;
+        let bus       = pipeline.get_bus().unwrap();
+        let roots     = Vec::new();
+        GraphState { settings, structure, pipeline, wm, mux, bus, roots, arend, vrend, format, sender }
     }
 
     pub fn reset (&mut self) {
@@ -116,6 +123,7 @@ impl GraphState {
         };
         // TODO replace with retain_state
         let _ = self.pipeline.set_state(gst::State::Playing);
+        self.structure = Some(Vec::from(s));
         Ok(())
     }
 
@@ -140,9 +148,14 @@ impl Graph {
     
     pub fn connect_destructive (&mut self, msg: &mut Msg<Vec<Structure>,Result<(),String>>) {
         let state  = self.state.clone();
+        let notif  = self.chat.clone();
         msg.connect(move |s| {
             debug!("Graph::destructive");
-            state.lock().unwrap().apply_streams(&s)
+            let res = state.lock().unwrap().apply_streams(&s);
+            if res.is_ok() {
+                notif.lock().unwrap().talk(&s)
+            };
+            res
         }).unwrap();
     }
 
