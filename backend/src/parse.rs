@@ -68,7 +68,7 @@ unsafe fn dump_pat (section: *mut GstMpegtsSection, metadata: &mut Structure) {
         
         if num == 0 { continue }
 
-        if metadata.channel_exists (num) {
+        if ! metadata.channel_exists (num) {
             metadata.add_channel(Channel::new_empty(num));
         }
     }

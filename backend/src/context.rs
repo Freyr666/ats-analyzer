@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use gst;
 use glib;
 use std::sync::{Arc,Mutex};
+//use std::{thread,time};
 
 use chatterer::MsgType;
 use chatterer::control::{Addressable,Dispatcher,DispatchTable};
@@ -100,7 +101,7 @@ impl Context {
 
     pub fn run(&self) {
         // TODO fi this hack
-        // thread::sleep(time::Duration::from_millis(500)); // a very dirty hack indeed
+        //thread::sleep(time::Duration::from_millis(500)); // a very dirty hack indeed
         self.notif.talk(&Status::Ready);
         self.mainloop.run();
     }
