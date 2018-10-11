@@ -38,6 +38,8 @@ impl Root {
             if !p.to_be_analyzed { return };
         };
 
+        debug!("Root::build_branch [{}]", pid);
+
         if let Some(branch) = Branch::new(stream, chan.number, pid, typ, settings, format, sender.lock().unwrap().clone()) {
             branch.add_to_pipe(&bin);
             branch.plug(&pad);
@@ -49,6 +51,7 @@ impl Root {
                 },
             };
 
+            debug!("Root::build_branch [{} ready]", pid);
             branches.push(branch);
         }
     }
@@ -56,6 +59,8 @@ impl Root {
     pub fn new(bin: &gst::Bin, m: Structure, settings: Option<Settings>,
                format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
         if ! m.to_be_analyzed() { return None };
+
+        debug!("Root::new");
 
         let src             = gst::ElementFactory::make("udpsrc", None).unwrap();
         let tee             = gst::ElementFactory::make("tee", None).unwrap();

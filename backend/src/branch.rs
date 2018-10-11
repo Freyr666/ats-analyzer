@@ -123,11 +123,13 @@ impl VideoBranch {
 
             analyser_c.connect("stream-lost", true, move |_| {
                 vdata_lost.lock().unwrap().send_lost();
+                debug!("Stream lost sent");
                 None
             }).unwrap();
 
             analyser_c.connect("stream-found", true, move |_| {
                 vdata_found.lock().unwrap().send_found();
+                debug!("Stream found sent");
                 None
             }).unwrap();
 

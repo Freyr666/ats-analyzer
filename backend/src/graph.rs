@@ -87,12 +87,15 @@ impl GraphState {
         debug!("GraphState::reset [bus reset]");
         self.bus      = self.pipeline.get_bus().unwrap();
 
+        debug!("GraphState::reset [video render reset]");
         self.vrend.iter().for_each(|rend| rend.plug(&self.wm.lock().unwrap().src_pad()));
+        debug!("GraphState::reset [audio render reset]");
         self.arend.iter().for_each(|rend| rend.plug(&self.mux.lock().unwrap().src_pad()));
     }
 
     pub fn set_state (&self, st: gst::State) {
         // TODO check
+        debug!("GraphState::set_state [{:?}]", st);
         let _ = self.pipeline.set_state(st);
     }
 
@@ -101,18 +104,16 @@ impl GraphState {
         self.reset();
         debug!("Graph::apply_streams [loop]");
         for s in s {
-            //println!("Stream");
             if let Some(root) = Root::new(&self.pipeline.clone().upcast(), s.clone(),
                                           self.settings, self.format, self.sender.clone()) {
-                //println!("New root");
-                let pipe   = self.pipeline.clone();
+                //let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
                 let mux    = self.mux.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
-                    //println!("Pad added");
+                    debug!("Graph::apply_streams [attach pad {} {}]", p.stream, p.channel);
                     wm.lock().unwrap().plug(p);
                     // TODO check
-                    let _ = pipe.set_state(gst::State::Playing);
+                    //let _ = pipe.set_state(gst::State::Playing);
                     //gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
                 });
                 
@@ -128,6 +129,7 @@ impl GraphState {
     }
 
     pub fn apply_settings (&mut self, s: Settings) -> Result<(),String> {
+        debug!("Graph::apply_settings");
         self.settings = Some(s);
         self.roots.iter_mut().for_each(|root : &mut Root| root.apply_settings(s) );
         Ok(())
@@ -153,6 +155,7 @@ impl Graph {
             debug!("Graph::destructive");
             let res = state.lock().unwrap().apply_streams(&s);
             if res.is_ok() {
+                debug!("Graph::destructive [send state]");
                 notif.lock().unwrap().talk(&s)
             };
             res
@@ -162,6 +165,7 @@ impl Graph {
     pub fn connect_settings (&mut self, msg: &mut Msg<Settings,Result<(),String>>) {
         let state  = self.state.clone();
         msg.connect(move |s| {
+            debug!("Graph::settings");
             state.lock().unwrap().apply_settings(s)
         }).unwrap();
     }
