@@ -113,7 +113,7 @@ impl WidgetVideo {
 }
 
 impl Widget for WidgetVideo {
-    fn add_to_pipe(&self, pipe: gst::Bin) {
+    fn add_to_pipe(&self, pipe: &gst::Bin) {
         pipe.add_many(&[&self.valve, &self.conv, /*&self.scale,*/ &self.deint, &self.caps/*, &self.queue*/]).unwrap();
         gst::Element::link_many(&[&self.valve, &self.conv, /*&self.scale,*/ &self.deint, &self.caps/*, &self.queue*/]).unwrap();
         self.valve.sync_state_with_parent().unwrap();

@@ -78,11 +78,11 @@ impl VideoBranch {
         // TODO consider lock removal
         let vdata     = Arc::new(Mutex::new(VideoData::new(stream.clone(), channel, pid, format, sender)));        
 
-        let stream_id = stream.clone();
-        let bin_c = bin.clone();
-        let pads_c = pads.clone();
-        let analyser_c = analyser.clone();
-        let pad_added_c = pad_added.clone();
+        let stream_id     = stream.clone();
+        let bin_weak      = bin.downgrade();
+        let analyser_weak = analyser.downgrade();
+        let pads_c        = pads.clone();
+        let pad_added_c   = pad_added.clone();
         
         decoder.connect_pad_added(move | _, pad | {
             debug!("VideoBranch::create encoder initialized");
@@ -94,40 +94,46 @@ impl VideoBranch {
 
             if *typ != "video" { return };
 
+            let bin = bin_weak.upgrade().unwrap();
+            let analyser = analyser_weak.upgrade().unwrap();
+
             let queue  = gst::ElementFactory::make("queue", None).unwrap();
             let upload = gst::ElementFactory::make("glupload",None).unwrap();
 
             let sink_pad = queue.get_static_pad("sink").unwrap();
-            let src_pad  = analyser_c.get_static_pad("src").unwrap();
+            let src_pad  = analyser.get_static_pad("src").unwrap();
 
             queue.set_property("max-size-time", &0u64).unwrap();
             queue.set_property("max-size-buffers", &0u32).unwrap();
             queue.set_property("max-size-bytes", &0u32).unwrap();
 
-            bin_c.add_many(&[&queue, &upload, &analyser_c]).unwrap();
-            gst::Element::link_many(&[&queue,  &upload, &analyser_c]).unwrap();
+            bin.add_many(&[&queue, &upload, &analyser]).unwrap();
+            gst::Element::link_many(&[&queue, &upload, &analyser]).unwrap();
 
             queue.sync_state_with_parent().unwrap();
             upload.sync_state_with_parent().unwrap();
-            analyser_c.sync_state_with_parent().unwrap();
+            analyser.sync_state_with_parent().unwrap();
 
-            let vdata = vdata.clone();
+            let vdata       = Arc::downgrade(&vdata);
             let vdata_lost  = vdata.clone();
             let vdata_found = vdata.clone();
             // TODO add err check
-            analyser_c.connect("data", true, move |vals| {
+            analyser.connect("data", true, move |vals| {
+                let vdata = vdata.upgrade().unwrap();
                 let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
                 vdata.lock().unwrap().send_msg(&d);
                 None
             }).unwrap();
 
-            analyser_c.connect("stream-lost", true, move |_| {
+            analyser.connect("stream-lost", true, move |_| {
+                let vdata_lost = vdata_lost.upgrade().unwrap();
                 vdata_lost.lock().unwrap().send_lost();
                 debug!("Stream lost sent");
                 None
             }).unwrap();
 
-            analyser_c.connect("stream-found", true, move |_| {
+            analyser.connect("stream-found", true, move |_| {
+                let vdata_found = vdata_found.upgrade().unwrap();
                 vdata_found.lock().unwrap().send_found();
                 debug!("Stream found sent");
                 None
@@ -135,7 +141,7 @@ impl VideoBranch {
 
             let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream_id.clone(), channel, pid, "video", bin_c.clone(), &src_pad);
+            let spad = SrcPad::new(stream_id.clone(), channel, pid, "video", &bin, &src_pad);
 
             debug!("VideoBranch::create emit pad");
             pad_added_c.lock().unwrap().emit(&spad);
@@ -152,7 +158,7 @@ impl VideoBranch {
         self.bin.sync_state_with_parent().unwrap();
     }
 
-    pub fn add_to_pipe (&self, b: &gst::Bin) {
+    pub fn add_to_pipe (&self, b: &gst::Pipeline) {
         b.add(&self.bin).unwrap();
         self.bin.sync_state_with_parent().unwrap();
        // self.bin.sync_children_states().unwrap();
@@ -193,6 +199,12 @@ impl VideoBranch {
     }
 }
 
+impl Drop for VideoBranch {
+    fn drop(&mut self) {
+        debug!("Branch {} {} {} is dropped", self.stream, self.channel, self.pid);
+    }
+}
+
 #[derive(Clone)]
 pub struct AudioBranch {
     stream:   String,
@@ -229,9 +241,9 @@ impl AudioBranch {
         let adata = Arc::new(Mutex::new(AudioData::new(stream.clone(), channel, pid, format, sender)));
 
         let stream_id = stream.clone();
-        let bin_c = bin.clone();
+        let bin_weak      = bin.downgrade();
+        let analyser_weak = analyser.downgrade();
         let pads_c = pads.clone();
-        let analyser_c = analyser.clone();
         let pad_added_c = pad_added.clone();
         let audio_pad_added_c = audio_pad_added.clone();
 
@@ -245,47 +257,53 @@ impl AudioBranch {
             let typ = &caps_toks[0];
 
             if *typ != "audio" { return };
+
+            let bin      = bin_weak.upgrade().unwrap();
+            let analyser = analyser_weak.upgrade().unwrap();
             
             let queue  = gst::ElementFactory::make("queue", None).unwrap();
-            let conv = gst::ElementFactory::make("audioconvert",None).unwrap();
+            let conv   = gst::ElementFactory::make("audioconvert",None).unwrap();
 
             let sink_pad = queue.get_static_pad("sink").unwrap();
-            let src_pad  = analyser_c.get_static_pad("src").unwrap();
+            let src_pad  = analyser.get_static_pad("src").unwrap();
 
             queue.set_property("max-size-time", &0u64).unwrap();
             queue.set_property("max-size-buffers", &0u32).unwrap();
             queue.set_property("max-size-bytes", &0u32).unwrap();
 
-            bin_c.add_many(&[&queue, &conv, &analyser_c]).unwrap();
-            gst::Element::link_many(&[&queue, &conv, &analyser_c]).unwrap();
+            bin.add_many(&[&queue, &conv, &analyser]).unwrap();
+            gst::Element::link_many(&[&queue, &conv, &analyser]).unwrap();
 
             queue.sync_state_with_parent().unwrap();
             conv.sync_state_with_parent().unwrap();
-            analyser_c.sync_state_with_parent().unwrap();
+            analyser.sync_state_with_parent().unwrap();
 
-            let adata = adata.clone();
+            let adata       = Arc::downgrade(&adata);
             let adata_lost  = adata.clone();
             let adata_found = adata.clone();
 
-            analyser_c.connect("data", true, move |vals| {
+            analyser.connect("data", true, move |vals| {
+                let adata = adata.upgrade().unwrap();
                 let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
                 adata.lock().unwrap().send_msg(&d);
                 None
             }).unwrap();
 
-            analyser_c.connect("stream-lost", true, move |_| {
+            analyser.connect("stream-lost", true, move |_| {
+                let adata_lost = adata_lost.upgrade().unwrap();
                 adata_lost.lock().unwrap().send_lost();
                 None
             }).unwrap();
 
-            analyser_c.connect("stream-found", true, move |_| {
+            analyser.connect("stream-found", true, move |_| {
+                let adata_found = adata_found.upgrade().unwrap();
                 adata_found.lock().unwrap().send_found();
                 None
             }).unwrap();
             
             let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream_id.clone(), channel, pid, "audio", bin_c.clone(), &src_pad);
+            let spad = SrcPad::new(stream_id.clone(), channel, pid, "audio", &bin, &src_pad);
             let aspad = spad.clone();
 
             debug!("AudioBranch::create emit pad");
@@ -305,7 +323,7 @@ impl AudioBranch {
         self.bin.sync_state_with_parent().unwrap();
     }
 
-    pub fn add_to_pipe (&self, b: &gst::Bin) {
+    pub fn add_to_pipe (&self, b: &gst::Pipeline) {
         b.add(&self.bin).unwrap();
         self.bin.sync_state_with_parent().unwrap();
         self.bin.sync_children_states().unwrap();
@@ -356,7 +374,7 @@ impl Branch {
         };
     }
 
-    pub fn add_to_pipe (&self, b: &gst::Bin) {
+    pub fn add_to_pipe (&self, b: &gst::Pipeline) {
         match *self {
             Branch::Video(ref br) => br.add_to_pipe(b),
             Branch::Audio(ref br) => br.add_to_pipe(b),

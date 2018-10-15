@@ -76,7 +76,7 @@ impl WidgetSoundbar {
 }
 
 impl Widget for WidgetSoundbar {
-    fn add_to_pipe (&self, pipe: gst::Bin) {
+    fn add_to_pipe (&self, pipe: &gst::Bin) {
         // TODO fix valve after soundbar
         pipe.add_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload]).unwrap();
         gst::Element::link_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload]).unwrap();

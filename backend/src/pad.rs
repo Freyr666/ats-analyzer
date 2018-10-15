@@ -1,5 +1,6 @@
 use gst;
 use gst::prelude::*;
+use glib;
 
 #[derive(Clone,Copy)]
 pub enum Type {
@@ -12,13 +13,13 @@ pub struct SrcPad {
     pub channel: u32,
     pub pid: u32,
 
-    bin: gst::Bin, // TODO remove
+    bin: glib::WeakRef<gst::Bin>, // TODO remove
     tee: gst::Element,
     pub pad: gst::Pad,
 }
 
 impl SrcPad {
-    pub fn new(stream: String, channel: u32, pid: u32, typ: &str, bin: gst::Bin, pad: &gst::Pad) -> SrcPad {
+    pub fn new(stream: String, channel: u32, pid: u32, typ: &str, bin: &gst::Bin, pad: &gst::Pad) -> SrcPad {
         let typ = match typ {
             "video" => Type::Video,
             "audio" => Type::Audio,
@@ -39,7 +40,7 @@ impl SrcPad {
 
         bin.add_pad(&ghost).unwrap();
 
-        SrcPad { typ, stream, channel, pid, bin, tee, pad: ghost.upcast() }
+        SrcPad { typ, stream, channel, pid, bin: bin.downgrade(), tee, pad: ghost.upcast() }
     }
     
 }
@@ -57,11 +58,13 @@ impl Clone for SrcPad {
 
 impl Drop for SrcPad {
     fn drop (&mut self) {
-        self.bin.remove_pad(&self.pad).unwrap();
-        if let Ok(p) = self.pad.clone().downcast::<gst::GhostPad>() {
-            self.tee.remove_pad(&p.get_target().unwrap()).unwrap();
-        } else {
-            self.tee.remove_pad(&self.pad).unwrap();
+        if let Some(bin) = self.bin.upgrade() {
+            bin.remove_pad(&self.pad).unwrap();
+            if let Ok(p) = self.pad.clone().downcast::<gst::GhostPad>() {
+                self.tee.remove_pad(&p.get_target().unwrap()).unwrap();
+            } else {
+                self.tee.remove_pad(&self.pad).unwrap();
+            }
         }
     }
 }

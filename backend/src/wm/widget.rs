@@ -16,7 +16,7 @@ pub struct WidgetDesc {
 }
 
 pub trait Widget {
-    fn add_to_pipe(&self, gst::Bin);
+    fn add_to_pipe(&self, &gst::Bin);
     fn plug_src(&mut self, &SrcPad);
     fn plug_sink(&mut self, gst::Pad);
     fn gen_uid(&mut self) -> String;

@@ -23,7 +23,7 @@ use wm::template::{WmTemplate,WmTemplatePartial,ContainerTemplate};
 
 pub struct Container {
     pub position: Position,
-    pub widgets:  HashMap<String,Arc<Mutex<Widget + Send>>>,
+    pub widgets:  HashMap<String,Arc<Mutex<Widget + Send>>>, // TODO WeakRef
 }
 
 pub struct WmState {    
@@ -31,7 +31,7 @@ pub struct WmState {
     layout:     HashMap<String,Container>,
     widgets:    HashMap<String,Arc<Mutex<Widget + Send>>>,
 
-    pipe:           gst::Pipeline,
+    pipe:           glib::WeakRef<gst::Pipeline>,
     caps:           gst::Element,
     download:       gst::Element,
     mixer:          gst::Element,
@@ -53,7 +53,7 @@ impl WmState {
         format!("video/x-raw(ANY),height={},width={}", height, width)
     }
     
-    pub fn new (pipe: gst::Pipeline, resolution: (u32, u32)) -> WmState {
+    pub fn new (pipe: &gst::Pipeline, resolution: (u32, u32)) -> WmState {
         let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
         let download = gst::ElementFactory::make("gldownload", None).unwrap();
         let mixer    = gst::ElementFactory::make("glvideomixer", None).unwrap();
@@ -63,22 +63,44 @@ impl WmState {
         mixer.set_property("latency", &100_000_000i64).unwrap();
         caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(resolution)).unwrap()).unwrap();
 
+        // let context = self.download.get_property("context").unwrap()
+        //     .downcast::<gst::Object>().unwrap()
+        //     .get().unwrap();
+        // debug!("CONTEX REF COUNTER: {}", context.ref_count());
+        
+        //gobject_sys::g_object_set_data_full(&mut context, name.as_ptr(), x.as_ptr(), Some(destroy));
+        debug!("NEW CAPS REF COUNTER: {}", caps.ref_count());
+        //self.caps.drop();
+        debug!("NEW DOWNLOAD REF COUNTER: {}", download.ref_count());
+        //self.download.drop();
+        debug!("NEW MIXER REF COUNTER: {}", mixer.ref_count());
+        //self.mixer.drop();
         pipe.add_many(&[&mixer,&caps,&download]).unwrap();
+        debug!("ADD CAPS REF COUNTER: {}", caps.ref_count());
+        //self.caps.drop();
+        debug!("ADD DOWNLOAD REF COUNTER: {}", download.ref_count());
+        //self.download.drop();
+        debug!("ADD MIXER REF COUNTER: {}", mixer.ref_count());
+        //self.mixer.drop();
         mixer.link(&caps).unwrap();
         caps.link(&download).unwrap();
+
+        let pipe = pipe.downgrade();
         
         WmState { resolution, layout: HashMap::new(), widgets: HashMap::new(),
                   pipe, caps, download, mixer }
     }
 
     pub fn plug (&mut self, pad: &SrcPad) -> Option<Arc<Mutex<Signal<()>>>> {
+        let pipe = self.pipe.upgrade().unwrap();
+
         match pad.typ {
             Type::Video => {
                 let uid;
                 let widg = widget_factory::make("video").unwrap();
                 {
                     let mut widg = widg.lock().unwrap();
-                    widg.add_to_pipe(self.pipe.clone().upcast());
+                    widg.add_to_pipe(&pipe.upcast());
                     let sink_pad = self.mixer.get_request_pad("sink_%u").unwrap();
                     widg.plug_src(pad);
                     widg.plug_sink(sink_pad);
@@ -93,7 +115,7 @@ impl WmState {
                 let widg = widget_factory::make("audio").unwrap();
                 {
                     let mut widg = widg.lock().unwrap();
-                    widg.add_to_pipe(self.pipe.clone().upcast());
+                    widg.add_to_pipe(&pipe.upcast());
                     let sink_pad = self.mixer.get_request_pad("sink_%u").unwrap();
                     widg.plug_src(pad);
                     widg.plug_sink(sink_pad);
@@ -109,11 +131,13 @@ impl WmState {
 
     pub fn set_resolution (&mut self, res: (u32, u32)) {
         self.caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(res))
-                               .unwrap()).unwrap();
+                               .unwrap())
+            .unwrap();
         self.resolution = res;
     }
     
     pub fn from_template (&mut self, t: &WmTemplate) -> Result<(),String> {
+        let pipe = self.pipe.upgrade().unwrap();
         for &(ref name,_) in &t.widgets {
             if ! self.widgets.keys().any(|n| n == name) {
                 return Err(format!("Wm: Widget {} does not exists", name))
@@ -135,8 +159,8 @@ impl WmState {
             self.layout.insert(cname.clone(), Container { position, widgets } );
         }
         self.set_resolution(t.resolution);
-        let _ = self.pipe.set_state(gst::State::Playing); // TODO
-        gst::debug_bin_to_dot_file(&self.pipe, gst::DebugGraphDetails::VERBOSE, "wm");
+        let _ = pipe.set_state(gst::State::Playing); // TODO
+        gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "wm");
         Ok(())
     }
     
@@ -156,6 +180,21 @@ impl WmState {
             .map(move |(wname,w)| (wname.clone(), w.lock().unwrap().get_desc().clone()))
             .collect();
         WmTemplate { resolution, layout, widgets }
+    }
+}
+
+impl Drop for WmState {
+    fn drop(&mut self) {
+        debug!("Dropping WmState!");
+        
+        //debug!("PIPELINE REF COUNTER: {}", self.pipe.upgrade().unwrap().ref_count());
+        //self.pipe.drop();
+        debug!("CAPS REF COUNTER: {}", self.caps.ref_count());
+        //self.caps.drop();
+        debug!("DOWNLOAD REF COUNTER: {}", self.download.ref_count());
+        //self.download.drop();
+        debug!("MIXER REF COUNTER: {}", self.mixer.ref_count());
+        //self.mixer.drop();
     }
 }
 
@@ -180,29 +219,30 @@ impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
             let state = self.state.clone();
             Box::new(move |req| {
                 match req {
-                    Request::Get =>
+                    Request::Get => 
                         if let Ok(s) = state.lock() {
                             Ok(Reply::Get(s.to_template()))
                         } else {
                             Err(String::from("can't acquire wm layout"))
                         },
-                    Request::Set(templ) => match auxilary(templ) {
+                    Request::Set(templ) => 
+                        match auxilary(templ) {
                             Ok(()) => Ok(Reply::Set),
                             Err(e) => Err(e),
-                    }
+                        }
                 }
             })
         }
 }
 
 impl Wm {
-    pub fn new (pipe: gst::Pipeline, format: MsgType, sender: Sender<Vec<u8>>) -> Wm {
+    pub fn new (pipe: &gst::Pipeline, format: MsgType, sender: Sender<Vec<u8>>) -> Wm {
         let chat = Arc::new(Mutex::new( Notifier::new("wm", format, sender )));
         let state = Arc::new(Mutex::new(WmState::new(pipe, (1280,720)) ));
         Wm { format, chat, state }
     }
 
-    pub fn reset (&mut self, pipe: gst::Pipeline) {
+    pub fn reset (&mut self, pipe: &gst::Pipeline) {
         *self.state.lock().unwrap() = WmState::new(pipe, (1280,720));
         self.chat.lock().unwrap().talk(&self.state.lock().unwrap().to_template());
     }
