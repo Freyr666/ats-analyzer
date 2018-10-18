@@ -2,11 +2,11 @@ use gst;
 use gst_video::VideoInfo;
 use gst::prelude::*;
 use std::str::FromStr;
-use pad::SrcPad;
+use pad::{Type,SrcPad};
 use signals::Signal;
 use std::sync::{Arc,Mutex};
 use wm::position::Position;
-use wm::widget::{Widget,WidgetDesc};
+use wm::widget::{Widget,WidgetDesc,Domain};
 
 pub struct WidgetVideo {
     desc:      Arc<Mutex<WidgetDesc>>,
@@ -34,8 +34,9 @@ impl WidgetVideo {
     pub fn new() -> WidgetVideo {
         let desc = WidgetDesc {
             position: Position::new(),
-            typ: String::from("video"),
-            domain: String::from(""),
+            typ: Type::Video,
+            domain: Domain::Nihil,
+            pid: None,
             aspect: None,
             description: String::from("video widget"),
             layer: 0,
@@ -132,7 +133,9 @@ impl Widget for WidgetVideo {
         let in_pad   = self.valve.get_static_pad("sink").unwrap();
         self.input_pad = Some(in_pad.clone());
         
-        self.desc.lock().unwrap().domain = format!("s{}_c{}", src.stream, src.channel);
+        self.desc.lock().unwrap().domain =
+            Domain::Chan { stream: src.stream.clone(), channel: src.channel };
+        self.desc.lock().unwrap().pid = Some(src.pid);
 
         let desc   = self.desc.clone();
         let par    = self.par.clone();
