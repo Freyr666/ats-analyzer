@@ -20,7 +20,7 @@ impl Control {
         let received       = Arc::new(Mutex::new(Msg::new()));
         
         in_socket.connect("ipc:///tmp/ats_qoe_in").unwrap();
-        out_socket.connect("ipc:///tmp/ats_qoe_out").unwrap();
+        out_socket.bind("ipc:///tmp/ats_qoe_out").unwrap();
         let r = received.clone();
         
         thread::Builder::new().name("recv_thread".to_string()).spawn(move || {

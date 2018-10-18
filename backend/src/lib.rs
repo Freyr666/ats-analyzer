@@ -30,6 +30,7 @@ extern crate zmq;
 pub mod signals;
 pub mod chatterer;
 pub mod initial;
+pub mod connection;
 pub mod settings;
 pub mod metadata;
 pub mod parse;

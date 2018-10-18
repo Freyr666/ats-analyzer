@@ -4,14 +4,16 @@ use initial::Initial;
 use settings::Configuration;
 use probe::Probe;
 use control::Control;
-use streams::{Streams};
+use streams::Streams;
 use graph::Graph;
+use connection::Conn;
 use std::boxed::Box;
 use std::collections::HashMap;
 use gst;
 use glib;
 use std::sync::{Arc,Mutex};
-//use std::{thread,time};
+use std::sync::atomic::{AtomicBool,Ordering};
+use std::{thread,time};
 
 use chatterer::MsgType;
 use chatterer::control::{Addressable,Dispatcher,DispatchTable};
@@ -27,6 +29,7 @@ pub struct ContextDispatcher {
 
 pub struct Context {
     mainloop:    glib::MainLoop,
+    connection:  Conn,
     notif:       Notifier,
 }
 
@@ -73,16 +76,19 @@ impl Context {
         let     config  = Configuration::new(i.msg_type, control.sender.clone());
         let mut streams = Streams::new(i.msg_type, control.sender.clone());
         let mut graph   = Graph::new(i.msg_type, control.sender.clone()).unwrap();
+        let connection  = Conn::new(i.msg_type);
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
             streams.connect_probe(probe);
         }
         
+        let wm = graph.get_wm();
+        
         dispatcher.lock().unwrap().add_to_table(&config);
         dispatcher.lock().unwrap().add_to_table(&streams);
         dispatcher.lock().unwrap().add_to_table(&graph);
-        let wm = graph.get_wm();
+        dispatcher.lock().unwrap().add_to_table(&connection);
         dispatcher.lock().unwrap().add_to_table(&(*wm.lock().unwrap()));
 
         let dis = dispatcher.clone();
@@ -96,13 +102,19 @@ impl Context {
         graph.connect_settings(&mut config.update.lock().unwrap());
         
         info!("Context was created");
-        Ok(Context { mainloop, notif })
+        Ok(Context { mainloop, notif, connection })
     }
 
     pub fn run(&self) {
-        // TODO fi this hack
-        //thread::sleep(time::Duration::from_millis(500)); // a very dirty hack indeed
-        self.notif.talk(&Status::Ready);
+        let ready      = Arc::new(AtomicBool::new(false));
+        let ready_clos = ready.clone();
+        self.connection.connect(move |&()| {
+            ready_clos.store(true,Ordering::Relaxed);
+        });
+        while !ready.load(Ordering::Relaxed) {
+            self.notif.talk(&Status::Ready);
+            thread::sleep(time::Duration::from_millis(100));
+        }
         self.mainloop.run();
     }
 }
