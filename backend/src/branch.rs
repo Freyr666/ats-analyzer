@@ -199,12 +199,6 @@ impl VideoBranch {
     }
 }
 
-impl Drop for VideoBranch {
-    fn drop(&mut self) {
-        debug!("Branch {} {} {} is dropped", self.stream, self.channel, self.pid);
-    }
-}
-
 #[derive(Clone)]
 pub struct AudioBranch {
     stream:   String,

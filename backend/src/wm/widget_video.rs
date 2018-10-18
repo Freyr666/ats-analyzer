@@ -197,4 +197,3 @@ impl Widget for WidgetVideo {
         self.linked.clone()
     }
 }
-

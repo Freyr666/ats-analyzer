@@ -25,7 +25,7 @@ struct MuxState {
 pub struct Mux {
     format:      MsgType,
     pub chat:    Arc<Mutex<Notifier>>,
-    state:       Arc<Mutex<MuxState>>,
+    state:       Arc<Mutex<Option<MuxState>>>,
 }
 
 impl MuxState {
@@ -92,46 +92,57 @@ impl Replybox<Request<String>,Reply<MuxInfo>> for Mux {
             let state = self.state.clone();
 
             Box::new(move |req| {
+                let mut state = match state.lock() {
+                    Ok(s)   => s,
+                    Err(_)  => return Err(String::from("can't acquire mux layout")),
+                };
+
+                let mut state = match *state {
+                    Some (ref mut s) => s,
+                    None         => return Err(String::from("Muxer is not initialized")),
+                };
+                
                 match req {
-                    Request::Get =>
-                        if let Ok(s) = state.lock() {
-                            Ok(Reply::Get(s.info()))
-                        } else {
-                            Err(String::from("can't acquire mux layout"))
-                        },
-                    Request::Set(choice) =>
-                        if let Ok(mut s) = state.lock() {
-                            match s.apply(choice) {
-                                Ok(()) => Ok(Reply::Set),
-                                Err(e) => Err(e),
-                            }
-                        } else {
-                            Err(String::from("can't acquire mux layout"))
-                        },
+                    Request::Get => Ok(Reply::Get(state.info())),
+                    Request::Set(choice) => match state.apply(choice) {
+                        Ok(()) => Ok(Reply::Set),
+                        Err(e) => Err(e),
+                    }
                 }
             })
         }
 }
 
 impl Mux {
-    pub fn new (pipe: &gst::Pipeline, format: MsgType, sender: Sender<Vec<u8>>) -> Mux {
+    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Mux {
         let chat  = Arc::new (Mutex::new (Notifier::new("mux", format, sender )));
-        let state = Arc::new (Mutex::new (MuxState::new(pipe)));
+        let state = Arc::new (Mutex::new (None));
         Mux { format, chat, state }
     }
 
-    pub fn reset (&mut self, pipe: &gst::Pipeline) {
-        *self.state.lock().unwrap() = MuxState::new(pipe);
-        self.chat.lock().unwrap().talk(&self.state.lock().unwrap().info());
+    pub fn init (&mut self, pipe: &gst::Pipeline) {
+        let muxer = MuxState::new(pipe);
+        self.chat.lock().unwrap().talk(&muxer.info());
+        *self.state.lock().unwrap() = Some(muxer);
+    }
+
+    pub fn reset (&mut self) {
+        *self.state.lock().unwrap() = None;
     }
 
     pub fn plug (&mut self, pad: &SrcPad) {
-        if self.state.lock().unwrap().plug(pad) {
-            self.chat.lock().unwrap().talk(&self.state.lock().unwrap().info());
+        match *self.state.lock().unwrap() {
+            None => (), // TODO invariant?
+            Some(ref mut state) => if state.plug(pad) {
+                self.chat.lock().unwrap().talk(&state.info());
+            }
         }
     }
 
     pub fn src_pad (&self) -> gst::Pad {
-        self.state.lock().unwrap().selector.get_static_pad("src").unwrap()
+        match *self.state.lock().unwrap() {
+            None => panic!("Audio_mux::src_pad invariant is brocken"), // TODO invariant?
+            Some(ref state) => state.selector.get_static_pad("src").unwrap()
+        }
     }
 }

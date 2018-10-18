@@ -41,7 +41,7 @@ pub struct Wm {
     format:      MsgType,
     pub chat:    Arc<Mutex<Notifier>>,
 
-    state:       Arc<Mutex<WmState>>,
+    state:       Arc<Mutex<Option<WmState>>>,
 }
 
 fn enum_to_val(cls: &str, val: i32) -> glib::Value {
@@ -69,19 +69,8 @@ impl WmState {
         // debug!("CONTEX REF COUNTER: {}", context.ref_count());
         
         //gobject_sys::g_object_set_data_full(&mut context, name.as_ptr(), x.as_ptr(), Some(destroy));
-        debug!("NEW CAPS REF COUNTER: {}", caps.ref_count());
-        //self.caps.drop();
-        debug!("NEW DOWNLOAD REF COUNTER: {}", download.ref_count());
-        //self.download.drop();
-        debug!("NEW MIXER REF COUNTER: {}", mixer.ref_count());
-        //self.mixer.drop();
+
         pipe.add_many(&[&mixer,&caps,&download]).unwrap();
-        debug!("ADD CAPS REF COUNTER: {}", caps.ref_count());
-        //self.caps.drop();
-        debug!("ADD DOWNLOAD REF COUNTER: {}", download.ref_count());
-        //self.download.drop();
-        debug!("ADD MIXER REF COUNTER: {}", mixer.ref_count());
-        //self.mixer.drop();
         mixer.link(&caps).unwrap();
         caps.link(&download).unwrap();
 
@@ -183,21 +172,6 @@ impl WmState {
     }
 }
 
-impl Drop for WmState {
-    fn drop(&mut self) {
-        debug!("Dropping WmState!");
-        
-        //debug!("PIPELINE REF COUNTER: {}", self.pipe.upgrade().unwrap().ref_count());
-        //self.pipe.drop();
-        debug!("CAPS REF COUNTER: {}", self.caps.ref_count());
-        //self.caps.drop();
-        debug!("DOWNLOAD REF COUNTER: {}", self.download.ref_count());
-        //self.download.drop();
-        debug!("MIXER REF COUNTER: {}", self.mixer.ref_count());
-        //self.mixer.drop();
-    }
-}
-
 impl Addressable for Wm {
     fn get_name (&self) -> &str { "wm" }
     fn get_format (&self) -> MsgType { self.format }
@@ -208,56 +182,74 @@ impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
     fn reply (&self) ->
         Box<Fn(Request<WmTemplatePartial>)->Result<Reply<WmTemplate>,String> + Send + Sync> {
             let state = self.state.clone();
-            let auxilary = move |templ: WmTemplatePartial| -> Result<(),String> {
-                let widg = state.lock().unwrap().widgets.iter()
-                    .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
-                    .collect();
-                let temp = WmTemplate::from_partial(templ, &widg);
-                state.lock().unwrap().from_template(&temp)
-            };
-            
-            let state = self.state.clone();
+
             Box::new(move |req| {
+                let mut state = match state.lock() {
+                    Ok(s)       => s,
+                    Err(_)      => return Err(String::from("can't acquire wm layout")),
+                };
+
+                let mut state = match *state {
+                    Some (ref mut s) => s,
+                    None             => return Err(String::from("Wm is not initialized")),
+                };
+                
                 match req {
-                    Request::Get => 
-                        if let Ok(s) = state.lock() {
-                            Ok(Reply::Get(s.to_template()))
-                        } else {
-                            Err(String::from("can't acquire wm layout"))
-                        },
-                    Request::Set(templ) => 
-                        match auxilary(templ) {
+                    Request::Get => Ok(Reply::Get(state.to_template())),
+                    Request::Set(templ) => {
+                        let widg = state.widgets.iter()
+                            .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
+                            .collect();
+                        let temp = WmTemplate::from_partial(templ, &widg);
+                        match state.from_template(&temp) {
                             Ok(()) => Ok(Reply::Set),
                             Err(e) => Err(e),
                         }
-                }
+                    }
+                }    
             })
         }
 }
 
 impl Wm {
-    pub fn new (pipe: &gst::Pipeline, format: MsgType, sender: Sender<Vec<u8>>) -> Wm {
+    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Wm {
         let chat = Arc::new(Mutex::new( Notifier::new("wm", format, sender )));
-        let state = Arc::new(Mutex::new(WmState::new(pipe, (1280,720)) ));
+        let state = Arc::new(Mutex::new( None ));
         Wm { format, chat, state }
     }
 
-    pub fn reset (&mut self, pipe: &gst::Pipeline) {
-        *self.state.lock().unwrap() = WmState::new(pipe, (1280,720));
-        self.chat.lock().unwrap().talk(&self.state.lock().unwrap().to_template());
+    pub fn init (&mut self, pipe: &gst::Pipeline) {
+        let wm = WmState::new(pipe, (1280,720));
+        self.chat.lock().unwrap().talk(&wm.to_template());
+        *self.state.lock().unwrap() = Some(wm);
     }
-
-    pub fn src_pad (&self) -> gst::Pad {
-        self.state.lock().unwrap().download.get_static_pad("src").unwrap()
+    
+    pub fn reset (&mut self) {
+        *self.state.lock().unwrap() = None;
     }
 
     pub fn plug (&mut self, pad: &SrcPad) {
-        if let Some(linked) = self.state.lock().unwrap().plug(&pad) {
-            let chat  = self.chat.clone();
-            let state = self.state.clone();
-            linked.lock().unwrap().connect(move |&()| {
-                chat.lock().unwrap().talk(&state.lock().unwrap().to_template());
-            });
+        match *self.state.lock().unwrap() {
+            None => (), // TODO invariant?
+            Some (ref mut state) => 
+                if let Some(linked) = state.plug(&pad) {
+                    let chat  = self.chat.clone();
+                    let state = self.state.clone();
+                    linked.lock().unwrap().connect(move |&()| {
+                        match *state.lock().unwrap() {
+                            None            => (),
+                            Some(ref state) =>
+                                chat.lock().unwrap().talk(&state.to_template()),
+                        }
+                    });
+                }
+        }
+    }
+
+    pub fn src_pad (&self) -> gst::Pad {
+        match *self.state.lock().unwrap() {
+            None => panic!("Wm::src_pad invariant is brocken"), // TODO invariant?
+            Some(ref state) => state.download.get_static_pad("src").unwrap()
         }
     }
 }
