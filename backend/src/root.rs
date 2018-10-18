@@ -24,7 +24,7 @@ impl Root {
                      settings: Option<Settings>,
                      added: Arc<Mutex<Signal<SrcPad>>>,
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
-                     bin: &gst::Bin, pad: &gst::Pad,
+                     bin: &gst::Pipeline, pad: &gst::Pad,
                      format: MsgType, sender: &Mutex<Sender<Vec<u8>>>) {
         let pname = pad.get_name();
         let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
@@ -38,6 +38,8 @@ impl Root {
             if !p.to_be_analyzed { return };
         };
 
+        debug!("Root::build_branch [{}]", pid);
+
         if let Some(branch) = Branch::new(stream, chan.number, pid, typ, settings, format, sender.lock().unwrap().clone()) {
             branch.add_to_pipe(&bin);
             branch.plug(&pad);
@@ -49,13 +51,16 @@ impl Root {
                 },
             };
 
+            debug!("Root::build_branch [{} ready]", pid);
             branches.push(branch);
         }
     }
     
-    pub fn new(bin: &gst::Bin, m: Structure, settings: Option<Settings>,
+    pub fn new(bin: &gst::Pipeline, m: Structure, settings: Option<Settings>,
                format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
         if ! m.to_be_analyzed() { return None };
+
+        debug!("Root::new");
 
         let src             = gst::ElementFactory::make("udpsrc", None).unwrap();
         let tee             = gst::ElementFactory::make("tee", None).unwrap();
@@ -93,20 +98,22 @@ impl Root {
             // TODO check
             let _ = srcpad.link(&sinkpad);
             
-            let stream = id.clone();
-            let bin_cc = bin.clone();
+            let stream   = id.clone();
+            let bin_weak = bin.downgrade();
             let settings_c = settings.clone();
-            let branches_c = branches.clone();
+            let branches_weak = branches.clone();
             let pad_added_c = pad_added.clone();
             let audio_pad_added_c = audio_pad_added.clone();
             let sender_c = Mutex::new(sender.clone());
             
             demux.connect_pad_added(move | _, pad | {
+                let bin      = bin_weak.clone().upgrade().unwrap();
+                //let branches = branches_weak.upgrade().unwrap();
                 let settings = settings_c.lock().unwrap();
-                Root::build_branch(&mut branches_c.lock().unwrap(), stream.clone(), &chan,
+                Root::build_branch(&mut branches_weak.lock().unwrap(), stream.clone(), &chan,
                                    *settings,
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
-                                   &bin_cc, pad,
+                                   &bin, pad,
                                    format, &sender_c);
             });
         };

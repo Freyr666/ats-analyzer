@@ -16,7 +16,7 @@ pub struct Renderer<T> {
 //}
 
 impl Renderer<VideoR> {
-    pub fn new (port: i32, bin: &gst::Bin) -> Renderer<VideoR> {
+    pub fn new (port: i32, bin: &gst::Pipeline) -> Renderer<VideoR> {
         //let mut vaapi = true;
         let encoder =
             gst::ElementFactory::make("vaapivp9enc", None) //vaapivp8enc
@@ -54,7 +54,7 @@ impl Renderer<VideoR> {
 }
 
 impl Renderer<AudioR> {
-    pub fn new (port: i32, bin: &gst::Bin) -> Renderer<AudioR> {
+    pub fn new (port: i32, bin: &gst::Pipeline) -> Renderer<AudioR> {
         let encoder = gst::ElementFactory::make("opusenc", None).unwrap();
         let pay     = gst::ElementFactory::make("rtpopuspay", None).unwrap();
         let output  = gst::ElementFactory::make("udpsink", None).unwrap();

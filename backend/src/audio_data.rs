@@ -92,7 +92,8 @@ impl AudioData {
 
     pub fn send_msg (&self, buf: &gst::Buffer) {
         unsafe {
-            if gst_sys::gst_buffer_map(buf.as_mut_ptr(), self.mmap, gst_sys::GstMapFlags::READ) == 0 {
+            //gst_sys::GstMapFlags::READ
+            if gst_sys::gst_buffer_map(buf.as_mut_ptr(), self.mmap, 1) == 0 {
                 panic!("audio_data: buf mmap failure");
             }
             let pointer: *const Error = (*self.mmap).data as *const Error;

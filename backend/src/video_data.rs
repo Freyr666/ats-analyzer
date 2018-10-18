@@ -94,7 +94,8 @@ impl VideoData {
 
     pub fn send_msg (&self, ebuf: &gst::Buffer) {
         unsafe {
-            if gst_sys::gst_buffer_map(ebuf.as_mut_ptr(), self.mmap, gst_sys::GstMapFlags::READ) == 0 {
+            //gst_sys::GstMapFlags::READ
+            if gst_sys::gst_buffer_map(ebuf.as_mut_ptr(), self.mmap, 1) == 0 {
                 panic!("video_data: ebuf mmap failure");
             }
             let pointer: *const Error = (*self.mmap).data as *const Error;
