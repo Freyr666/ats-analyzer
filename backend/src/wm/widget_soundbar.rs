@@ -3,9 +3,9 @@ use gst::prelude::*;
 use std::str::FromStr;
 use std::sync::{Arc,Mutex};
 use signals::Signal;
-use pad::SrcPad;
+use pad::{Type,SrcPad};
 use wm::position::Position;
-use wm::widget::{Widget,WidgetDesc};
+use wm::widget::{Widget,WidgetDesc,Domain};
 
 pub struct WidgetSoundbar {
     desc:      Arc<Mutex<WidgetDesc>>,
@@ -27,8 +27,9 @@ impl WidgetSoundbar {
     pub fn new() -> WidgetSoundbar {
         let desc = WidgetDesc {
             position: Position::new(),
-            typ: String::from("soundbar"),
-            domain: String::from(""),
+            typ: Type::Audio,
+            domain: Domain::Nihil,
+            pid: None,
             aspect: None,
             description: String::from("soundbar widget"),
             layer: 0,
@@ -94,7 +95,9 @@ impl Widget for WidgetSoundbar {
         let in_pad   = self.soundbar.get_static_pad("sink").unwrap();
         self.input_pad = Some(in_pad.clone());
 
-        self.desc.lock().unwrap().domain = format!("s{}_c{}", src.stream, src.channel);
+        self.desc.lock().unwrap().domain =
+            Domain::Chan { stream: src.stream.clone(), channel: src.channel };
+        self.desc.lock().unwrap().pid = Some(src.pid);
 
         // TODO check
         let _ = src.pad.link(&in_pad.clone());

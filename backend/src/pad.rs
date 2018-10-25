@@ -2,7 +2,7 @@ use gst;
 use gst::prelude::*;
 use glib;
 
-#[derive(Clone,Copy)]
+#[derive(Serialize,Deserialize,Clone,Copy,Debug)]
 pub enum Type {
     Video, Audio, Unknown //GraphVolume,
 }
