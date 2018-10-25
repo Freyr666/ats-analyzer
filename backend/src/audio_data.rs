@@ -20,8 +20,8 @@ struct Param {
 #[repr(C)]
 enum Parameter {
     SilenceShortt,
-    SilenceMoment,
     LoudnessShortt,
+    SilenceMoment,
     LoudnessMoment,
     ParamNumber,
 }
