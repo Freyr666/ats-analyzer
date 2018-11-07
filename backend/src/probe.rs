@@ -6,6 +6,7 @@ use gst::prelude::*;
 use glib;
 //use gst::DebugGraphDetails;
 use gst_mpegts_sys;
+use gst_sys;
 use parse;
 use initial::{Id,Uri};
 
@@ -52,6 +53,7 @@ impl Probe {
                             if let Some(s) = parse::table(section, &mut structure) {
                                 signal.lock().unwrap().emit(&s)
                             };
+                            gst_sys::gst_mini_object_unref(section as *mut gst_sys::GstMiniObject);
                         }
                     } else if let Some(s) = msg.get_structure() {
                             if s.get_name() == "GstUDPSrcTimeout" &&

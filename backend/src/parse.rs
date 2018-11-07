@@ -54,7 +54,10 @@ fn stream_name (val: i32) -> &'static str {
 unsafe fn dump_pat (section: *mut GstMpegtsSection, metadata: &mut Structure) {
     let pat = gst_mpegts_section_get_pat (section);
 
-    if pat.is_null() { panic!("pat table is empty") }
+    if pat.is_null() {
+        warn!("pat table is empty");
+        return
+    }
 
     let sz = (*pat).len as usize;
     let patp = slice::from_raw_parts((*pat).pdata, sz);
@@ -77,7 +80,10 @@ unsafe fn dump_pat (section: *mut GstMpegtsSection, metadata: &mut Structure) {
 unsafe fn dump_pmt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
     let pmt = gst_mpegts_section_get_pmt (section);
 
-    if pmt.is_null() { panic!("pmt table is empty") }
+    if pmt.is_null() {
+        warn!("pmt table is empty");
+        return
+    }
 
     let channel = if metadata.channel_exists (u32::from((*pmt).program_number)) {
         metadata.find_channel_mut_unsafe(u32::from((*pmt).program_number))
@@ -116,7 +122,10 @@ unsafe fn dump_pmt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
 unsafe fn dump_sdt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
     let sdt = gst_mpegts_section_get_sdt (section);
 
-    if sdt.is_null() { panic!("sdt table is empty") }
+    if sdt.is_null() {
+        warn!("sdt table is empty");
+        return
+    }
     
     let sz = (*(*sdt).services).len as usize;
     let services = slice::from_raw_parts((*(*sdt).services).pdata, sz);

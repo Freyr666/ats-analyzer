@@ -115,6 +115,8 @@ impl VideoData {
                             errors };
 
             self.notif.talk(&msg);
+
+            gst_sys::gst_buffer_unmap(ebuf.as_mut_ptr(), self.mmap);
         }
     }
 
