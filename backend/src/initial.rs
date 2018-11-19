@@ -4,6 +4,7 @@ use chatterer::MsgType;
 #[derive(Debug)]
 pub enum Error {
     HelpOption,
+    DescribeOption,
     WrongOption (String)
 }
 
@@ -141,9 +142,10 @@ impl Initial {
                 ArgsParserState::Positional =>
                 { if arg.starts_with('-') {
                     match arg.as_str() {
-                        "-h" | "--help"    => return Err (Error::HelpOption),
-                        "-m" | "--msgtype" => state = ArgsParserState::MsgType,
-                        x                  =>
+                        "-h" | "--help"     => return Err (Error::HelpOption),
+                        "-p" | "--protocol" => return Err (Error::DescribeOption),
+                        "-m" | "--msgtype"  => state = ArgsParserState::MsgType,
+                        x                   =>
                         { let s = format!("{}: unrecognized option '{}'", path, x);
                           return Err (Error::WrongOption(s));
                         }
@@ -191,6 +193,7 @@ impl Initial {
          [-opt arg] id1 uri1 [id2 uri2 id3 uri3]\n\
          Options:\n\
          \t-m,\t--msgtype\tipc message type [json | msgpack]\n\
+         \t-p,\t--protocol\tprotocol description
          \t-h,\t--help   \thelp\n\
          Additional:\n\
          \turi format: udp://[ip] or udp://[ip]:[port]\n"

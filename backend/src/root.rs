@@ -34,8 +34,10 @@ impl Root {
         if name_toks.len() != 3 || caps_toks.is_empty() { return };
         let typ = caps_toks[0];
         let pid = u32::from_str_radix(name_toks[2], 16).unwrap();
-        if let Some (p) = chan.find_pid(pid){
-            if !p.to_be_analyzed { return };
+        
+        /* No corresponding pid in config */
+        if let None = chan.find_pid(pid){
+            return;
         };
 
         debug!("Root::build_branch [{}]", pid);
@@ -58,8 +60,6 @@ impl Root {
     
     pub fn new(bin: &gst::Pipeline, m: Structure, settings: Option<Settings>,
                format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
-        if ! m.to_be_analyzed() { return None };
-
         debug!("Root::new");
 
         let src             = gst::ElementFactory::make("udpsrc", None).unwrap();

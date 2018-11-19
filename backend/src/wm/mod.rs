@@ -12,8 +12,6 @@ use gst::prelude::*;
 use gst;
 use glib;
 use chatterer::notif::Notifier;
-use chatterer::control::{Addressable,Replybox};
-use chatterer::control::message::{Request,Reply};
 use chatterer::MsgType;
 use signals::Signal;
 use pad::{Type,SrcPad};
@@ -172,18 +170,16 @@ impl WmState {
     }
 }
 
-impl Addressable for Wm {
-    fn get_name (&self) -> &str { "wm" }
-    fn get_format (&self) -> MsgType { self.format }
-}
-
-impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
+/*
+impl Replybox for Wm {
     
     fn reply (&self) ->
-        Box<Fn(Request<WmTemplatePartial>)->Result<Reply<WmTemplate>,String> + Send + Sync> {
+        Box<Fn(Vec<u8>)->Vec<u8> + Send + Sync> {
             let state = self.state.clone();
 
             Box::new(move |req| {
+                req
+                
                 let mut state = match state.lock() {
                     Ok(s)       => s,
                     Err(_)      => return Err(String::from("can't acquire wm layout")),
@@ -207,9 +203,11 @@ impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
                         }
                     }
                 }    
+                 
             })
         }
 }
+*/
 
 impl Wm {
     pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Wm {

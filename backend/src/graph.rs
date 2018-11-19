@@ -4,13 +4,12 @@ use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
 use chatterer::MsgType;
 use chatterer::notif::Notifier;
-use chatterer::control::{Addressable,Replybox};
 use root::Root;
 use wm::Wm;
 use signals::Msg;
 use metadata::Structure;
 use settings::Settings;
-use audio_mux::Mux;
+//use audio_mux::Mux;
 use renderer::{VideoR,AudioR,Renderer};
 
 pub struct GraphState {
@@ -22,7 +21,7 @@ pub struct GraphState {
     pipeline:    gst::Pipeline,
     bus:         gst::Bus,
     pub wm:      Arc<Mutex<Wm>>,
-    pub mux:     Arc<Mutex<Mux>>,
+    // pub mux:     Arc<Mutex<Mux>>,
     roots:       Vec<Root>,
     vrend:       Option<Renderer<VideoR>>,
     arend:       Option<Renderer<AudioR>>,
@@ -35,16 +34,12 @@ pub struct Graph {
     state:       Arc<Mutex<GraphState>>,
 }
 
-impl Addressable for Graph {
-    fn get_name(&self) -> &str { "graph" }
-    fn get_format(&self) -> MsgType { self.format }
-}
-
-impl Replybox<(),Option<Vec<Structure>>> for Graph {
-    fn reply (&self) -> Box<Fn(())->Result<Option<Vec<Structure>>,String> + Send + Sync> {
+/*
+impl Replybox for Graph {
+    fn reply (&self) -> Box<Fn(Vec<u8>)->Vec<u8> + Send + Sync> {
         let state = self.state.clone();
         
-        Box::new(move |()| {
+        Box::new(move |_| {
             if let Ok (s) = state.lock() {
                 Ok (s.structure.clone())
             } else {
@@ -53,6 +48,7 @@ impl Replybox<(),Option<Vec<Structure>>> for Graph {
         })
     }
 }
+*/
 
 impl GraphState {
     pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> GraphState {
@@ -60,14 +56,14 @@ impl GraphState {
         let structure = None;
         let pipeline  = gst::Pipeline::new(None);
         let wm        = Arc::new(Mutex::new(Wm::new(format, sender.clone())));
-        let mux       = Arc::new(Mutex::new(Mux::new(format, sender.clone())));
+        //let mux       = Arc::new(Mutex::new(Mux::new(format, sender.clone())));
         let vrend     = None;
         let arend     = None;
         let bus       = pipeline.get_bus().unwrap();
         let roots     = Vec::new();
         wm.lock().unwrap().init(&pipeline);
-        mux.lock().unwrap().init(&pipeline);
-        GraphState { settings, structure, pipeline, wm, mux, bus, roots, arend, vrend, format, sender }
+        //mux.lock().unwrap().init(&pipeline);
+        GraphState { settings, structure, pipeline, wm, /*mux,*/ bus, roots, arend, vrend, format, sender }
     }
 
     pub fn reset (&mut self) {
@@ -87,7 +83,7 @@ impl GraphState {
         debug!("GraphState::reset [arend reset]");
         self.arend    = None;
         debug!("GraphState::reset [audio mux reset]");
-        self.mux.lock().unwrap().reset();
+        //self.mux.lock().unwrap().reset();
         debug!("GraphState::reset [wm reset]");
         self.wm.lock().unwrap().reset();
         gst::debug_bin_to_dot_file(& self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_post_reset");
@@ -96,13 +92,13 @@ impl GraphState {
     pub fn init (&mut self) {
         debug!("GraphState::init");
         self.wm.lock().unwrap().init(&self.pipeline);
-        self.mux.lock().unwrap().init(&self.pipeline);
+        //self.mux.lock().unwrap().init(&self.pipeline);
         self.vrend    = Some(Renderer::<VideoR>::new(5004, &self.pipeline));
         self.arend    = Some(Renderer::<AudioR>::new(5005, &self.pipeline));
         debug!("GraphState::reset [video render reset]");
         self.vrend.iter().for_each(|rend| rend.plug(&self.wm.lock().unwrap().src_pad()));
         debug!("GraphState::reset [audio render reset]");
-        self.arend.iter().for_each(|rend| rend.plug(&self.mux.lock().unwrap().src_pad()));
+        //self.arend.iter().for_each(|rend| rend.plug(&self.mux.lock().unwrap().src_pad()));
     }
 
     pub fn set_state (&self, st: gst::State) {
@@ -123,7 +119,7 @@ impl GraphState {
                                           self.sender.clone()) {
                 //let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
-                let mux    = self.mux.clone();
+                //let mux    = self.mux.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
                     debug!("Graph::apply_streams [attach pad {} {}]", p.stream, p.channel);
                     wm.lock().unwrap().plug(p);
@@ -133,7 +129,7 @@ impl GraphState {
                 });
                 
                 root.audio_pad_added.lock().unwrap().connect(move |p| {
-                    mux.lock().unwrap().plug(p);
+                    //mux.lock().unwrap().plug(p);
                 });
             }
         };

@@ -4,9 +4,8 @@ use initial::Initial;
 use settings::Configuration;
 use probe::Probe;
 use control::Control;
-use streams::Streams;
+use streams::StreamParser;
 use graph::Graph;
-use connection::Conn;
 use std::boxed::Box;
 use std::collections::HashMap;
 use gst;
@@ -14,46 +13,97 @@ use glib;
 use std::sync::{Arc,Mutex};
 use std::sync::atomic::{AtomicBool,Ordering};
 use std::{thread,time};
+use serde_json;
+use serde_msgpack;
 
-use chatterer::MsgType;
-use chatterer::control::{Addressable,Dispatcher,DispatchTable};
+use chatterer::{MsgType,Description};
+use chatterer::control::{parse,Name,Method,Content,Response};
 use chatterer::notif::Notifier;
 
 #[derive(Serialize)]
 enum Status { Ready }
 
-pub struct ContextDispatcher {
-    format:      MsgType,
-    table:       HashMap<String, (Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync>)>,
+pub struct ContextState {
+    format:        MsgType,
+    ready:         Arc<AtomicBool>,
+    stream_parser: StreamParser,
+    graph:         Graph,
+    
 }
 
 pub struct Context {
+    state:       Arc<Mutex<ContextState>>,
     mainloop:    glib::MainLoop,
-    connection:  Conn,
     notif:       Notifier,
 }
 
-impl Addressable for ContextDispatcher {
-    fn get_name (&self) -> &str { "backend" }
-    fn get_format (&self) -> MsgType { self.format }
-}
+impl ContextState {
+    fn parse<'a,T> (&self, m: &'a Vec<u8>) -> T
+    where T: serde::Deserialize<'a> {
+        parse (&self.format, &m)
+    }
 
-impl DispatchTable for ContextDispatcher {
-    fn add_respondent (&mut self, s: String, c: Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync>) {
-        self.table.insert(s, c);
+    fn respond_readyness (&self, msg: &Vec<u8>) -> Vec<u8> {
+        let meth : Method = self.parse(&msg);
+        match meth.method {
+            "accept" => {
+                if !self.ready.load(Ordering::Relaxed) {
+                    self.ready.store(true, Ordering::Relaxed);
+                    meth.respond_ok ("established")
+                        .serialize (&self.format)
+                } else {
+                    meth.respond_err::<&str> ("already connected")
+                        .serialize (&self.format)
+                }
+            },
+            _ => meth.respond_err::<()> ("not found")
+                     .serialize (&self.format)
+        }
+    }
+
+    fn respond_stream_parser (&self, msg: &Vec<u8>) -> Vec<u8> {
+        let meth : Method = self.parse(&msg);
+        match meth.method {
+            "get" => {
+                let s : &Vec<_> = &self.stream_parser.structures.lock().unwrap();
+                meth.respond_ok (&s).serialize (&self.format)
+            },
+            _ => meth.respond_err::<()> ("not found")
+                     .serialize (&self.format)
+        }
     }
     
-    fn get_respondent (&self, s: &str) -> Option<&Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync>> {
-        self.table.get(s)
+    fn respond_graph (&self, msg: &Vec<u8>) -> Vec<u8> {
+        let meth : Method = self.parse(&msg);
+        Vec::new()
+    }
+
+    fn respond_wm (&self, msg: &Vec<u8>) -> Vec<u8> {
+        let meth : Method = self.parse(&msg);
+        Vec::new()
+    }
+    
+    fn respond_not_found (&self, s: &str, msg: &Vec<u8>) -> Vec<u8> {
+        let meth : Method = self.parse(&msg);
+        meth.respond_err::<()> ("not found")
+            .serialize (&self.format)
+    }
+    
+    pub fn dispatch (&mut self, msg: &Vec<u8>) -> Vec<u8> {
+        let addr : Name = self.parse(&msg);
+        match addr.name {
+            "connection"    => self.respond_readyness (&msg),
+            "stream_parser" => self.respond_stream_parser (&msg),
+            "graph"         => self.respond_graph (&msg),
+            "wm"            => self.respond_wm (&msg),
+            s => self.respond_not_found (&s, &msg),
+        }
     }
 }
 
-impl Dispatcher for ContextDispatcher {}
-
-impl ContextDispatcher {
-    pub fn new (format: MsgType) -> ContextDispatcher {
-        let table       = HashMap::new();
-        ContextDispatcher { table, format }
+impl Description for Context {
+    fn describe () -> String {
+        String::from("")
     }
 }
 
@@ -64,7 +114,6 @@ impl Context {
         let mainloop    = glib::MainLoop::new(None, false);
         let mut control = Control::new().unwrap();
 
-        let dispatcher  = Arc::new(Mutex::new(ContextDispatcher::new(i.msg_type)));
         let notif       = Notifier::new("backend", i.msg_type, control.sender.clone());
         
         let mut probes  = Vec::new();
@@ -73,44 +122,46 @@ impl Context {
             probes.push(Probe::new(&i.uris[sid]));
         };
 
-        let     config  = Configuration::new(i.msg_type, control.sender.clone());
-        let mut streams = Streams::new(i.msg_type, control.sender.clone());
-        let mut graph   = Graph::new(i.msg_type, control.sender.clone()).unwrap();
-        let connection  = Conn::new(i.msg_type);
+        let     config        = Configuration::new(i.msg_type, control.sender.clone());
+        let mut stream_parser = StreamParser::new(i.msg_type, control.sender.clone());
+        let mut graph         = Graph::new(i.msg_type, control.sender.clone()).unwrap();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
-            streams.connect_probe(probe);
+            stream_parser.connect_probe(probe);
         }
         
         let wm = graph.get_wm();
-        
+
+        /*
         dispatcher.lock().unwrap().add_to_table(&config);
         dispatcher.lock().unwrap().add_to_table(&streams);
         dispatcher.lock().unwrap().add_to_table(&graph);
         dispatcher.lock().unwrap().add_to_table(&connection);
         dispatcher.lock().unwrap().add_to_table(&(*wm.lock().unwrap()));
-
+         */
+        /*
         let dis = dispatcher.clone();
         control.connect(move |s| {
             // debug!("Control message received");
             dis.lock().unwrap().dispatch(s).unwrap()
             // debug!("Control message response ready");
         });
+        */
 
-        graph.connect_destructive(&mut streams.update.lock().unwrap());
+        //graph.connect_destructive(&mut stream_parser.update.lock().unwrap());
         graph.connect_settings(&mut config.update.lock().unwrap());
+
+        let ready = Arc::new(AtomicBool::new(false));
+
+        let state = Arc::new (Mutex::new (ContextState { format: i.msg_type, ready, stream_parser, graph }));
         
         info!("Context was created");
-        Ok(Context { mainloop, notif, connection })
+        Ok(Context { state, mainloop, notif })
     }
 
-    pub fn run(&self) {
-        let ready      = Arc::new(AtomicBool::new(false));
-        let ready_clos = ready.clone();
-        self.connection.connect(move |&()| {
-            ready_clos.store(true,Ordering::Relaxed);
-        });
+    pub fn run (&self) {
+        let ready = self.state.lock().unwrap().ready.clone();
         while !ready.load(Ordering::Relaxed) {
             self.notif.talk(&Status::Ready);
             thread::sleep(time::Duration::from_millis(100));
