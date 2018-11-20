@@ -64,6 +64,6 @@ fn main() {
             std::process::exit(-1);
         }
     };
-    let c    = Context::new(&i).unwrap();
+    let mut c = Context::new(&i).unwrap();
     c.run()
 }

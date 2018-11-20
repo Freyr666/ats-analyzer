@@ -6,6 +6,7 @@ use chatterer::MsgType;
 use chatterer::notif::Notifier;
 use root::Root;
 use wm::Wm;
+use wm::template::{WmTemplate,WmTemplatePartial};
 use signals::Msg;
 use metadata::Structure;
 use settings::Settings;
@@ -16,7 +17,7 @@ pub struct GraphState {
     format:      MsgType,
     sender:      Sender<Vec<u8>>,
     settings:    Option<Settings>,
-    structure:   Option<Vec<Structure>>,
+    pub structure: Vec<Structure>,
 
     pipeline:    gst::Pipeline,
     bus:         gst::Bus,
@@ -34,26 +35,10 @@ pub struct Graph {
     state:       Arc<Mutex<GraphState>>,
 }
 
-/*
-impl Replybox for Graph {
-    fn reply (&self) -> Box<Fn(Vec<u8>)->Vec<u8> + Send + Sync> {
-        let state = self.state.clone();
-        
-        Box::new(move |_| {
-            if let Ok (s) = state.lock() {
-                Ok (s.structure.clone())
-            } else {
-                Err (String::from("can't acquire graph state applied structure"))
-            }
-        })
-    }
-}
-*/
-
 impl GraphState {
     pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> GraphState {
         let settings  = None;
-        let structure = None;
+        let structure = Vec::new();
         let pipeline  = gst::Pipeline::new(None);
         let wm        = Arc::new(Mutex::new(Wm::new(format, sender.clone())));
         //let mux       = Arc::new(Mutex::new(Mux::new(format, sender.clone())));
@@ -107,14 +92,14 @@ impl GraphState {
         let _ = self.pipeline.set_state(st);
     }
 
-    pub fn apply_streams (&mut self, s: &[Structure]) -> Result<(),String> {
+    pub fn apply_streams (&mut self, s: Vec<Structure>) -> Result<(),String> {
         debug!("Graph::apply_streams [reset]");
         self.reset();
         self.init();
         debug!("Graph::apply_streams [loop]");
 
-        for s in s {
-            if let Some(root) = Root::new(&self.pipeline, s.clone(),
+        for stream in &s {
+            if let Some(root) = Root::new(&self.pipeline, &stream,
                                           self.settings, self.format,
                                           self.sender.clone()) {
                 //let pipe   = self.pipeline.clone();
@@ -135,7 +120,7 @@ impl GraphState {
         };
         // TODO replace with retain_state
         let _ = self.pipeline.set_state(gst::State::Playing);
-        self.structure = Some(Vec::from(s));
+        self.structure = s;
         Ok(())
     }
 
@@ -158,7 +143,30 @@ impl Graph {
     pub fn get_wm (&self) -> Arc<Mutex<Wm>> {
         self.state.lock().unwrap().wm.clone()
     }
-    
+
+    pub fn get_structure (&self) -> Vec<Structure> {
+        self.state.lock().unwrap().structure.clone()
+    }
+
+    pub fn set_structure (&self, s: Vec<Structure>) -> Result<(),String> {
+        self.state.lock().unwrap().apply_streams(s)
+    }
+
+    pub fn get_wm_layout (&self) -> Result<WmTemplate,String> {
+        match self.state.lock() {
+            Ok(s)  => s.wm.lock().unwrap().get_layout(),
+            Err(_) => Err(String::from("can't acquire wm state")), 
+        }
+    }
+
+    pub fn set_wm_layout (&self, templ: WmTemplatePartial) -> Result<(),String> {
+        match self.state.lock() {
+            Ok(s)  => s.wm.lock().unwrap().set_layout(templ),
+            Err(_) => Err(String::from("can't acquire wm state")), 
+        }
+    }
+
+            /*
     pub fn connect_destructive (&mut self, msg: &mut Msg<Vec<Structure>,Result<(),String>>) {
         let state  = self.state.clone();
         let notif  = self.chat.clone();
@@ -180,5 +188,6 @@ impl Graph {
             state.lock().unwrap().apply_settings(s)
         }).unwrap();
     }
+         */
     
 }

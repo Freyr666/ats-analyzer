@@ -5,6 +5,8 @@ use settings::Configuration;
 use probe::Probe;
 use control::Control;
 use streams::StreamParser;
+use metadata::Structure;
+use wm::template::WmTemplatePartial;
 use graph::Graph;
 use std::boxed::Box;
 use std::collections::HashMap;
@@ -33,6 +35,7 @@ pub struct ContextState {
 
 pub struct Context {
     state:       Arc<Mutex<ContextState>>,
+    control:     Control,
     mainloop:    glib::MainLoop,
     notif:       Notifier,
 }
@@ -75,15 +78,39 @@ impl ContextState {
     
     fn respond_graph (&self, msg: &Vec<u8>) -> Vec<u8> {
         let meth : Method = self.parse(&msg);
-        Vec::new()
+        match meth.method {
+            "get_structure" => {
+                let s = self.graph.get_structure();
+                meth.respond_ok (&s).serialize (&self.format)
+            },
+            "apply_structure" => {
+                let cont : Content<Vec<Structure>> = self.parse (&msg);
+                meth.respond (self.graph.set_structure(cont.content))
+                    .serialize (&self.format)
+            },
+            _ => meth.respond_err::<()> ("not found")
+                     .serialize (&self.format)
+        }
     }
 
     fn respond_wm (&self, msg: &Vec<u8>) -> Vec<u8> {
         let meth : Method = self.parse(&msg);
-        Vec::new()
+        match meth.method {
+            "get_layout" => {
+                let templ = self.graph.get_wm_layout ();
+                meth.respond (templ).serialize (&self.format)
+            },
+            "apply_layout" => {
+                let templ : Content<WmTemplatePartial> = self.parse(&msg);
+                let resp = self.graph.set_wm_layout (templ.content);
+                meth.respond (resp).serialize (&self.format)
+            },
+            _ => meth.respond_err::<()> ("not found")
+                     .serialize (&self.format)
+        }
     }
     
-    fn respond_not_found (&self, s: &str, msg: &Vec<u8>) -> Vec<u8> {
+    fn respond_not_found (&self, msg: &Vec<u8>) -> Vec<u8> {
         let meth : Method = self.parse(&msg);
         meth.respond_err::<()> ("not found")
             .serialize (&self.format)
@@ -96,7 +123,7 @@ impl ContextState {
             "stream_parser" => self.respond_stream_parser (&msg),
             "graph"         => self.respond_graph (&msg),
             "wm"            => self.respond_wm (&msg),
-            s => self.respond_not_found (&s, &msg),
+            _ => self.respond_not_found (&msg),
         }
     }
 }
@@ -111,9 +138,9 @@ impl Context {
     pub fn new (i : &Initial) -> Result<Context, String> {
         gst::init().unwrap();
 
-        let mainloop    = glib::MainLoop::new(None, false);
-        let mut control = Control::new().unwrap();
-
+        let mainloop = glib::MainLoop::new(None, false);
+        let control  = Control::new().unwrap();
+        
         let notif       = Notifier::new("backend", i.msg_type, control.sender.clone());
         
         let mut probes  = Vec::new();
@@ -122,7 +149,7 @@ impl Context {
             probes.push(Probe::new(&i.uris[sid]));
         };
 
-        let     config        = Configuration::new(i.msg_type, control.sender.clone());
+        //let     config        = Configuration::new(i.msg_type, control.sender.clone());
         let mut stream_parser = StreamParser::new(i.msg_type, control.sender.clone());
         let mut graph         = Graph::new(i.msg_type, control.sender.clone()).unwrap();
         
@@ -131,15 +158,8 @@ impl Context {
             stream_parser.connect_probe(probe);
         }
         
-        let wm = graph.get_wm();
+        //let wm = graph.get_wm();
 
-        /*
-        dispatcher.lock().unwrap().add_to_table(&config);
-        dispatcher.lock().unwrap().add_to_table(&streams);
-        dispatcher.lock().unwrap().add_to_table(&graph);
-        dispatcher.lock().unwrap().add_to_table(&connection);
-        dispatcher.lock().unwrap().add_to_table(&(*wm.lock().unwrap()));
-         */
         /*
         let dis = dispatcher.clone();
         control.connect(move |s| {
@@ -150,22 +170,29 @@ impl Context {
         */
 
         //graph.connect_destructive(&mut stream_parser.update.lock().unwrap());
-        graph.connect_settings(&mut config.update.lock().unwrap());
+        //graph.connect_settings(&mut config.update.lock().unwrap());
 
         let ready = Arc::new(AtomicBool::new(false));
 
         let state = Arc::new (Mutex::new (ContextState { format: i.msg_type, ready, stream_parser, graph }));
         
         info!("Context was created");
-        Ok(Context { state, mainloop, notif })
+        Ok(Context { state, control, mainloop, notif })
     }
 
-    pub fn run (&self) {
-        let ready = self.state.lock().unwrap().ready.clone();
+    pub fn run (&mut self) {
+        let ready   = self.state.lock().unwrap().ready.clone();
+        let context_state = self.state.clone();
+        
         while !ready.load(Ordering::Relaxed) {
             self.notif.talk(&Status::Ready);
             thread::sleep(time::Duration::from_millis(100));
         }
+
+        self.control.connect(move |s| {
+            context_state.lock().unwrap().dispatch(&s)
+        });
+        
         self.mainloop.run();
     }
 }

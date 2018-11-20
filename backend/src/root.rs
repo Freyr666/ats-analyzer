@@ -58,7 +58,7 @@ impl Root {
         }
     }
     
-    pub fn new(bin: &gst::Pipeline, m: Structure, settings: Option<Settings>,
+    pub fn new(bin: &gst::Pipeline, m: &Structure, settings: Option<Settings>,
                format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
         debug!("Root::new");
 
@@ -77,7 +77,7 @@ impl Root {
 
         let id = m.id.clone();
 
-        for chan in m.channels {
+        for chan in &m.channels {
             let demux_name = format!("demux_{}_{}_{}_{}",
                                      id.clone(), chan.number, chan.service_name, chan.provider_name);
 
@@ -99,6 +99,7 @@ impl Root {
             let _ = srcpad.link(&sinkpad);
             
             let stream   = id.clone();
+            let chan     = chan.clone();
             let bin_weak = bin.downgrade();
             let settings_c = settings.clone();
             let branches_weak = branches.clone();
@@ -110,7 +111,8 @@ impl Root {
                 let bin      = bin_weak.clone().upgrade().unwrap();
                 //let branches = branches_weak.upgrade().unwrap();
                 let settings = settings_c.lock().unwrap();
-                Root::build_branch(&mut branches_weak.lock().unwrap(), stream.clone(), &chan,
+                Root::build_branch(&mut branches_weak.lock().unwrap(),
+                                   stream.clone(), &chan,
                                    *settings,
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
                                    &bin, pad,

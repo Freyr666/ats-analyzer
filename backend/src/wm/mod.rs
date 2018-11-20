@@ -61,13 +61,6 @@ impl WmState {
         mixer.set_property("latency", &100_000_000i64).unwrap();
         caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(resolution)).unwrap()).unwrap();
 
-        // let context = self.download.get_property("context").unwrap()
-        //     .downcast::<gst::Object>().unwrap()
-        //     .get().unwrap();
-        // debug!("CONTEX REF COUNTER: {}", context.ref_count());
-        
-        //gobject_sys::g_object_set_data_full(&mut context, name.as_ptr(), x.as_ptr(), Some(destroy));
-
         pipe.add_many(&[&mixer,&caps,&download]).unwrap();
         mixer.link(&caps).unwrap();
         caps.link(&download).unwrap();
@@ -248,6 +241,26 @@ impl Wm {
         match *self.state.lock().unwrap() {
             None => panic!("Wm::src_pad invariant is brocken"), // TODO invariant?
             Some(ref state) => state.download.get_static_pad("src").unwrap()
+        }
+    }
+
+    pub fn get_layout (&self) -> Result<WmTemplate,String> {
+        match *self.state.lock().unwrap() {
+            None => Err(String::from("Wm is not initialized")),
+            Some(ref wm) => Ok(wm.to_template()),
+        }
+    }
+
+    pub fn set_layout (&self, templ: WmTemplatePartial) -> Result<(),String> {
+        match *self.state.lock().unwrap() {
+            None => Err(String::from("Wm is not initialized")),
+            Some(ref mut wm) => {
+                let widg = wm.widgets.iter()
+                    .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
+                    .collect();
+                let temp = WmTemplate::from_partial(templ, &widg);
+                wm.from_template(&temp)
+            }
         }
     }
 }
