@@ -1,9 +1,3 @@
-#[derive(Clone, Copy, Debug)]
-pub enum MsgType {
-    Msgpack,
-    Json
-}
-
 pub trait Description {
     fn describe () -> String;
 }
@@ -13,7 +7,6 @@ pub mod notif {
     use serde_msgpack;
     use serde::Serialize;
     use std::sync::mpsc::Sender;
-    use chatterer::MsgType;
 
     #[derive(Serialize)]
     struct Msg <'a, T: 'a> {
@@ -23,24 +16,20 @@ pub mod notif {
 
     pub struct Notifier {
         name:   &'static str,
-        format: MsgType,
         sender: Sender<Vec<u8>>
     }
 
     impl Notifier {
 
-        pub fn new(name: &'static str, format: MsgType, sender: Sender<Vec<u8>>) -> Notifier {
-            Notifier { name, format, sender }
+        pub fn new(name: &'static str, sender: Sender<Vec<u8>>) -> Notifier {
+            Notifier { name, sender }
         }
         
         fn serialize_msg<T> (&self, data: &T) -> Vec<u8>
             where T: Serialize {
             let msg = Msg { name: self.name,
                             data };
-            match self.format {
-                MsgType::Json    => serde_json::to_vec(&msg).unwrap(),
-                MsgType::Msgpack => serde_msgpack::to_vec(&msg).unwrap(),
-            }
+            serde_json::to_vec(&msg).unwrap()
         }
         
         pub fn talk<T> (&self, data: &T)
@@ -57,7 +46,6 @@ pub mod control {
     use serde_msgpack;
     use serde::Serialize;
     use serde::de::DeserializeOwned;
-    use chatterer::MsgType;
     
     #[derive(Deserialize, Debug)]
     pub struct Name<'a> {
@@ -84,12 +72,9 @@ pub mod control {
         pub result:  Result<T,String>,
     }
 
-    pub fn parse<'a,T> (format: &MsgType, msg: &'a Vec<u8>) -> T
+    pub fn parse<'a,T> (msg: &'a Vec<u8>) -> T
     where T: serde::Deserialize<'a> {
-        match format {
-            MsgType::Json    => serde_json::from_slice(&msg).unwrap(),
-            MsgType::Msgpack => serde_msgpack::from_slice(&msg).unwrap(),
-        }
+        serde_json::from_slice(&msg).unwrap()
     }
 
     impl<'a> Method<'a> {
@@ -112,11 +97,8 @@ pub mod control {
 
     impl<'a,T> Response<'a,T>
     where T: serde::Serialize {
-        pub fn serialize (&self, format: &MsgType) -> Vec<u8> {
-            match format {
-                MsgType::Json    => serde_json::to_vec(&self).unwrap(),
-                MsgType::Msgpack => serde_msgpack::to_vec(&self).unwrap(),
-            }
+        pub fn serialize (&self) -> Vec<u8> {
+            serde_json::to_vec(&self).unwrap()
         }
     }
 }

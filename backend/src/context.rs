@@ -18,7 +18,7 @@ use std::{thread,time};
 use serde_json;
 use serde_msgpack;
 
-use chatterer::{MsgType,Description};
+use chatterer::Description;
 use chatterer::control::{parse,Name,Method,Content,Response};
 use chatterer::notif::Notifier;
 
@@ -26,7 +26,6 @@ use chatterer::notif::Notifier;
 enum Status { Ready }
 
 pub struct ContextState {
-    format:        MsgType,
     ready:         Arc<AtomicBool>,
     stream_parser: StreamParser,
     graph:         Graph,
@@ -41,83 +40,79 @@ pub struct Context {
 }
 
 impl ContextState {
-    fn parse<'a,T> (&self, m: &'a Vec<u8>) -> T
-    where T: serde::Deserialize<'a> {
-        parse (&self.format, &m)
-    }
 
     fn respond_readyness (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = self.parse(&msg);
+        let meth : Method = parse(&msg);
         match meth.method {
             "accept" => {
                 if !self.ready.load(Ordering::Relaxed) {
                     self.ready.store(true, Ordering::Relaxed);
                     meth.respond_ok ("established")
-                        .serialize (&self.format)
+                        .serialize ()
                 } else {
                     meth.respond_err::<&str> ("already connected")
-                        .serialize (&self.format)
+                        .serialize ()
                 }
             },
             _ => meth.respond_err::<()> ("not found")
-                     .serialize (&self.format)
+                     .serialize ()
         }
     }
 
     fn respond_stream_parser (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = self.parse(&msg);
+        let meth : Method = parse(&msg);
         match meth.method {
             "get" => {
                 let s : &Vec<_> = &self.stream_parser.structures.lock().unwrap();
-                meth.respond_ok (&s).serialize (&self.format)
+                meth.respond_ok (&s).serialize ()
             },
             _ => meth.respond_err::<()> ("not found")
-                     .serialize (&self.format)
+                     .serialize ()
         }
     }
     
     fn respond_graph (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = self.parse(&msg);
+        let meth : Method = parse(&msg);
         match meth.method {
             "get_structure" => {
                 let s = self.graph.get_structure();
-                meth.respond_ok (&s).serialize (&self.format)
+                meth.respond_ok (&s).serialize ()
             },
             "apply_structure" => {
-                let cont : Content<Vec<Structure>> = self.parse (&msg);
+                let cont : Content<Vec<Structure>> = parse (&msg);
                 meth.respond (self.graph.set_structure(cont.content))
-                    .serialize (&self.format)
+                    .serialize ()
             },
             _ => meth.respond_err::<()> ("not found")
-                     .serialize (&self.format)
+                     .serialize ()
         }
     }
 
     fn respond_wm (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = self.parse(&msg);
+        let meth : Method = parse(&msg);
         match meth.method {
             "get_layout" => {
                 let templ = self.graph.get_wm_layout ();
-                meth.respond (templ).serialize (&self.format)
+                meth.respond (templ).serialize ()
             },
             "apply_layout" => {
-                let templ : Content<WmTemplatePartial> = self.parse(&msg);
+                let templ : Content<WmTemplatePartial> = parse(&msg);
                 let resp = self.graph.set_wm_layout (templ.content);
-                meth.respond (resp).serialize (&self.format)
+                meth.respond (resp).serialize ()
             },
             _ => meth.respond_err::<()> ("not found")
-                     .serialize (&self.format)
+                     .serialize ()
         }
     }
     
     fn respond_not_found (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = self.parse(&msg);
+        let meth : Method = parse(&msg);
         meth.respond_err::<()> ("not found")
-            .serialize (&self.format)
+            .serialize ()
     }
     
     pub fn dispatch (&mut self, msg: &Vec<u8>) -> Vec<u8> {
-        let addr : Name = self.parse(&msg);
+        let addr : Name = parse(&msg);
         match addr.name {
             "connection"    => self.respond_readyness (&msg),
             "stream_parser" => self.respond_stream_parser (&msg),
@@ -141,7 +136,7 @@ impl Context {
         let mainloop = glib::MainLoop::new(None, false);
         let control  = Control::new().unwrap();
         
-        let notif       = Notifier::new("backend", i.msg_type, control.sender.clone());
+        let notif       = Notifier::new("backend", control.sender.clone());
         
         let mut probes  = Vec::new();
 
@@ -150,8 +145,8 @@ impl Context {
         };
 
         //let     config        = Configuration::new(i.msg_type, control.sender.clone());
-        let mut stream_parser = StreamParser::new(i.msg_type, control.sender.clone());
-        let mut graph         = Graph::new(i.msg_type, control.sender.clone()).unwrap();
+        let mut stream_parser = StreamParser::new(control.sender.clone());
+        let mut graph         = Graph::new(control.sender.clone()).unwrap();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
@@ -174,7 +169,7 @@ impl Context {
 
         let ready = Arc::new(AtomicBool::new(false));
 
-        let state = Arc::new (Mutex::new (ContextState { format: i.msg_type, ready, stream_parser, graph }));
+        let state = Arc::new (Mutex::new (ContextState { ready, stream_parser, graph }));
         
         info!("Context was created");
         Ok(Context { state, control, mainloop, notif })

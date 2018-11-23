@@ -5,7 +5,6 @@ use std::sync::mpsc::Sender;
 use metadata::{Channel,Structure};
 use settings::Settings;
 use signals::Signal;
-use chatterer::MsgType;
 use pad::SrcPad;
 use branch::Branch;
 use std::u32;
@@ -25,7 +24,7 @@ impl Root {
                      added: Arc<Mutex<Signal<SrcPad>>>,
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
                      bin: &gst::Pipeline, pad: &gst::Pad,
-                     format: MsgType, sender: &Mutex<Sender<Vec<u8>>>) {
+                     sender: &Mutex<Sender<Vec<u8>>>) {
         let pname = pad.get_name();
         let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
         let name_toks: Vec<&str> = pname.split('_').collect();
@@ -42,7 +41,7 @@ impl Root {
 
         debug!("Root::build_branch [{}]", pid);
 
-        if let Some(branch) = Branch::new(stream, chan.number, pid, typ, settings, format, sender.lock().unwrap().clone()) {
+        if let Some(branch) = Branch::new(stream, chan.number, pid, typ, settings, sender.lock().unwrap().clone()) {
             branch.add_to_pipe(&bin);
             branch.plug(&pad);
             match branch {
@@ -59,7 +58,7 @@ impl Root {
     }
     
     pub fn new(bin: &gst::Pipeline, m: &Structure, settings: Option<Settings>,
-               format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
+               sender: Sender<Vec<u8>>) -> Option<Root> {
         debug!("Root::new");
 
         let src             = gst::ElementFactory::make("udpsrc", None).unwrap();
@@ -116,7 +115,7 @@ impl Root {
                                    *settings,
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
                                    &bin, pad,
-                                   format, &sender_c);
+                                   &sender_c);
             });
         };
 

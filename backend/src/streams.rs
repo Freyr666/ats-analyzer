@@ -1,7 +1,6 @@
 use metadata::Structure;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
-use chatterer::MsgType;
 use chatterer::notif::Notifier;
 use signals::Msg;
 use probe::Probe;
@@ -13,8 +12,8 @@ pub struct StreamParser {
 }
 
 impl StreamParser {
-    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> StreamParser {
-        let chat       = Arc::new(Mutex::new( Notifier::new("stream_parser", format, sender )));
+    pub fn new (sender: Sender<Vec<u8>>) -> StreamParser {
+        let chat       = Arc::new(Mutex::new( Notifier::new("stream_parser", sender )));
         let structures = Arc::new(Mutex::new(vec![]));
         StreamParser { chat, structures }
     }

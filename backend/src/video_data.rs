@@ -7,7 +7,6 @@ use std::mem;
 use std::sync::mpsc::Sender;
 use serde::Deserialize;
 use chatterer::notif::Notifier;
-use chatterer::MsgType;
 
 #[derive(Serialize,Deserialize,Debug)]
 #[repr(C)]
@@ -82,13 +81,13 @@ unsafe impl Send for VideoData {}
 
 impl VideoData {
 
-    pub fn new (stream: String, channel: u32, pid: u32, format: MsgType, sender: Sender<Vec<u8>>) -> VideoData {
+    pub fn new (stream: String, channel: u32, pid: u32, sender: Sender<Vec<u8>>) -> VideoData {
         let mmap :  *mut gst_sys::GstMapInfo;
         unsafe {
             mmap = libc::malloc(mem::size_of::<gst_sys::GstMapInfo>()) as *mut gst_sys::GstMapInfo;
         }
-        let notif = Notifier::new("video_data", format, sender.clone());
-        let notif_status = Notifier::new("stream_lost", format, sender);
+        let notif = Notifier::new("video_data", sender.clone());
+        let notif_status = Notifier::new("stream_lost", sender);
         VideoData { stream, channel, pid, notif, notif_status, mmap }
     }
 

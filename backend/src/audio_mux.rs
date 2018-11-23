@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::vec::Vec;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
-use chatterer::MsgType;
 use chatterer::control::{Addressable,Replybox};
 use chatterer::control::message::{Request,Reply};
 use chatterer::notif::Notifier;
@@ -24,7 +23,6 @@ struct MuxState {
 }
 
 pub struct Mux {
-    format:      MsgType,
     pub chat:    Arc<Mutex<Notifier>>,
     state:       Arc<Mutex<Option<MuxState>>>,
 }

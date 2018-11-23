@@ -12,7 +12,6 @@ use gst::prelude::*;
 use gst;
 use glib;
 use chatterer::notif::Notifier;
-use chatterer::MsgType;
 use signals::Signal;
 use pad::{Type,SrcPad};
 use wm::widget::Widget;
@@ -36,7 +35,6 @@ pub struct WmState {
 }
 
 pub struct Wm {
-    format:      MsgType,
     pub chat:    Arc<Mutex<Notifier>>,
 
     state:       Arc<Mutex<Option<WmState>>>,
@@ -203,10 +201,10 @@ impl Replybox for Wm {
 */
 
 impl Wm {
-    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Wm {
-        let chat = Arc::new(Mutex::new( Notifier::new("wm", format, sender )));
+    pub fn new (sender: Sender<Vec<u8>>) -> Wm {
+        let chat = Arc::new(Mutex::new( Notifier::new("wm", sender )));
         let state = Arc::new(Mutex::new( None ));
-        Wm { format, chat, state }
+        Wm { chat, state }
     }
 
     pub fn init (&mut self, pipe: &gst::Pipeline) {

@@ -2,7 +2,6 @@ use gst::prelude::*;
 use gst;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
-use chatterer::MsgType;
 use chatterer::notif::Notifier;
 use root::Root;
 use wm::Wm;
@@ -14,7 +13,6 @@ use settings::Settings;
 use renderer::{VideoR,AudioR,Renderer};
 
 pub struct GraphState {
-    format:      MsgType,
     sender:      Sender<Vec<u8>>,
     settings:    Option<Settings>,
     pub structure: Vec<Structure>,
@@ -29,26 +27,25 @@ pub struct GraphState {
 }
 
 pub struct Graph {
-    format:      MsgType,
     pub chat:    Arc<Mutex<Notifier>>,
 
     state:       Arc<Mutex<GraphState>>,
 }
 
 impl GraphState {
-    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> GraphState {
+    pub fn new (sender: Sender<Vec<u8>>) -> GraphState {
         let settings  = None;
         let structure = Vec::new();
         let pipeline  = gst::Pipeline::new(None);
-        let wm        = Arc::new(Mutex::new(Wm::new(format, sender.clone())));
-        //let mux       = Arc::new(Mutex::new(Mux::new(format, sender.clone())));
+        let wm        = Arc::new(Mutex::new(Wm::new(sender.clone())));
+        //let mux       = Arc::new(Mutex::new(Mux::new(sender.clone())));
         let vrend     = None;
         let arend     = None;
         let bus       = pipeline.get_bus().unwrap();
         let roots     = Vec::new();
         wm.lock().unwrap().init(&pipeline);
         //mux.lock().unwrap().init(&pipeline);
-        GraphState { settings, structure, pipeline, wm, /*mux,*/ bus, roots, arend, vrend, format, sender }
+        GraphState { settings, structure, pipeline, wm, /*mux,*/ bus, roots, arend, vrend, sender }
     }
 
     pub fn reset (&mut self) {
@@ -100,7 +97,7 @@ impl GraphState {
 
         for stream in &s {
             if let Some(root) = Root::new(&self.pipeline, &stream,
-                                          self.settings, self.format,
+                                          self.settings,
                                           self.sender.clone()) {
                 //let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
@@ -134,10 +131,10 @@ impl GraphState {
 
 impl Graph {
     
-    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Result<Graph,String> {
-        let chat = Arc::new(Mutex::new( Notifier::new("graph", format, sender.clone() )));
-        let state = Arc::new(Mutex::new(GraphState::new(format, sender.clone()) ));
-        Ok(Graph { format, chat, state } )
+    pub fn new (sender: Sender<Vec<u8>>) -> Result<Graph,String> {
+        let chat = Arc::new(Mutex::new( Notifier::new("graph", sender.clone() )));
+        let state = Arc::new(Mutex::new(GraphState::new(sender.clone()) ));
+        Ok(Graph { chat, state } )
     }
 
     pub fn get_wm (&self) -> Arc<Mutex<Wm>> {
@@ -149,7 +146,12 @@ impl Graph {
     }
 
     pub fn set_structure (&self, s: Vec<Structure>) -> Result<(),String> {
+        // TODO talk only when applied successfully
+        self.chat.lock().unwrap().talk(&s);
         self.state.lock().unwrap().apply_streams(s)
+        //if res.is_ok() {
+        //    self.chat.lock().unwrap().talk()
+        //};
     }
 
     pub fn get_wm_layout (&self) -> Result<WmTemplate,String> {
