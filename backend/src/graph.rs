@@ -132,7 +132,7 @@ impl GraphState {
 impl Graph {
     
     pub fn new (sender: Sender<Vec<u8>>) -> Result<Graph,String> {
-        let chat = Arc::new(Mutex::new( Notifier::new("graph", sender.clone() )));
+        let chat = Arc::new(Mutex::new( Notifier::new("applied_streams", sender.clone() )));
         let state = Arc::new(Mutex::new(GraphState::new(sender.clone()) ));
         Ok(Graph { chat, state } )
     }
