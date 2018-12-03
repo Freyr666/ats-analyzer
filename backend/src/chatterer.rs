@@ -69,7 +69,7 @@ pub mod control {
         pub name:    &'a str,
         pub method:  &'a str,
         pub counter: i32,
-        pub result:  Result<T,String>,
+        pub content: Result<T,String>,
     }
 
     pub fn parse<'a,T> (msg: &'a Vec<u8>) -> T
@@ -80,17 +80,17 @@ pub mod control {
     impl<'a> Method<'a> {
         pub fn respond<T> (&self, result: Result<T,String>)
                         -> Response<'a,T> {
-            Response { name: self.name, method: self.method, counter: self.counter, result }
+            Response { name: self.name, method: self.method, counter: self.counter, content: result }
         }
 
         pub fn respond_ok<T> (&self, v: T) -> Response<'a,T> {
             Response { name: self.name, method: self.method,
-                       counter: self.counter, result: Ok(v) }
+                       counter: self.counter, content: Ok(v) }
         }
 
         pub fn respond_err<T> (&self, v: &str) -> Response<'a,T> {
             Response { name: self.name, method: self.method,
-                       counter: self.counter, result: Err(String::from(v)) }
+                       counter: self.counter, content: Err(String::from(v)) }
         }
             
     }
