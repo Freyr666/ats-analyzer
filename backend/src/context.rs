@@ -178,15 +178,15 @@ impl Context {
     pub fn run (&mut self) {
         let ready   = self.state.lock().unwrap().ready.clone();
         let context_state = self.state.clone();
+
+        self.control.connect(move |s| {
+            context_state.lock().unwrap().dispatch(&s)
+        });
         
         while !ready.load(Ordering::Relaxed) {
             self.notif.talk(&Status::Ready);
             thread::sleep(time::Duration::from_millis(100));
         }
-
-        self.control.connect(move |s| {
-            context_state.lock().unwrap().dispatch(&s)
-        });
         
         self.mainloop.run();
     }
