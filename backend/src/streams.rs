@@ -27,6 +27,7 @@ impl StreamParser {
                 let str = structures.iter_mut().find(|st| st.id == s.id).unwrap();
                 str.from(s)
             }
+        chat.talk(&structures); // TODO chack var
     }
     
     pub fn connect_probe (&mut self, p: &mut Probe) {
