@@ -1,25 +1,21 @@
 //use chatterer::ChattererProxy;
 //use chatterer::Logger;
 use initial::Initial;
-use settings::Configuration;
+//use settings::Configuration;
 use probe::Probe;
 use control::Control;
 use streams::StreamParser;
 use metadata::Structure;
 use wm::template::WmTemplatePartial;
 use graph::Graph;
-use std::boxed::Box;
-use std::collections::HashMap;
 use gst;
 use glib;
 use std::sync::{Arc,Mutex};
 use std::sync::atomic::{AtomicBool,Ordering};
 use std::{thread,time};
-use serde_json;
-use serde_msgpack;
 
 use chatterer::Description;
-use chatterer::control::{parse,Name,Method,Content,Response};
+use chatterer::control::{parse,Name,Method,Content};
 use chatterer::notif::Notifier;
 
 #[derive(Serialize)]
@@ -146,7 +142,7 @@ impl Context {
 
         //let     config        = Configuration::new(i.msg_type, control.sender.clone());
         let mut stream_parser = StreamParser::new(control.sender.clone());
-        let mut graph         = Graph::new(control.sender.clone()).unwrap();
+        let     graph         = Graph::new(control.sender.clone()).unwrap();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);

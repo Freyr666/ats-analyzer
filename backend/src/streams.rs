@@ -2,7 +2,6 @@ use metadata::Structure;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
 use chatterer::notif::Notifier;
-use signals::Msg;
 use probe::Probe;
 
 

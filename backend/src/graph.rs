@@ -6,7 +6,6 @@ use chatterer::notif::Notifier;
 use root::Root;
 use wm::Wm;
 use wm::template::{WmTemplate,WmTemplatePartial};
-use signals::Msg;
 use metadata::Structure;
 use settings::Settings;
 //use audio_mux::Mux;

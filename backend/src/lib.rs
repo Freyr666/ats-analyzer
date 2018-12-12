@@ -24,7 +24,7 @@ extern crate gstreamer as gst;
 extern crate gstreamer_sys as gst_sys;
 extern crate gstreamer_video as gst_video;
 extern crate gstreamer_mpegts_sys as gst_mpegts_sys;
-extern crate rmp_serde as serde_msgpack;
+//extern crate rmp_serde as serde_msgpack;
 extern crate zmq;
 
 pub mod signals;

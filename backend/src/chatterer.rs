@@ -4,7 +4,6 @@ pub trait Description {
 
 pub mod notif {
     use serde_json;
-    use serde_msgpack;
     use serde::Serialize;
     use std::sync::mpsc::Sender;
 
@@ -43,9 +42,6 @@ pub mod notif {
 
 pub mod control {
     use serde_json;
-    use serde_msgpack;
-    use serde::Serialize;
-    use serde::de::DeserializeOwned;
     
     #[derive(Deserialize, Debug)]
     pub struct Name<'a> {
