@@ -35,14 +35,20 @@ impl WmTemplate {
                 return Err(format!("container {}: is out of screen borders", cname))
             }
             for  &(ref wname, ref w) in &c.widgets {
+                let position = w.position.unwrap_or(c.position);
+                
                 if ! self.widgets.iter().any(|&(ref name,_)| *name == *wname) {
                     return Err(format!("{}: no such widget", wname))
                 }
-                if ! w.position.is_in(&c.position) {
+                if ! position.is_in(&c.position) {
                     return Err(format!("{}: is out of container's borders", wname))
                 }
                 // not very optimal
-                if c.widgets.iter().any(|&(ref name, ref wdg)| *name != *wname && wdg.position.is_overlap(&w.position)) {
+                if c.widgets.iter()
+                    .any(|&(ref name, ref wdg)| {
+                        let other_position = wdg.position.unwrap_or(c.position);
+                        *name != *wname
+                        && other_position.is_overlapped(&position)}) {
                     return Err(format!("{}: intersects with another widget", wname))
                 }
             }

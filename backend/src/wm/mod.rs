@@ -122,19 +122,22 @@ impl WmState {
             }
         }
         t.validate()?;
-        self.widgets.iter_mut().for_each(|(_,w)| w.lock().unwrap().set_enable(false));
+        self.widgets.iter_mut().for_each(|(_,w)| w.lock().unwrap().disable());
 
         self.layout = HashMap::new();
         for &(ref cname, ref c) in &t.layout {
-            let position = c.position;
+            let container_position = c.position;
+            let offset   = (container_position.get_x(), container_position.get_y());
             let mut widgets  = HashMap::new();
             for &(ref wname, ref w) in &c.widgets {
                 let widget = self.widgets[wname].clone();
-                widget.lock().unwrap().apply_desc(&w);
-                widget.lock().unwrap().set_enable(true);
+                let layer    = w.layer;
+                let position = w.position.unwrap_or(container_position);
+                widget.lock().unwrap().render(offset, position, layer);
                 widgets.insert(wname.clone(), widget);
             }
-            self.layout.insert(cname.clone(), Container { position, widgets } );
+            self.layout.insert(cname.clone(),
+                               Container { position: container_position, widgets } );
         }
         self.set_resolution(t.resolution);
         let _ = pipe.set_state(gst::State::Playing); // TODO
