@@ -1,9 +1,9 @@
 use std::env::Args;
-use chatterer::MsgType;
 
 #[derive(Debug)]
 pub enum Error {
     HelpOption,
+    DescribeOption,
     WrongOption (String)
 }
 
@@ -13,7 +13,6 @@ pub type Id  = String;
 #[derive(Debug)]
 pub struct Initial {
     pub uris:     Vec<(Id,Uri)>,
-    pub msg_type: MsgType
 }
 
 pub enum UriParserState {
@@ -22,7 +21,6 @@ pub enum UriParserState {
 }
 
 pub enum ArgsParserState {
-    MsgType,
     Uri(String),
     Positional
 }
@@ -129,9 +127,7 @@ impl Initial {
     pub fn new(args : Args) -> Result<Initial, Error> {
         /* Options:
          * -h help
-         * -m msgtype
          */
-        let mut mt    : MsgType         = MsgType::Json;
         let mut uris                    = Vec::new();
         let mut state : ArgsParserState = ArgsParserState::Positional;
         let mut args  : Vec<String>     = args.collect();
@@ -141,9 +137,9 @@ impl Initial {
                 ArgsParserState::Positional =>
                 { if arg.starts_with('-') {
                     match arg.as_str() {
-                        "-h" | "--help"    => return Err (Error::HelpOption),
-                        "-m" | "--msgtype" => state = ArgsParserState::MsgType,
-                        x                  =>
+                        "-h" | "--help"     => return Err (Error::HelpOption),
+                        "-p" | "--protocol" => return Err (Error::DescribeOption),
+                        x                   =>
                         { let s = format!("{}: unrecognized option '{}'", path, x);
                           return Err (Error::WrongOption(s));
                         }
@@ -163,17 +159,6 @@ impl Initial {
                         }
                     }
                 },
-                ArgsParserState::MsgType => {
-                    state = ArgsParserState::Positional;
-                    match arg.as_str() {
-                        "json"    => mt = MsgType::Json,
-                        "msgpack" => mt = MsgType::Msgpack,
-                        _         =>
-                        { let s = format!("{}: bad msgtype value ({})", path, arg);
-                          return Err (Error::WrongOption(s))
-                        }
-                    }
-                },
             }
         };
 
@@ -182,7 +167,7 @@ impl Initial {
                 let s = format!("{}: no uri argument for stream {}", path, id);
                 Err (Error::WrongOption(s))
             },
-            _ => Ok ( Initial { uris, msg_type : mt } )
+            _ => Ok ( Initial { uris } )
         }
     }
 
@@ -190,7 +175,7 @@ impl Initial {
         "Usage:\n\
          [-opt arg] id1 uri1 [id2 uri2 id3 uri3]\n\
          Options:\n\
-         \t-m,\t--msgtype\tipc message type [json | msgpack]\n\
+         \t-p,\t--protocol\tprotocol description
          \t-h,\t--help   \thelp\n\
          Additional:\n\
          \turi format: udp://[ip] or udp://[ip]:[port]\n"

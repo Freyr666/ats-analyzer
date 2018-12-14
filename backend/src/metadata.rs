@@ -26,7 +26,6 @@ pub enum PidContent {
 #[derive(Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Pid {
     pub pid:              u32,
-    pub to_be_analyzed:   bool,
     pub content:          PidContent,
     pub stream_type:      u32,
     pub stream_type_name: String
@@ -50,7 +49,7 @@ pub struct Structure {
 impl Pid {
     pub fn new (pid: u32, stream_type: u32, stream_type_name: String) -> Pid {
         // TODO init pid_content
-        Pid { pid, to_be_analyzed: false, content: PidContent::Empty, stream_type, stream_type_name }
+        Pid { pid, content: PidContent::Empty, stream_type, stream_type_name }
     }
 }
 
@@ -69,10 +68,6 @@ impl Channel {
 
     pub fn pids_num (&self) -> usize {
         self.pids.len()
-    }
-
-    pub fn to_be_analyzed (&self) -> bool {
-        self.pids.iter().any(|p| p.to_be_analyzed)
     }
 
     pub fn pid_exists (&self, pid: u32) -> bool {
@@ -107,10 +102,6 @@ impl Structure {
 
     pub fn channels_num (&self) -> usize {
         self.channels.len()
-    }
-
-    pub fn to_be_analyzed (&self) -> bool {
-        self.channels.iter().any(|c| c.to_be_analyzed())
     }
     
     pub fn clear (&mut self) {

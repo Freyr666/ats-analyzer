@@ -16,19 +16,19 @@ pub struct WidgetDesc {
     pub typ:         Type,
     pub domain:      Domain,
     pub pid:         Option<u32>,
-    pub position:    Position,
+    pub position:    Option<Position>,
     pub layer:       i32,
     pub aspect:      Option<(u32,u32)>,
     pub description: String,
 }
 
 pub trait Widget {
-    fn add_to_pipe(&self, &gst::Bin);
-    fn plug_src(&mut self, &SrcPad);
-    fn plug_sink(&mut self, gst::Pad);
-    fn gen_uid(&mut self) -> String;
-    fn set_enable(&mut self, bool);
-    fn get_desc(&self) -> WidgetDesc;
-    fn apply_desc(&mut self, &WidgetDesc);
-    fn linked(&self) -> Arc<Mutex<Signal<()>>>;
+    fn add_to_pipe (&self, &gst::Bin);
+    fn plug_src (&mut self, &SrcPad);
+    fn plug_sink (&mut self, gst::Pad);
+    fn gen_uid (&mut self) -> String;
+    fn get_desc (&self) -> WidgetDesc;
+    fn render (&mut self, (u32, u32), Position, i32);
+    fn disable (&mut self);
+    fn linked (&self) -> Arc<Mutex<Signal<()>>>;
 }

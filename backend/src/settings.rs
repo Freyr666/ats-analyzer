@@ -1,8 +1,5 @@
 use std::sync::{Arc,Mutex};
-use chatterer::MsgType;
 use chatterer::notif::Notifier;
-use chatterer::control::{Addressable,Replybox};
-use chatterer::control::message::{Request,Reply};
 use signals::Msg;
 use std::sync::mpsc::Sender;
 
@@ -73,25 +70,28 @@ pub struct Settings {
 }
 
 pub struct Configuration {
-    format:     MsgType,
     settings:   Arc<Mutex<Option<Settings>>>,
 
     pub chat:   Arc<Mutex<Notifier>>,
     pub update: Arc<Mutex<Msg<Settings,Result<(),String>>>>,
 }
 
+
+/*
 impl Addressable for Configuration {
     fn get_name (&self) -> &str { "settings" }
     fn get_format (&self) -> MsgType { self.format }
 }
 
-impl Replybox<Request<Settings>,Reply<Settings>> for Configuration {
+impl Replybox for Configuration {
 
     fn reply (&self) ->
-        Box<Fn(Request<Settings>)->Result<Reply<Settings>,String> + Send + Sync> {
+        Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync> {
             let signal   = self.update.clone();
             let settings = self.settings.clone();
-            Box::new(move | data: Request<Settings> | {
+            Box::new(move | data: Vec<u8> | {
+                
+                
                 match data {
                     Request::Get =>
                         if let Ok(s) = settings.lock() {
@@ -117,13 +117,14 @@ impl Replybox<Request<Settings>,Reply<Settings>> for Configuration {
             })
         }
 }
+*/
 
 impl Configuration {
-    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Configuration {
+    pub fn new (sender: Sender<Vec<u8>>) -> Configuration {
         let update     = Arc::new(Mutex::new(Msg::new()));
         let settings   = Arc::new(Mutex::new(None));
-        let chat       = Arc::new(Mutex::new(Notifier::new("settings", format, sender )));
+        let chat       = Arc::new(Mutex::new(Notifier::new("settings", sender )));
 
-        Configuration { format, chat, update, settings }
+        Configuration { chat, update, settings }
     }
 }

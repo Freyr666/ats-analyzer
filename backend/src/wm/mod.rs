@@ -12,9 +12,6 @@ use gst::prelude::*;
 use gst;
 use glib;
 use chatterer::notif::Notifier;
-use chatterer::control::{Addressable,Replybox};
-use chatterer::control::message::{Request,Reply};
-use chatterer::MsgType;
 use signals::Signal;
 use pad::{Type,SrcPad};
 use wm::widget::Widget;
@@ -38,7 +35,6 @@ pub struct WmState {
 }
 
 pub struct Wm {
-    format:      MsgType,
     pub chat:    Arc<Mutex<Notifier>>,
 
     state:       Arc<Mutex<Option<WmState>>>,
@@ -62,13 +58,6 @@ impl WmState {
         mixer.set_property("async-handling", &true).unwrap();
         mixer.set_property("latency", &100_000_000i64).unwrap();
         caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(resolution)).unwrap()).unwrap();
-
-        // let context = self.download.get_property("context").unwrap()
-        //     .downcast::<gst::Object>().unwrap()
-        //     .get().unwrap();
-        // debug!("CONTEX REF COUNTER: {}", context.ref_count());
-        
-        //gobject_sys::g_object_set_data_full(&mut context, name.as_ptr(), x.as_ptr(), Some(destroy));
 
         pipe.add_many(&[&mixer,&caps,&download]).unwrap();
         mixer.link(&caps).unwrap();
@@ -133,19 +122,22 @@ impl WmState {
             }
         }
         t.validate()?;
-        self.widgets.iter_mut().for_each(|(_,w)| w.lock().unwrap().set_enable(false));
+        self.widgets.iter_mut().for_each(|(_,w)| w.lock().unwrap().disable());
 
         self.layout = HashMap::new();
         for &(ref cname, ref c) in &t.layout {
-            let position = c.position;
+            let container_position = c.position;
+            let offset   = (container_position.get_x(), container_position.get_y());
             let mut widgets  = HashMap::new();
             for &(ref wname, ref w) in &c.widgets {
                 let widget = self.widgets[wname].clone();
-                widget.lock().unwrap().apply_desc(&w);
-                widget.lock().unwrap().set_enable(true);
+                let layer    = w.layer;
+                let position = w.position.unwrap_or(container_position);
+                widget.lock().unwrap().render(offset, position, layer);
                 widgets.insert(wname.clone(), widget);
             }
-            self.layout.insert(cname.clone(), Container { position, widgets } );
+            self.layout.insert(cname.clone(),
+                               Container { position: container_position, widgets } );
         }
         self.set_resolution(t.resolution);
         let _ = pipe.set_state(gst::State::Playing); // TODO
@@ -172,18 +164,16 @@ impl WmState {
     }
 }
 
-impl Addressable for Wm {
-    fn get_name (&self) -> &str { "wm" }
-    fn get_format (&self) -> MsgType { self.format }
-}
-
-impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
+/*
+impl Replybox for Wm {
     
     fn reply (&self) ->
-        Box<Fn(Request<WmTemplatePartial>)->Result<Reply<WmTemplate>,String> + Send + Sync> {
+        Box<Fn(Vec<u8>)->Vec<u8> + Send + Sync> {
             let state = self.state.clone();
 
             Box::new(move |req| {
+                req
+                
                 let mut state = match state.lock() {
                     Ok(s)       => s,
                     Err(_)      => return Err(String::from("can't acquire wm layout")),
@@ -207,15 +197,17 @@ impl Replybox<Request<WmTemplatePartial>,Reply<WmTemplate>> for Wm {
                         }
                     }
                 }    
+                 
             })
         }
 }
+*/
 
 impl Wm {
-    pub fn new (format: MsgType, sender: Sender<Vec<u8>>) -> Wm {
-        let chat = Arc::new(Mutex::new( Notifier::new("wm", format, sender )));
+    pub fn new (sender: Sender<Vec<u8>>) -> Wm {
+        let chat = Arc::new(Mutex::new( Notifier::new("wm", sender )));
         let state = Arc::new(Mutex::new( None ));
-        Wm { format, chat, state }
+        Wm { chat, state }
     }
 
     pub fn init (&mut self, pipe: &gst::Pipeline) {
@@ -250,6 +242,26 @@ impl Wm {
         match *self.state.lock().unwrap() {
             None => panic!("Wm::src_pad invariant is brocken"), // TODO invariant?
             Some(ref state) => state.download.get_static_pad("src").unwrap()
+        }
+    }
+
+    pub fn get_layout (&self) -> Result<WmTemplate,String> {
+        match *self.state.lock().unwrap() {
+            None => Err(String::from("Wm is not initialized")),
+            Some(ref wm) => Ok(wm.to_template()),
+        }
+    }
+
+    pub fn set_layout (&self, templ: WmTemplatePartial) -> Result<(),String> {
+        match *self.state.lock().unwrap() {
+            None => Err(String::from("Wm is not initialized")),
+            Some(ref mut wm) => {
+                let widg = wm.widgets.iter()
+                    .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
+                    .collect();
+                let temp = WmTemplate::from_partial(templ, &widg);
+                wm.from_template(&temp)
+            }
         }
     }
 }

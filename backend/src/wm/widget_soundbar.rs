@@ -10,6 +10,7 @@ use wm::widget::{Widget,WidgetDesc,Domain};
 pub struct WidgetSoundbar {
     desc:      Arc<Mutex<WidgetDesc>>,
     enabled:   bool,
+    offset:    (u32, u32),
     uid:       Option<String>,
     stream:    String,
     channel:   u32,
@@ -26,7 +27,7 @@ pub struct WidgetSoundbar {
 impl WidgetSoundbar {
     pub fn new() -> WidgetSoundbar {
         let desc = WidgetDesc {
-            position: Position::new(),
+            position: None,
             typ: Type::Audio,
             domain: Domain::Nihil,
             pid: None,
@@ -34,6 +35,7 @@ impl WidgetSoundbar {
             description: String::from("soundbar widget"),
             layer: 0,
         };
+        let offset   = (0, 0);
         let desc     = Arc::new(Mutex::new(desc));
         let linked   = Arc::new(Mutex::new(Signal::new()));
         let soundbar = gst::ElementFactory::make("soundbar", None).unwrap();
@@ -43,6 +45,7 @@ impl WidgetSoundbar {
         caps.set_property("caps", &gst::Caps::from_str("video/x-raw").unwrap()).unwrap();
         WidgetSoundbar {
             desc,
+            offset,
             enabled:   false,
             uid:       None,
             stream: String::default(), channel: 0, pid: 0,
@@ -51,28 +54,15 @@ impl WidgetSoundbar {
         }
     }
 
-    fn set_layer(&mut self, layer: i32) {
-        let mut desc = self.desc.lock().unwrap();
-        if desc.layer == layer { return };
-        desc.layer = layer;
-        if let Some(ref pad) = self.mixer_pad {
-            pad.set_property("zorder", &((layer+1) as u32)).unwrap();
-        };
-    }
 
-    fn set_position(&mut self, position: Position) {
-        let mut desc = self.desc.lock().unwrap();
-        if desc.position == position { return };
-        desc.position = position;
+
+    fn enable (&mut self) {
+        if self.enabled { return };
+        self.enabled = true;
         if let Some(ref pad) = self.mixer_pad {
-            let cps = format!("video/x-raw,height={},width={}",
-                              position.get_height(), position.get_width());
-            self.caps.set_property("caps", &gst::Caps::from_string(&cps).unwrap()).unwrap();
-            pad.set_property("height", &(position.get_height() as i32)).unwrap();
-            pad.set_property("width", &(position.get_width() as i32)).unwrap();
-            pad.set_property("xpos", &(position.get_x() as i32)).unwrap();
-            pad.set_property("ypos", &(position.get_y() as i32)).unwrap();
+            pad.set_property("alpha", &1.0).unwrap();
         };
+        self.valve.set_property("drop", &false).unwrap();
     }
 }
 
@@ -114,22 +104,37 @@ impl Widget for WidgetSoundbar {
         self.mixer_pad = Some(sink.clone());
     }
 
-    fn set_enable (&mut self, enabled: bool) {
-        if self.enabled == enabled { return };
-        self.enabled = enabled;
+    fn disable (&mut self) {
+        if ! self.enabled { return };
+        let mut desc = self.desc.lock().unwrap();
+        self.enabled = false;
         if let Some(ref pad) = self.mixer_pad {
-            if enabled {
-                pad.set_property("alpha", &1.0).unwrap();
-            } else {
-                pad.set_property("alpha", &0.0).unwrap();
-            }
+            pad.set_property("alpha", &0.0).unwrap();
         };
-        if enabled {
-            self.valve.set_property("drop", &false).unwrap();
-        } else {
-            self.valve.set_property("drop", &true).unwrap();
-        }
+        self.valve.set_property("drop", &true).unwrap();
+        desc.position = None;
     }
+
+    fn render (&mut self, offset: (u32, u32), position: Position, layer: i32) {
+        if ! self.enabled { self.enable (); }
+
+        let mut desc = self.desc.lock().unwrap();
+        let (off_x, off_y) = offset;
+        desc.position = Some(position);
+        desc.layer    = layer;
+        self.offset   = offset;
+
+        if let Some(ref pad) = self.mixer_pad {
+            let cps = format!("video/x-raw,height={},width={}",
+                              position.get_height(), position.get_width());
+            self.caps.set_property("caps", &gst::Caps::from_string(&cps).unwrap()).unwrap();
+            pad.set_property("zorder", &((layer+1) as u32)).unwrap();
+            pad.set_property("height", &(position.get_height() as i32)).unwrap();
+            pad.set_property("width", &(position.get_width() as i32)).unwrap();
+            pad.set_property("xpos", &((position.get_x() + off_x) as i32)).unwrap();
+            pad.set_property("ypos", &((position.get_y() + off_y) as i32)).unwrap();
+        };
+    }   
 
     fn gen_uid(&mut self) -> String {
         if let Some(ref s) = self.uid {
@@ -143,11 +148,6 @@ impl Widget for WidgetSoundbar {
     
     fn get_desc(&self) -> WidgetDesc {
         self.desc.lock().unwrap().clone()
-    }
-
-    fn apply_desc(&mut self, d: &WidgetDesc) {
-        self.set_layer(d.layer);
-        self.set_position(d.position);
     }
 
     fn linked(&self) -> Arc<Mutex<Signal<()>>> {

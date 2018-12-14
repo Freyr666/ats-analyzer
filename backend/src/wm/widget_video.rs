@@ -12,6 +12,7 @@ pub struct WidgetVideo {
     desc:      Arc<Mutex<WidgetDesc>>,
     par:       Arc<Mutex<Option<(u32,u32)>>>,
     enabled:   bool,
+    offset:    (u32, u32),
     uid:       Option<String>,
     stream:    String,
     channel:   u32,
@@ -33,7 +34,7 @@ struct Asp {
 impl WidgetVideo {
     pub fn new() -> WidgetVideo {
         let desc = WidgetDesc {
-            position: Position::new(),
+            position: None,
             typ: Type::Video,
             domain: Domain::Nihil,
             pid: None,
@@ -41,6 +42,7 @@ impl WidgetVideo {
             description: String::from("video widget"),
             layer: 0,
         };
+        let offset = (0, 0);
         let desc   = Arc::new(Mutex::new(desc));
         let par    = Arc::new(Mutex::new(None));
         let linked = Arc::new(Mutex::new(Signal::new()));
@@ -51,6 +53,7 @@ impl WidgetVideo {
         caps.set_property("caps", &gst::Caps::from_str("video/x-raw(ANY),format=RGBA").unwrap()).unwrap();
         WidgetVideo {
             desc, par,
+            offset,
             enabled:   false,
             uid:       None,
             stream: String::default(), channel: 0, pid: 0,
@@ -85,31 +88,13 @@ impl WidgetVideo {
         }
     }
 
-    fn set_layer(&mut self, layer: i32) {
-        let mut desc = self.desc.lock().unwrap();
-        if desc.layer == layer { return };
-        desc.layer = layer;
+    fn enable (&mut self) {
+        if self.enabled { return };
+        self.enabled = true;
         if let Some(ref pad) = self.mixer_pad {
-            pad.set_property("zorder", &((layer+1) as u32)).unwrap();
+            pad.set_property("alpha", &1.0).unwrap();
         };
-    }
-
-    fn set_position(&mut self, position: Position) {
-        let mut desc = self.desc.lock().unwrap();
-        if desc.position == position { return };
-        desc.position = position;
-        let (height, width) : (i32, i32) = if let Some(par) = *self.par.lock().unwrap() {
-            let (par_n, par_d) = par;
-            (position.get_height()  as i32, (position.get_width() * par_d / par_n) as i32)
-        } else {
-            (position.get_height() as i32, position.get_width() as i32)
-        };
-        if let Some(ref pad) = self.mixer_pad {
-            pad.set_property("height", &height).unwrap();
-            pad.set_property("width", &width).unwrap();
-            pad.set_property("xpos", &(position.get_x() as i32)).unwrap();
-            pad.set_property("ypos", &(position.get_y() as i32)).unwrap();
-        };
+        self.valve.set_property("drop", &false).unwrap();
     }
 }
 
@@ -159,22 +144,41 @@ impl Widget for WidgetVideo {
         self.mixer_pad = Some(sink.clone());
     }
 
-    fn set_enable (&mut self, enabled: bool) {
-        if self.enabled == enabled { return };
-        self.enabled = enabled;
+    fn disable (&mut self) {
+        if !self.enabled { return };
+        let mut desc = self.desc.lock().unwrap();
+        self.enabled = false;
         if let Some(ref pad) = self.mixer_pad {
-           if enabled {
-               pad.set_property("alpha", &1.0).unwrap();
-           } else {
-               pad.set_property("alpha", &0.0).unwrap();
-           }
+            pad.set_property("alpha", &0.0).unwrap();
         };
-        // Valve does not work with GL yet
-        if enabled {
-            self.valve.set_property("drop", &false).unwrap();
+        self.valve.set_property("drop", &true).unwrap();
+        desc.position = None;
+    }
+
+    fn render (&mut self, offset: (u32, u32), position: Position, layer: i32) {
+        if ! self.enabled { self.enable (); }
+
+        let mut desc = self.desc.lock().unwrap();
+        let (off_x, off_y) = offset;
+        desc.position = Some(position);
+        desc.layer    = layer;
+        self.offset   = offset;
+
+        // Non-square-pixel-related hack 
+        let (height, width) : (i32, i32) = if let Some(par) = *self.par.lock().unwrap() {
+            let (par_n, par_d) = par;
+            (position.get_height()  as i32, (position.get_width() * par_d / par_n) as i32)
         } else {
-            self.valve.set_property("drop", &true).unwrap();
-        }
+            (position.get_height() as i32, position.get_width() as i32)
+        };
+
+        if let Some(ref pad) = self.mixer_pad {
+            pad.set_property("zorder", &((layer+1) as u32)).unwrap();
+            pad.set_property("height", &height).unwrap();
+            pad.set_property("width", &width).unwrap();
+            pad.set_property("xpos", &((position.get_x() + off_x) as i32)).unwrap();
+            pad.set_property("ypos", &((position.get_y() + off_y) as i32)).unwrap();
+        };
     }
     
     fn gen_uid(&mut self) -> String {
@@ -191,11 +195,6 @@ impl Widget for WidgetVideo {
         self.desc.lock().unwrap().clone()
     }
     
-    fn apply_desc(&mut self, d: &WidgetDesc) {
-        self.set_layer(d.layer);
-        self.set_position(d.position);
-    }
-
     fn linked(&self) -> Arc<Mutex<Signal<()>>> {
         self.linked.clone()
     }

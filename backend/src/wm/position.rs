@@ -26,7 +26,7 @@ impl Position {
             && self.right <= other.right
     }
 
-    pub fn is_overlap (&self, other: &Position) -> bool {
+    pub fn is_overlapped (&self, other: &Position) -> bool {
         self.left < other.right && self.right > other.left &&
             self.top > other.bottom && self.bottom < other.top
     }

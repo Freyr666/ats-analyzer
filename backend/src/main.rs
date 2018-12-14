@@ -5,6 +5,7 @@ use log::{LevelFilter, Log, Record, Metadata};
 
 use backend::initial::{Initial,Error};
 use backend::context::Context;
+use backend::chatterer::Description;
 
 #[cfg(feature = "std")]
 use log::set_boxed_logger;
@@ -51,7 +52,11 @@ fn main() {
     let i    = match Initial::new(args) {
         Ok (i) => i,
         Err (Error::HelpOption) => {
-            println!("{}",Initial::usage());
+            println!("{}", Initial::usage());
+            std::process::exit(-1);
+        },
+        Err (Error::DescribeOption) => {
+            println!("{}", Context::describe());
             std::process::exit(-1);
         },
         Err (Error::WrongOption(s)) => {
@@ -59,6 +64,6 @@ fn main() {
             std::process::exit(-1);
         }
     };
-    let c    = Context::new(&i).unwrap();
+    let mut c = Context::new(&i).unwrap();
     c.run()
 }

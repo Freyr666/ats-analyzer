@@ -5,7 +5,6 @@ use std::sync::mpsc::Sender;
 use metadata::{Channel,Structure};
 use settings::Settings;
 use signals::Signal;
-use chatterer::MsgType;
 use pad::SrcPad;
 use branch::Branch;
 use std::u32;
@@ -25,7 +24,7 @@ impl Root {
                      added: Arc<Mutex<Signal<SrcPad>>>,
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
                      bin: &gst::Pipeline, pad: &gst::Pad,
-                     format: MsgType, sender: &Mutex<Sender<Vec<u8>>>) {
+                     sender: &Mutex<Sender<Vec<u8>>>) {
         let pname = pad.get_name();
         let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
         let name_toks: Vec<&str> = pname.split('_').collect();
@@ -34,13 +33,15 @@ impl Root {
         if name_toks.len() != 3 || caps_toks.is_empty() { return };
         let typ = caps_toks[0];
         let pid = u32::from_str_radix(name_toks[2], 16).unwrap();
-        if let Some (p) = chan.find_pid(pid){
-            if !p.to_be_analyzed { return };
+        
+        /* No corresponding pid in config */
+        if let None = chan.find_pid(pid){
+            return;
         };
 
         debug!("Root::build_branch [{}]", pid);
 
-        if let Some(branch) = Branch::new(stream, chan.number, pid, typ, settings, format, sender.lock().unwrap().clone()) {
+        if let Some(branch) = Branch::new(stream, chan.number, pid, typ, settings, sender.lock().unwrap().clone()) {
             branch.add_to_pipe(&bin);
             branch.plug(&pad);
             match branch {
@@ -56,10 +57,8 @@ impl Root {
         }
     }
     
-    pub fn new(bin: &gst::Pipeline, m: Structure, settings: Option<Settings>,
-               format: MsgType, sender: Sender<Vec<u8>>) -> Option<Root> {
-        if ! m.to_be_analyzed() { return None };
-
+    pub fn new(bin: &gst::Pipeline, m: &Structure, settings: Option<Settings>,
+               sender: Sender<Vec<u8>>) -> Option<Root> {
         debug!("Root::new");
 
         let src             = gst::ElementFactory::make("udpsrc", None).unwrap();
@@ -77,7 +76,7 @@ impl Root {
 
         let id = m.id.clone();
 
-        for chan in m.channels {
+        for chan in &m.channels {
             let demux_name = format!("demux_{}_{}_{}_{}",
                                      id.clone(), chan.number, chan.service_name, chan.provider_name);
 
@@ -99,6 +98,7 @@ impl Root {
             let _ = srcpad.link(&sinkpad);
             
             let stream   = id.clone();
+            let chan     = chan.clone();
             let bin_weak = bin.downgrade();
             let settings_c = settings.clone();
             let branches_weak = branches.clone();
@@ -110,11 +110,12 @@ impl Root {
                 let bin      = bin_weak.clone().upgrade().unwrap();
                 //let branches = branches_weak.upgrade().unwrap();
                 let settings = settings_c.lock().unwrap();
-                Root::build_branch(&mut branches_weak.lock().unwrap(), stream.clone(), &chan,
+                Root::build_branch(&mut branches_weak.lock().unwrap(),
+                                   stream.clone(), &chan,
                                    *settings,
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
                                    &bin, pad,
-                                   format, &sender_c);
+                                   &sender_c);
             });
         };
 
