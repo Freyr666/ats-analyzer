@@ -30,4 +30,11 @@ impl Position {
         self.left < other.right && self.right > other.left &&
             self.top > other.bottom && self.bottom < other.top
     }
+
+    pub fn adjusted_by_left_upper (&self, other: &Position) -> Position {
+        Position { left: self.left + other.left,
+                   right: self.right + other.left,
+                   top: self.top + other.top,
+                   bottom: self.bottom + other.top }
+    }
 }

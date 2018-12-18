@@ -35,7 +35,9 @@ impl WmTemplate {
                 return Err(format!("container {}: is out of screen borders", cname))
             }
             for  &(ref wname, ref w) in &c.widgets {
-                let position = w.position.unwrap_or(c.position);
+                let position = w.position
+                    .map(|w| w.adjusted_by_left_upper(&c.position))
+                    .unwrap_or(c.position);
                 
                 if ! self.widgets.iter().any(|&(ref name,_)| *name == *wname) {
                     return Err(format!("{}: no such widget", wname))
