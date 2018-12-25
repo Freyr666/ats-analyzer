@@ -62,7 +62,7 @@ impl Root {
         debug!("Root::new");
 
         let src             = gst::ElementFactory::make("udpsrc", None).unwrap();
-        let tee             = gst::ElementFactory::make("tee", None).unwrap();
+        let tsparse         = gst::ElementFactory::make("tsparse", None).unwrap();
         let settings        = Arc::new(Mutex::new(settings));
         let branches        = Arc::new(Mutex::new(Vec::new()));
         let pad_added       = Arc::new(Mutex::new(Signal::new()));
@@ -71,8 +71,8 @@ impl Root {
         src.set_property("uri", &m.uri).unwrap();
         src.set_property("buffer-size", &2_147_483_647).unwrap();
 
-        bin.add_many(&[&src, &tee]).unwrap();
-        src.link(&tee).unwrap();
+        bin.add_many(&[&src, &tsparse]).unwrap();
+        src.link(&tsparse).unwrap();
 
         let id = m.id.clone();
 
@@ -88,8 +88,9 @@ impl Root {
             queue.set_property("max-size-buffers", &0u32).unwrap();
             queue.set_property("max-size-bytes", &0u32).unwrap();
 
+            let prog_pad_name = format!("program_{}", chan.number);
             let sinkpad = queue.get_static_pad("sink").unwrap();
-            let srcpad  = tee.get_request_pad("src_%u").unwrap();
+            let srcpad  = tsparse.get_request_pad(&prog_pad_name).unwrap();
 
             bin.add_many(&[&queue,&demux]).unwrap();
             queue.link(&demux).unwrap();
