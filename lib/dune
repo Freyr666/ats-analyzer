@@ -1,0 +1,4 @@
+(library
+  (name      backend)
+  (c_names   backend_stubs)
+  (c_library_flags (-lqoebackend)))

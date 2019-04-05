@@ -126,7 +126,7 @@ impl Description for Context {
 }
 
 impl Context {
-    pub fn new (i : &Initial) -> Result<Context, String> {
+    pub fn new (i : &Initial) -> Result<Box<Context>, String> {
         gst::init().unwrap();
 
         let mainloop = glib::MainLoop::new(None, false);
@@ -168,7 +168,7 @@ impl Context {
         let state = Arc::new (Mutex::new (ContextState { ready, stream_parser, graph }));
         
         info!("Context was created");
-        Ok(Context { state, control, mainloop, notif })
+        Ok(Box::new(Context { state, control, mainloop, notif }))
     }
 
     pub fn run (&mut self) {
