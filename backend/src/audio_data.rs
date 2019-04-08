@@ -6,7 +6,7 @@ use std::slice;
 use std::mem;
 use std::sync::mpsc::Sender;
 use serde::Deserialize;
-use chatterer::notif::Notifier;
+use signals::Signal;
 
 #[derive(Serialize,Deserialize,Debug)]
 #[repr(C)]
@@ -44,34 +44,32 @@ struct Errors<'a> {
     loudness_shortt: &'a Error,
     loudness_moment: &'a Error,
 } 
-
-#[derive(Serialize,Deserialize,Debug)]
+/*
 struct Msg<'a> {
-    #[serde(bound(deserialize = "&'a String: Deserialize<'de>"))]
     stream:     &'a String,
     channel:    u32,
     pid:        u32,
-    #[serde(bound(deserialize = "Errors<'a>: Deserialize<'de>"))]
-    errors:     Errors<'a>
+    data:       &'a [u8]
 }
 
-#[derive(Serialize,Deserialize,Debug)]
 struct MsgStatus<'a> {
-    #[serde(bound(deserialize = "&'a String: Deserialize<'de>"))]
     stream:     &'a String,
     channel:    u32,
     pid:        u32,
     playing:    bool,
 }
-
+*/
 pub struct AudioData {
-    stream:       String,
-    channel:      u32,
-    pid:          u32,
-    notif:        Notifier,
-    notif_status: Notifier,
-    mmap:         *mut gst_sys::GstMapInfo,
+    stream:        String,
+    channel :      u32,
+    pid:           u32,
+    signal:        Signal<[u8]>,
+    signal_status: Signal<bool>,
+    mmap:          *mut gst_sys::GstMapInfo,
 }
+
+pub trait Api {}
+    
 
 unsafe impl Send for AudioData {}
 
@@ -79,14 +77,14 @@ unsafe impl Send for AudioData {}
 
 impl AudioData {
 
-    pub fn new (stream: String, channel: u32, pid: u32, sender: Sender<Vec<u8>>) -> AudioData {
+    pub fn new (stream: String, channel: u32, pid: u32) -> AudioData {
         let mmap :  *mut gst_sys::GstMapInfo;
         unsafe {
             mmap = libc::malloc(mem::size_of::<gst_sys::GstMapInfo>()) as *mut gst_sys::GstMapInfo;
         }
-        let notif = Notifier::new("audio_data", sender.clone());
-        let notif_status = Notifier::new("stream_lost", sender);
-        AudioData { stream, channel, pid, notif, notif_status, mmap }
+        let signal = Signal::new();
+        let signal_status = Signal::new();
+        AudioData { stream, channel, pid, signal, signal_status, mmap }
     }
 
     pub fn send_msg (&self, buf: &gst::Buffer) {
@@ -95,45 +93,27 @@ impl AudioData {
             if gst_sys::gst_buffer_map(buf.as_mut_ptr(), self.mmap, 1) == 0 {
                 panic!("audio_data: buf mmap failure");
             }
-            let pointer: *const Error = (*self.mmap).data as *const Error;
-            let err_buf = slice::from_raw_parts(pointer, Parameter::ParamNumber as usize);
-            let errors = Errors {
-                silence_shortt:  &err_buf[Parameter::SilenceShortt as usize],
-                silence_moment:  &err_buf[Parameter::SilenceMoment as usize],
-                loudness_shortt: &err_buf[Parameter::LoudnessShortt as usize],
-                loudness_moment: &err_buf[Parameter::LoudnessMoment as usize],
-            };
-            let msg = Msg { stream: &self.stream,
-                            channel: self.channel,
-                            pid: self.pid,
-                            errors };
+            let data = slice::from_raw_parts((*self.mmap).data,
+                                             (*self.mmap).size);
 
-            self.notif.talk(&msg);
+            self.signal.emit (&data);
 
             gst_sys::gst_buffer_unmap(buf.as_mut_ptr(), self.mmap);
         }
     }
 
     pub fn send_lost (&self) {
-        let msg = MsgStatus { stream: &self.stream,
-                              channel: self.channel,
-                              pid: self.pid,
-                              playing: false };
-        self.notif_status.talk(&msg);
+        self.signal_status.emit(&false);
     }
 
     pub fn send_found (&self) {
-        let msg = MsgStatus { stream: &self.stream,
-                              channel: self.channel,
-                              pid: self.pid,
-                              playing: true };
-        self.notif_status.talk(&msg);
+        self.signal_status.emit(&true);
     }
 }
 
 impl Drop for AudioData {
     fn drop(&mut self) {
-        unsafe {
+        unsafe { /* TODO check if copyless manipulation is possible */
             libc::free(self.mmap as *mut libc::c_void);
         }
     }

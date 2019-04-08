@@ -59,7 +59,7 @@ pub struct VideoBranch {
 
 impl VideoBranch {
     pub fn new (stream: String, channel: u32, pid: u32,
-                settings: Option<Settings>, sender: Sender<Vec<u8>>) -> VideoBranch {
+                settings: Option<Settings>/*, sender: Sender<Vec<u8>>*/) -> VideoBranch {
         debug!("VideoBranch::create");
         
         let common = CommonBranch::new();
@@ -75,7 +75,7 @@ impl VideoBranch {
         
         VideoBranch::apply_settings(&analyser, settings);
         // TODO consider lock removal
-        let vdata     = Arc::new(Mutex::new(VideoData::new(stream.clone(), channel, pid, sender)));        
+        let vdata     = Arc::new(Mutex::new(VideoData::new(stream.clone(), channel, pid)));
 
         let stream_id     = stream.clone();
         let bin_weak      = bin.downgrade();
@@ -215,7 +215,7 @@ pub struct AudioBranch {
 
 impl AudioBranch {
     pub fn new (stream: String, channel: u32, pid: u32,
-                settings: Option<Settings>, sender: Sender<Vec<u8>>) -> AudioBranch {
+                settings: Option<Settings> /*, sender: Sender<Vec<u8>>*/) -> AudioBranch {
         debug!("AudioBranch::create");
         
         let common = CommonBranch::new();
@@ -231,7 +231,7 @@ impl AudioBranch {
         AudioBranch::apply_settings(&analyser, settings);
 
         // TODO consider lock removal
-        let adata = Arc::new(Mutex::new(AudioData::new(stream.clone(), channel, pid, sender)));
+        let adata = Arc::new(Mutex::new(AudioData::new(stream.clone(), channel, pid)));
 
         let stream_id = stream.clone();
         let bin_weak      = bin.downgrade();
@@ -352,10 +352,10 @@ pub enum Branch {
 impl Branch {
 
     pub fn new(stream: String, channel: u32, pid: u32, typ: &str,
-               settings: Option<Settings>, sender: Sender<Vec<u8>>) -> Option<Branch> {
+               settings: Option<Settings>/*, sender: Sender<Vec<u8>>*/) -> Option<Branch> {
         match typ {
-            "video" => Some(Branch::Video(VideoBranch::new(stream, channel, pid, settings, sender))),
-            "audio" => Some(Branch::Audio(AudioBranch::new(stream, channel, pid, settings, sender))),
+            "video" => Some(Branch::Video(VideoBranch::new(stream, channel, pid, settings/*, sender*/))),
+            "audio" => Some(Branch::Audio(AudioBranch::new(stream, channel, pid, settings/*, sender*/))),
             _       => None
         }
     }

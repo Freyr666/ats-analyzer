@@ -1,7 +1,7 @@
 pub trait Description {
     fn describe () -> String;
 }
-
+/*
 pub mod notif {
     use serde_json;
     use serde::Serialize;
@@ -39,6 +39,7 @@ pub mod notif {
 
     }
 }
+*/
 
 pub mod control {
     use serde_json;

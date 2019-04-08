@@ -1,5 +1,4 @@
 use std::sync::{Arc,Mutex};
-use chatterer::notif::Notifier;
 use signals::Msg;
 use std::sync::mpsc::Sender;
 
@@ -72,7 +71,7 @@ pub struct Settings {
 pub struct Configuration {
     settings:   Arc<Mutex<Option<Settings>>>,
 
-    pub chat:   Arc<Mutex<Notifier>>,
+   /* pub chat:   Arc<Mutex<Notifier>>,*/
     pub update: Arc<Mutex<Msg<Settings,Result<(),String>>>>,
 }
 
@@ -120,11 +119,11 @@ impl Replybox for Configuration {
 */
 
 impl Configuration {
-    pub fn new (sender: Sender<Vec<u8>>) -> Configuration {
+    pub fn new () -> Configuration {
         let update     = Arc::new(Mutex::new(Msg::new()));
         let settings   = Arc::new(Mutex::new(None));
-        let chat       = Arc::new(Mutex::new(Notifier::new("settings", sender )));
+       /* let chat       = Arc::new(Mutex::new(Notifier::new("settings", sender ))); */
 
-        Configuration { chat, update, settings }
+        Configuration { update, settings }
     }
 }

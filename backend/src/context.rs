@@ -11,18 +11,11 @@ use graph::Graph;
 use gst;
 use glib;
 use std::sync::{Arc,Mutex};
-use std::sync::atomic::{AtomicBool,Ordering};
-use std::{thread,time};
 
 use chatterer::Description;
 use chatterer::control::{parse,Name,Method,Content};
-use chatterer::notif::Notifier;
-
-#[derive(Serialize)]
-enum Status { Ready }
 
 pub struct ContextState {
-    ready:         Arc<AtomicBool>,
     stream_parser: StreamParser,
     graph:         Graph,
     
@@ -32,28 +25,9 @@ pub struct Context {
     state:       Arc<Mutex<ContextState>>,
     control:     Control,
     mainloop:    glib::MainLoop,
-    notif:       Notifier,
 }
 
 impl ContextState {
-
-    fn respond_readyness (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        match meth.method {
-            "accept" => {
-                if !self.ready.load(Ordering::Relaxed) {
-                    self.ready.store(true, Ordering::Relaxed);
-                    meth.respond_ok ("established")
-                        .serialize ()
-                } else {
-                    meth.respond_err::<&str> ("already connected")
-                        .serialize ()
-                }
-            },
-            _ => meth.respond_err::<()> ("not found")
-                     .serialize ()
-        }
-    }
 
     fn respond_stream_parser (&self, msg: &Vec<u8>) -> Vec<u8> {
         let meth : Method = parse(&msg);
@@ -110,7 +84,6 @@ impl ContextState {
     pub fn dispatch (&mut self, msg: &Vec<u8>) -> Vec<u8> {
         let addr : Name = parse(&msg);
         match addr.name {
-            "connection"    => self.respond_readyness (&msg),
             "stream_parser" => self.respond_stream_parser (&msg),
             "graph"         => self.respond_graph (&msg),
             "wm"            => self.respond_wm (&msg),
@@ -132,8 +105,6 @@ impl Context {
         let mainloop = glib::MainLoop::new(None, false);
         let control  = Control::new().unwrap();
         
-        let notif       = Notifier::new("backend", control.sender.clone());
-        
         let mut probes  = Vec::new();
 
         for sid in 0..i.uris.len() {
@@ -141,7 +112,7 @@ impl Context {
         };
 
         //let     config        = Configuration::new(i.msg_type, control.sender.clone());
-        let mut stream_parser = StreamParser::new(control.sender.clone());
+        let mut stream_parser = StreamParser::new(/*control.sender.clone()*/);
         let     graph         = Graph::new(control.sender.clone()).unwrap();
         
         for probe in &mut probes {
@@ -163,26 +134,18 @@ impl Context {
         //graph.connect_destructive(&mut stream_parser.update.lock().unwrap());
         //graph.connect_settings(&mut config.update.lock().unwrap());
 
-        let ready = Arc::new(AtomicBool::new(false));
-
-        let state = Arc::new (Mutex::new (ContextState { ready, stream_parser, graph }));
+        let state = Arc::new (Mutex::new (ContextState { stream_parser, graph }));
         
         info!("Context was created");
-        Ok(Box::new(Context { state, control, mainloop, notif }))
+        Ok(Box::new(Context { state, control, mainloop }))
     }
 
     pub fn run (&mut self) {
-        let ready   = self.state.lock().unwrap().ready.clone();
         let context_state = self.state.clone();
 
         self.control.connect(move |s| {
             context_state.lock().unwrap().dispatch(&s)
         });
-        
-        while !ready.load(Ordering::Relaxed) {
-            self.notif.talk(&Status::Ready);
-            thread::sleep(time::Duration::from_millis(100));
-        }
         
         self.mainloop.run();
     }

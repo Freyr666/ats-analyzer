@@ -5,8 +5,9 @@ use gst::prelude::*;
 use std::slice;
 use std::mem;
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
 use serde::Deserialize;
-use chatterer::notif::Notifier;
+use signals::Signal;
 
 #[derive(Serialize,Deserialize,Debug)]
 #[repr(C)]
@@ -47,32 +48,13 @@ struct Errors<'a> {
     blocky: &'a Error,
 } 
 
-#[derive(Serialize,Deserialize,Debug)]
-struct Msg<'a> {
-    #[serde(bound(deserialize = "&'a String: Deserialize<'de>"))]
-    stream:     &'a String,
-    channel:    u32,
-    pid:        u32,
-    #[serde(bound(deserialize = "Errors<'a>: Deserialize<'de>"))]
-    errors:     Errors<'a>
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-struct MsgStatus<'a> {
-    #[serde(bound(deserialize = "&'a String: Deserialize<'de>"))]
-    stream:     &'a String,
-    channel:    u32,
-    pid:        u32,
-    playing:    bool,
-}
-
 pub struct VideoData {
-    stream:       String,
-    channel:      u32,
-    pid:          u32,
-    notif:        Notifier,
-    notif_status: Notifier,
-    mmap:         *mut gst_sys::GstMapInfo,
+    stream:        Arc<String>,
+    channel:       u32,
+    pid:           u32,
+    signal:        Signal<[u8]>,
+    signal_status: Signal<bool>,
+    mmap:          *mut gst_sys::GstMapInfo,
 }
 
 unsafe impl Send for VideoData {}
@@ -81,14 +63,14 @@ unsafe impl Send for VideoData {}
 
 impl VideoData {
 
-    pub fn new (stream: String, channel: u32, pid: u32, sender: Sender<Vec<u8>>) -> VideoData {
+    pub fn new (stream: String, channel: u32, pid: u32) -> VideoData {
         let mmap :  *mut gst_sys::GstMapInfo;
         unsafe {
             mmap = libc::malloc(mem::size_of::<gst_sys::GstMapInfo>()) as *mut gst_sys::GstMapInfo;
         }
-        let notif = Notifier::new("video_data", sender.clone());
-        let notif_status = Notifier::new("stream_lost", sender);
-        VideoData { stream, channel, pid, notif, notif_status, mmap }
+        let signal = Signal::new();
+        let signal_status = Signal::new();
+        VideoData { stream: Arc::new(stream), channel, pid, signal, signal_status, mmap }
     }
 
     pub fn send_msg (&self, ebuf: &gst::Buffer) {
@@ -97,42 +79,21 @@ impl VideoData {
             if gst_sys::gst_buffer_map(ebuf.as_mut_ptr(), self.mmap, 1) == 0 {
                 panic!("video_data: ebuf mmap failure");
             }
-            let pointer: *const Error = (*self.mmap).data as *const Error;
-            let err_buf = slice::from_raw_parts(pointer, Parameter::ParamNumber as usize);
-
-            let errors: Errors = Errors {
-                black:  &err_buf[Parameter::Black as usize],
-                luma:   &err_buf[Parameter::Luma as usize],
-                freeze: &err_buf[Parameter::Freeze as usize],
-                diff:   &err_buf[Parameter::Diff as usize],
-                blocky: &err_buf[Parameter::Blocky as usize],
-            };
-
-            let msg = Msg { stream: &self.stream,
-                            channel: self.channel,
-                            pid: self.pid,
-                            errors };
-
-            self.notif.talk(&msg);
+            let data = slice::from_raw_parts((*self.mmap).data,
+                                             (*self.mmap).size);
+            
+            self.signal.emit(data);
 
             gst_sys::gst_buffer_unmap(ebuf.as_mut_ptr(), self.mmap);
         }
     }
 
     pub fn send_lost (&self) {
-        let msg = MsgStatus { stream: &self.stream,
-                              channel: self.channel,
-                              pid: self.pid,
-                              playing: false };
-        self.notif_status.talk(&msg);
+        self.signal_status.emit(&false);
     }
 
     pub fn send_found (&self) {
-        let msg = MsgStatus { stream: &self.stream,
-                              channel: self.channel,
-                              pid: self.pid,
-                              playing: true };
-        self.notif_status.talk(&msg);
+        self.signal_status.emit(&true);
     }
 
 }

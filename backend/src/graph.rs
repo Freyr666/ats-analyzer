@@ -2,7 +2,7 @@ use gst::prelude::*;
 use gst;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
-use chatterer::notif::Notifier;
+use signals::Signal;
 use root::Root;
 use wm::Wm;
 use wm::template::{WmTemplate,WmTemplatePartial};
@@ -26,7 +26,7 @@ pub struct GraphState {
 }
 
 pub struct Graph {
-    pub chat:    Arc<Mutex<Notifier>>,
+    pub signal:  Arc<Mutex<Signal<Vec<u8>>>>,
 
     state:       Arc<Mutex<GraphState>>,
 }
@@ -36,7 +36,7 @@ impl GraphState {
         let settings  = None;
         let structure = Vec::new();
         let pipeline  = gst::Pipeline::new(None);
-        let wm        = Arc::new(Mutex::new(Wm::new(sender.clone())));
+        let wm        = Arc::new(Mutex::new(Wm::new()));
         //let mux       = Arc::new(Mutex::new(Mux::new(sender.clone())));
         let vrend     = None;
         let arend     = None;
@@ -131,9 +131,9 @@ impl GraphState {
 impl Graph {
     
     pub fn new (sender: Sender<Vec<u8>>) -> Result<Graph,String> {
-        let chat = Arc::new(Mutex::new( Notifier::new("applied_streams", sender.clone() )));
-        let state = Arc::new(Mutex::new(GraphState::new(sender.clone()) ));
-        Ok(Graph { chat, state } )
+        let signal = Arc::new(Mutex::new( Signal::new() ));
+        let state  = Arc::new(Mutex::new(GraphState::new(sender.clone()) ));
+        Ok(Graph { signal, state } )
     }
 
     pub fn get_wm (&self) -> Arc<Mutex<Wm>> {
@@ -146,7 +146,7 @@ impl Graph {
 
     pub fn set_structure (&self, s: Vec<Structure>) -> Result<(),String> {
         // TODO talk only when applied successfully
-        self.chat.lock().unwrap().talk(&s);
+        self.signal.lock().unwrap().emit(&serde_json::to_vec(&s).unwrap());
         self.state.lock().unwrap().apply_streams(s)
         //if res.is_ok() {
         //    self.chat.lock().unwrap().talk()
