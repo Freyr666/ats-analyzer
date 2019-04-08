@@ -8,61 +8,29 @@ use std::sync::mpsc::Sender;
 use serde::Deserialize;
 use signals::Signal;
 
-#[derive(Serialize,Deserialize,Debug)]
-#[repr(C)]
-struct Param {
-    min: f64,
-    max: f64,
-    avg: f64,
-}
+/* TODO check validity
+ * Data representation:
+ * { silence_shortt : error;
+ *   silence_moment : error;
+ *   loudness_short : error;
+ *   loudness_moment : error;
+ * }
+ * where error =
+ * { counter : u32;
+ *   size : u32;
+ *   params : params;
+ *   timestamp: i64;
+ *   peak_flag: bool;
+ *   cont_flag: bool;
+ * }
+ * and params =
+ * { min: f64;
+ *   max: f64;
+ *   avg: f64;
+ * }
+ */
 
-#[repr(C)]
-enum Parameter {
-    SilenceShortt,
-    LoudnessShortt,
-    SilenceMoment,
-    LoudnessMoment,
-    ParamNumber,
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-#[repr(C)]
-struct Error {
-    counter:   i32,
-    size:      i32,
-    params:    Param,
-    timestamp: i64,
-    peak_flag: bool,
-    cont_flag: bool,
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-struct Errors<'a> {
-    #[serde(bound(deserialize = "&'a Error: Deserialize<'de>"))]
-    silence_shortt:  &'a Error,
-    silence_moment:  &'a Error,
-    loudness_shortt: &'a Error,
-    loudness_moment: &'a Error,
-} 
-/*
-struct Msg<'a> {
-    stream:     &'a String,
-    channel:    u32,
-    pid:        u32,
-    data:       &'a [u8]
-}
-
-struct MsgStatus<'a> {
-    stream:     &'a String,
-    channel:    u32,
-    pid:        u32,
-    playing:    bool,
-}
-*/
 pub struct AudioData {
-    stream:        String,
-    channel :      u32,
-    pid:           u32,
     signal:        Signal<[u8]>,
     signal_status: Signal<bool>,
     mmap:          *mut gst_sys::GstMapInfo,
@@ -77,14 +45,14 @@ unsafe impl Send for AudioData {}
 
 impl AudioData {
 
-    pub fn new (stream: String, channel: u32, pid: u32) -> AudioData {
+    pub fn new () -> AudioData {
         let mmap :  *mut gst_sys::GstMapInfo;
         unsafe {
             mmap = libc::malloc(mem::size_of::<gst_sys::GstMapInfo>()) as *mut gst_sys::GstMapInfo;
         }
         let signal = Signal::new();
         let signal_status = Signal::new();
-        AudioData { stream, channel, pid, signal, signal_status, mmap }
+        AudioData { signal, signal_status, mmap }
     }
 
     pub fn send_msg (&self, buf: &gst::Buffer) {

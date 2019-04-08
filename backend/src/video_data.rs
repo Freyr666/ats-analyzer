@@ -9,49 +9,30 @@ use std::sync::Arc;
 use serde::Deserialize;
 use signals::Signal;
 
-#[derive(Serialize,Deserialize,Debug)]
-#[repr(C)]
-struct Param {
-    min: f32,
-    max: f32,
-    avg: f32,
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-#[repr(C)]
-struct Error {
-    counter:   u32,
-    size:      u32,
-    params:    Param,
-    timestamp: i64,
-    peak_flag: bool,
-    cont_flag: bool,
-}
-
-#[repr(C)]
-enum Parameter {
-    Black,
-    Luma,
-    Freeze,
-    Diff,
-    Blocky,
-    ParamNumber,
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-struct Errors<'a> {
-    #[serde(bound(deserialize = "&'a Error: Deserialize<'de>"))]
-    black:  &'a Error,
-    luma:   &'a Error,
-    freeze: &'a Error,
-    diff:   &'a Error,
-    blocky: &'a Error,
-} 
+/*
+ * Data representation:
+ * { black : error;
+ *   luma  : error;
+ *   freeze : error;
+ *   diff : error;
+ *   blocky : error;
+ * }
+ * where error =
+ * { counter : u32;
+ *   size : u32;
+ *   params : params;
+ *   timestamp: i64;
+ *   peak_flag: bool;
+ *   cont_flag: bool;
+ * }
+ * and params =
+ * { min: f32;
+ *   max: f32;
+ *   avg: f32;
+ * }
+ */
 
 pub struct VideoData {
-    stream:        Arc<String>,
-    channel:       u32,
-    pid:           u32,
     signal:        Signal<[u8]>,
     signal_status: Signal<bool>,
     mmap:          *mut gst_sys::GstMapInfo,
@@ -63,14 +44,14 @@ unsafe impl Send for VideoData {}
 
 impl VideoData {
 
-    pub fn new (stream: String, channel: u32, pid: u32) -> VideoData {
+    pub fn new () -> VideoData {
         let mmap :  *mut gst_sys::GstMapInfo;
         unsafe {
             mmap = libc::malloc(mem::size_of::<gst_sys::GstMapInfo>()) as *mut gst_sys::GstMapInfo;
         }
         let signal = Signal::new();
         let signal_status = Signal::new();
-        VideoData { stream: Arc::new(stream), channel, pid, signal, signal_status, mmap }
+        VideoData { signal, signal_status, mmap }
     }
 
     pub fn send_msg (&self, ebuf: &gst::Buffer) {
