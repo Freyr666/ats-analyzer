@@ -12,7 +12,7 @@ use settings::Settings;
 use renderer::{VideoR,AudioR,Renderer};
 
 pub struct GraphState {
-    sender:      Sender<Vec<u8>>,
+    //sender:      Sender<Vec<u8>>,
     settings:    Option<Settings>,
     pub structure: Vec<Structure>,
 
@@ -32,7 +32,7 @@ pub struct Graph {
 }
 
 impl GraphState {
-    pub fn new (sender: Sender<Vec<u8>>) -> GraphState {
+    pub fn new () -> GraphState {
         let settings  = None;
         let structure = Vec::new();
         let pipeline  = gst::Pipeline::new(None);
@@ -44,7 +44,7 @@ impl GraphState {
         let roots     = Vec::new();
         wm.lock().unwrap().init(&pipeline);
         //mux.lock().unwrap().init(&pipeline);
-        GraphState { settings, structure, pipeline, wm, /*mux,*/ bus, roots, arend, vrend, sender }
+        GraphState { settings, structure, pipeline, wm, /*mux,*/ bus, roots, arend, vrend }
     }
 
     pub fn reset (&mut self) {
@@ -96,8 +96,7 @@ impl GraphState {
 
         for stream in &s {
             if let Some(root) = Root::new(&self.pipeline, &stream,
-                                          self.settings,
-                                          self.sender.clone()) {
+                                          self.settings) {
                 //let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
                 //let mux    = self.mux.clone();
@@ -130,9 +129,9 @@ impl GraphState {
 
 impl Graph {
     
-    pub fn new (sender: Sender<Vec<u8>>) -> Result<Graph,String> {
+    pub fn new () -> Result<Graph,String> {
         let signal = Arc::new(Mutex::new( Signal::new() ));
-        let state  = Arc::new(Mutex::new(GraphState::new(sender.clone()) ));
+        let state  = Arc::new(Mutex::new(GraphState::new() ));
         Ok(Graph { signal, state } )
     }
 

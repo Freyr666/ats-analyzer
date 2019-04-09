@@ -75,7 +75,7 @@ impl VideoBranch {
         
         VideoBranch::apply_settings(&analyser, settings);
         // TODO consider lock removal
-        let vdata     = Arc::new(Mutex::new(VideoData::new(stream.clone(), channel, pid)));
+        let vdata     = Arc::new(Mutex::new(VideoData::new()));//stream.clone(), channel, pid)));
 
         let stream_id     = stream.clone();
         let bin_weak      = bin.downgrade();
@@ -231,7 +231,7 @@ impl AudioBranch {
         AudioBranch::apply_settings(&analyser, settings);
 
         // TODO consider lock removal
-        let adata = Arc::new(Mutex::new(AudioData::new(stream.clone(), channel, pid)));
+        let adata = Arc::new(Mutex::new(AudioData::new()));//stream.clone(), channel, pid)));
 
         let stream_id = stream.clone();
         let bin_weak      = bin.downgrade();

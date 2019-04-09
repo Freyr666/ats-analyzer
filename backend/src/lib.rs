@@ -28,7 +28,6 @@ extern crate gstreamer_mpegts_sys as gst_mpegts_sys;
 extern crate zmq;
 
 pub mod signals;
-pub mod chatterer;
 pub mod initial;
 pub mod settings;
 pub mod metadata;
@@ -78,7 +77,7 @@ impl log::Log for Logger {
 }
 
 #[no_mangle]
-pub extern fn qoe_backend_init_logger () {
+pub extern "C" fn qoe_backend_init_logger () {
     let log_level_filter = match std::env::var("ATS3_LOG_LEVEL") {
         Err (_) => LevelFilter::Off,
         Ok(ref s) => match s.as_str() {
@@ -95,18 +94,57 @@ pub extern fn qoe_backend_init_logger () {
 }
 
 #[no_mangle]
-pub extern fn qoe_backend_create (err: *mut *const c_char) -> Option<(*mut context::Context)> {
-    let initial = initial::Initial { uris: Vec::new() };
+pub extern "C" fn qoe_backend_create (err: *mut *const c_char) -> *const context::Context {
+    let initial = initial::Initial { uris: vec![(String::from("test"),
+                                                 String::from("udp://224.1.2.2:1234"))] };
     match context::Context::new (&initial) {
         Ok (v) => {
-            Some (Box::into_raw(v))
+            println!("Good context");
+            Box::into_raw(v)
         },
-        Err (e) => {
-            unsafe { *err = CString::new (e)
+        Err (_e) => {
+         /*   unsafe { *err = CString::new (e)
                       .expect("CString::new failed")
                       .into_raw();
-            }
-            None
+            }*/
+            std::ptr::null () as *const context::Context
         }
     }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn qoe_backend_run (c: *mut context::Context) {
+    let mut cont = Box::from_raw(c);
+    cont.run ();
+    std::mem::forget(cont);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn qoe_backend_quit (c: *mut context::Context) {
+    let mut cont = Box::from_raw(c);
+    cont.quit ();
+    std::mem::forget(cont);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn qoe_backend_free (c: *mut context::Context) {
+    let _cont = Box::from_raw(c);
+    //std::mem::drop(cont);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn qoe_backend_get (c: *mut context::Context)
+                                          -> *mut c_char {
+    let cont = Box::from_raw(c);
+    println!("Trying to get streams");
+    let res = cont.state.lock().unwrap()
+        .stream_parser_get_structure();
+    println!("Got streams");
+    std::mem::forget (cont);
+    let cstr = CString::new(res).unwrap();
+    let size = std::mem::size_of_val(&cstr);
+    let buf = libc::malloc(size);
+    println!("Size of buffer: {}", size);
+    libc::memcpy(buf, cstr.as_ptr() as *const libc::c_void, size);
+    buf as *mut c_char
 }

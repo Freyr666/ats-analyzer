@@ -8,11 +8,19 @@
 #include <caml/callback.h>
 #include <caml/threads.h>
 
-typedef void* Context_ptr;
+typedef void Context;
 
 extern void qoe_backend_init_logger (void);
 
-extern Context_ptr qoe_backend_create (char** error);
+extern Context* qoe_backend_create (char** error);
+
+extern void qoe_backend_run (Context*);
+
+extern void qoe_backend_quit (Context*);
+
+extern void qoe_backend_free (Context*);
+
+extern char* qoe_backend_get (Context*);
 
 static struct custom_operations context_ops = {
   "context",
@@ -24,7 +32,7 @@ static struct custom_operations context_ops = {
   custom_compare_ext_default
 };
 
-#define Context_val(v) (*((Context_ptr *) Data_custom_val(v)))
+#define Context_val(v) (*((Context **) Data_custom_val(v)))
 
 CAMLprim value
 caml_qoe_backend_init_logger (value unit) {
@@ -40,8 +48,8 @@ caml_qoe_backend_create (value unit) {
         CAMLparam0 ();
         CAMLlocal1 (res);
 
-        Context_ptr context = NULL;
-        char* error = NULL;
+        Context *context = NULL;
+        char *error = NULL;
 
         caml_release_runtime_system ();
         
@@ -49,6 +57,8 @@ caml_qoe_backend_create (value unit) {
 
         caml_acquire_runtime_system ();
 
+        printf ("Context received at %p\n", context);
+        
         if (context == NULL) {
 
                 if (error) {
@@ -62,10 +72,82 @@ caml_qoe_backend_create (value unit) {
                         caml_failwith ("Unknown error");
                         
                 }
-
-                res = alloc_custom (&context_ops, sizeof(Context_ptr), 0, 1);
                 
         }
 
+        res = alloc_custom (&context_ops, sizeof(Context*), 0, 1);
+        Context_val(res) = context;
+
+        CAMLreturn(res);
+}
+
+CAMLprim value
+caml_qoe_backend_run (value backend) {
+        CAMLparam1 (backend);
+        //CAMLlocal0 ();
+
+        Context * back = Context_val (backend);
+
+        printf ("Context received at %p\n", back);
+
+        caml_release_runtime_system ();
+
+        qoe_backend_run (back);
+
+        caml_acquire_runtime_system ();
+        
+        CAMLreturn (Val_unit);
+}
+
+CAMLprim value
+caml_qoe_backend_quit (value backend) {
+        CAMLparam1 (backend);
+        //CAMLlocal0 ();
+
+        Context * back = Context_val (backend);
+
+        caml_release_runtime_system ();
+
+        qoe_backend_quit (back);
+
+        caml_acquire_runtime_system ();
+        
+        CAMLreturn(Val_unit);
+}
+
+CAMLprim value
+caml_qoe_backend_free (value backend) {
+        CAMLparam1 (backend);
+        //CAMLlocal0 ();
+        // TODO properly deallocate
+        Context * back = Context_val (backend);
+
+        caml_release_runtime_system ();
+
+        qoe_backend_free (back);
+
+        caml_acquire_runtime_system ();
+        
+        CAMLreturn(Val_unit);
+}
+
+CAMLprim value
+caml_qoe_backend_get_streams (value backend) {
+        CAMLparam1 (backend);
+        CAMLlocal1 (res);
+        // TODO properly deallocate
+        Context * back = Context_val (backend);
+        char* streams;
+
+        printf ("Context received at %p\n", back);
+        
+        caml_release_runtime_system ();
+
+        streams = qoe_backend_get (back);
+
+        caml_acquire_runtime_system ();
+        // TODO reduce allocations
+        res = caml_copy_string(streams);
+        
         CAMLreturn(res);
 }

@@ -57,8 +57,7 @@ impl Root {
         }
     }
     
-    pub fn new(bin: &gst::Pipeline, m: &Structure, settings: Option<Settings>,
-               sender: Sender<Vec<u8>>) -> Option<Root> {
+    pub fn new(bin: &gst::Pipeline, m: &Structure, settings: Option<Settings>) -> Option<Root> {
         debug!("Root::new");
 
         let src             = gst::ElementFactory::make("udpsrc", None).unwrap();

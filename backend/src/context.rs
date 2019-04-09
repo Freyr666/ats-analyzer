@@ -3,7 +3,7 @@
 use initial::Initial;
 //use settings::Configuration;
 use probe::Probe;
-use control::Control;
+//use control::Control;
 use streams::StreamParser;
 use metadata::Structure;
 use wm::template::WmTemplatePartial;
@@ -12,9 +12,6 @@ use gst;
 use glib;
 use std::sync::{Arc,Mutex};
 
-use chatterer::Description;
-use chatterer::control::{parse,Name,Method,Content};
-
 pub struct ContextState {
     stream_parser: StreamParser,
     graph:         Graph,
@@ -22,80 +19,47 @@ pub struct ContextState {
 }
 
 pub struct Context {
-    state:       Arc<Mutex<ContextState>>,
-    control:     Control,
+    pub state:       Arc<Mutex<ContextState>>,
+    //control:     Control,
     mainloop:    glib::MainLoop,
 }
 
 impl ContextState {
 
-    fn respond_stream_parser (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        match meth.method {
-            "get" => {
-                let s : &Vec<_> = &self.stream_parser.structures.lock().unwrap();
-                meth.respond_ok (&s).serialize ()
-            },
-            _ => meth.respond_err::<()> ("not found")
-                     .serialize ()
-        }
+    pub fn stream_parser_get_structure (&self) -> Vec<u8> {
+        println!("Getting streams");
+        let s : &Vec<_> = &self.stream_parser.structures.lock().unwrap();
+        serde_json::to_vec(&s).unwrap()
     }
-    
-    fn respond_graph (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        match meth.method {
-            "get_structure" => {
-                let s = self.graph.get_structure();
-                meth.respond_ok (&s).serialize ()
-            },
-            "apply_structure" => {
-                let cont : Content<Vec<Structure>> = parse (&msg);
-                meth.respond (self.graph.set_structure(cont.content))
-                    .serialize ()
-            },
-            _ => meth.respond_err::<()> ("not found")
-                     .serialize ()
+
+    pub fn graph_get_structure (&self) -> Vec<u8> {
+        let s = self.graph.get_structure();
+        serde_json::to_vec(&s).unwrap()
+    }
+
+    pub fn graph_apply_structure (&self, v: &Vec<u8>) -> Result<(),String> {
+        if let Ok (structs) = serde_json::from_slice::<Vec<Structure>>(&v) {
+            self.graph.set_structure(structs)
+        } else {
+            Err (String::from("msg format err"))
         }
     }
 
-    fn respond_wm (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        match meth.method {
-            "get_layout" => {
-                let templ = self.graph.get_wm_layout ();
-                meth.respond (templ).serialize ()
-            },
-            "apply_layout" => {
-                let templ : Content<WmTemplatePartial> = parse(&msg);
-                let resp = self.graph.set_wm_layout (templ.content);
-                meth.respond (resp).serialize ()
-            },
-            _ => meth.respond_err::<()> ("not found")
-                     .serialize ()
+    pub fn wm_get_layout (&self) -> Result<Vec<u8>,String> {
+        match self.graph.get_wm_layout () {
+            Ok(s)  => Ok(serde_json::to_vec(&s).unwrap()),
+            Err(e) => Err(e),
         }
     }
-    
-    fn respond_not_found (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        meth.respond_err::<()> ("not found")
-            .serialize ()
-    }
-    
-    pub fn dispatch (&mut self, msg: &Vec<u8>) -> Vec<u8> {
-        let addr : Name = parse(&msg);
-        match addr.name {
-            "stream_parser" => self.respond_stream_parser (&msg),
-            "graph"         => self.respond_graph (&msg),
-            "wm"            => self.respond_wm (&msg),
-            _ => self.respond_not_found (&msg),
-        }
-    }
-}
 
-impl Description for Context {
-    fn describe () -> String {
-        String::from("")
+    pub fn wm_apply_layout (&self, v: &Vec<u8>) -> Result<(),String> {
+        if let Ok(templ) = serde_json::from_slice::<WmTemplatePartial>(&v) {
+            self.graph.set_wm_layout(templ)
+        } else {
+            Err (String::from("msg format err"))
+        }
     }
+    
 }
 
 impl Context {
@@ -103,7 +67,7 @@ impl Context {
         gst::init().unwrap();
 
         let mainloop = glib::MainLoop::new(None, false);
-        let control  = Control::new().unwrap();
+        //let control  = Control::new().unwrap();
         
         let mut probes  = Vec::new();
 
@@ -113,7 +77,7 @@ impl Context {
 
         //let     config        = Configuration::new(i.msg_type, control.sender.clone());
         let mut stream_parser = StreamParser::new(/*control.sender.clone()*/);
-        let     graph         = Graph::new(control.sender.clone()).unwrap();
+        let     graph         = Graph::new().unwrap();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
@@ -137,16 +101,21 @@ impl Context {
         let state = Arc::new (Mutex::new (ContextState { stream_parser, graph }));
         
         info!("Context was created");
-        Ok(Box::new(Context { state, control, mainloop }))
+        Ok(Box::new(Context { state, mainloop }))
     }
 
     pub fn run (&mut self) {
-        let context_state = self.state.clone();
-
+    //    let context_state = self.state.clone();
+/*
         self.control.connect(move |s| {
             context_state.lock().unwrap().dispatch(&s)
         });
-        
+  */      
         self.mainloop.run();
     }
+
+    pub fn quit (&mut self) {
+        self.mainloop.quit()
+    }
+    
 }
