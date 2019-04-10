@@ -28,6 +28,7 @@ extern crate gstreamer_mpegts_sys as gst_mpegts_sys;
 extern crate zmq;
 
 pub mod signals;
+pub mod channels;
 pub mod initial;
 pub mod settings;
 pub mod metadata;
@@ -117,9 +118,12 @@ pub struct init_val {
     arg1: *const c_char,
 }
 
+type Vecu8CB = extern "C" fn(*mut c_char);
+
 #[no_mangle]
 pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
                                              vals_num: u32,
+                                             streams_cb: Vecu8CB,
                                              err: *mut *const c_char)
                                              -> *const context::Context {
 
@@ -133,7 +137,11 @@ pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
     }
 
     let context = initial::validate(&vec)
-        .and_then (|v| context::Context::new (&v));
+        .and_then (|v| {
+            context::Context::new (&v, move |data| {
+                streams_cb(string_to_chars(data));
+            })
+        });
     
     match context {
         Ok (v) => {

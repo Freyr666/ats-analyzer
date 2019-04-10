@@ -23,6 +23,7 @@ void qoe_backend_init_logger (void);
  */
 Context* qoe_backend_create (struct init_val * vals,
                              uint32_t vals_n,
+                             void(*f)(char*),
                              char **error);
 
 /**

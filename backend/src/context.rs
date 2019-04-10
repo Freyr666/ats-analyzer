@@ -62,7 +62,11 @@ impl ContextState {
 }
 
 impl Context {
-    pub fn new (uris : &Vec<(String,String)>) -> Result<Box<Context>, String> {
+    pub fn new<Fstr> (uris : &Vec<(String,String)>,
+                streams_cb: Fstr)
+                -> Result<Box<Context>, String>
+    where Fstr: Fn(&Vec<u8>) + Send + Sync + 'static {
+        
         gst::init().unwrap();
 
         let mainloop = glib::MainLoop::new(None, false);
@@ -82,6 +86,8 @@ impl Context {
             probe.set_state(gst::State::Playing);
             stream_parser.connect_probe(probe);
         }
+
+        stream_parser.connect_streams_changed (streams_cb);
         
         //let wm = graph.get_wm();
 

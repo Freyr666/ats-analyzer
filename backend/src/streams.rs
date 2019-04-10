@@ -10,11 +10,6 @@ pub struct StreamParser {
     signal: Arc<Mutex<Signal<Vec<u8>>>>,
 }
 
-pub trait Api {
-    fn connect_streams_changed<F> (&mut self, f: F)
-    where F: Fn(&Vec<u8>) + Send + Sync + 'static;
-}
-
 impl StreamParser {
     pub fn new () -> StreamParser {
         let signal     = Arc::new(Mutex::new( Signal::new() ));
@@ -44,10 +39,8 @@ impl StreamParser {
                                    s);
         } );
     }
-}
 
-impl Api for StreamParser {
-    fn connect_streams_changed<F> (&mut self, f: F)
+    pub fn connect_streams_changed<F> (&mut self, f: F)
     where F: Fn(&Vec<u8>) + Send + Sync + 'static {
         self.signal.lock().unwrap().connect(f);
     }
