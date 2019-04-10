@@ -1,6 +1,5 @@
 //use chatterer::ChattererProxy;
 //use chatterer::Logger;
-use initial::Initial;
 //use settings::Configuration;
 use probe::Probe;
 //use control::Control;
@@ -37,7 +36,7 @@ impl ContextState {
         serde_json::to_vec(&s).unwrap()
     }
 
-    pub fn graph_apply_structure (&self, v: &Vec<u8>) -> Result<(),String> {
+    pub fn graph_apply_structure (&self, v: &[u8]) -> Result<(),String> {
         if let Ok (structs) = serde_json::from_slice::<Vec<Structure>>(&v) {
             self.graph.set_structure(structs)
         } else {
@@ -52,7 +51,7 @@ impl ContextState {
         }
     }
 
-    pub fn wm_apply_layout (&self, v: &Vec<u8>) -> Result<(),String> {
+    pub fn wm_apply_layout (&self, v: &[u8]) -> Result<(),String> {
         if let Ok(templ) = serde_json::from_slice::<WmTemplatePartial>(&v) {
             self.graph.set_wm_layout(templ)
         } else {
@@ -63,7 +62,7 @@ impl ContextState {
 }
 
 impl Context {
-    pub fn new (i : &Initial) -> Result<Box<Context>, String> {
+    pub fn new (uris : &Vec<(String,String)>) -> Result<Box<Context>, String> {
         gst::init().unwrap();
 
         let mainloop = glib::MainLoop::new(None, false);
@@ -71,8 +70,8 @@ impl Context {
         
         let mut probes  = Vec::new();
 
-        for sid in 0..i.uris.len() {
-            probes.push(Probe::new(&i.uris[sid]));
+        for sid in 0..uris.len() {
+            probes.push(Probe::new(&uris[sid]));
         };
 
         //let     config        = Configuration::new(i.msg_type, control.sender.clone());

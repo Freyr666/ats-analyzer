@@ -76,6 +76,24 @@ impl log::Log for Logger {
     fn flush(&self) {}
 }
 
+unsafe fn string_to_chars (s: &[u8]) -> *mut c_char {
+    let size = s.len();    
+    //let cstr = CString::new(res).unwrap();
+    let buf = libc::calloc(size + 1, 1);
+    libc::memcpy(buf, s.as_ptr() as *const libc::c_void, size);
+    buf as *mut c_char
+}
+
+unsafe fn chars_to_slice<'a> (cs: *const c_char) -> &'a [u8] {
+    let data = std::ffi::CStr::from_ptr (cs);
+    data.to_bytes()
+}
+
+unsafe fn chars_to_string (cs: *const c_char) -> String {
+    let data = std::ffi::CStr::from_ptr (cs);
+    String::from(data.to_str().unwrap()) //TODO remove unwrap
+} 
+
 #[no_mangle]
 pub extern "C" fn qoe_backend_init_logger () {
     let log_level_filter = match std::env::var("ATS3_LOG_LEVEL") {
@@ -93,20 +111,36 @@ pub extern "C" fn qoe_backend_init_logger () {
     log::set_max_level(log_level_filter);
 }
 
+#[repr(C)]
+pub struct init_val {
+    tag: *const c_char,
+    arg1: *const c_char,
+}
+
 #[no_mangle]
-pub extern "C" fn qoe_backend_create (err: *mut *const c_char) -> *const context::Context {
-    let initial = initial::Initial { uris: vec![(String::from("test"),
-                                                 String::from("udp://224.1.2.2:1234"))] };
-    match context::Context::new (&initial) {
+pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
+                                             vals_num: u32,
+                                             err: *mut *const c_char)
+                                             -> *const context::Context {
+
+    let slice : &[init_val] = std::slice::from_raw_parts (vals, vals_num as usize);
+    let mut vec : Vec<(String,String)> = Vec::with_capacity (vals_num as usize);
+    
+    for ref i in slice {
+        let v = (chars_to_string (i.tag),
+                 chars_to_string (i.arg1));
+        vec.push(v);
+    }
+
+    let context = initial::validate(&vec)
+        .and_then (|v| context::Context::new (&v));
+    
+    match context {
         Ok (v) => {
-            println!("Good context");
             Box::into_raw(v)
         },
-        Err (_e) => {
-         /*   unsafe { *err = CString::new (e)
-                      .expect("CString::new failed")
-                      .into_raw();
-            }*/
+        Err (e) => {
+            *err = string_to_chars (e.as_bytes());
             std::ptr::null () as *const context::Context
         }
     }
@@ -114,37 +148,123 @@ pub extern "C" fn qoe_backend_create (err: *mut *const c_char) -> *const context
 
 #[no_mangle]
 pub unsafe extern "C" fn qoe_backend_run (c: *mut context::Context) {
+    if c.is_null() {
+        return ();
+    }
     let mut cont = Box::from_raw(c);
     cont.run ();
     std::mem::forget(cont);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn qoe_backend_quit (c: *mut context::Context) {
+pub unsafe extern "C" fn qoe_backend_free (c: *mut context::Context) {
+    if c.is_null() {
+        return ();
+    }
     let mut cont = Box::from_raw(c);
     cont.quit ();
-    std::mem::forget(cont);
 }
-
+/*
 #[no_mangle]
 pub unsafe extern "C" fn qoe_backend_free (c: *mut context::Context) {
     let _cont = Box::from_raw(c);
     //std::mem::drop(cont);
 }
+*/
+// TODO check allocations
+#[no_mangle]
+pub unsafe extern "C" fn qoe_backend_stream_parser_get_structure (c: *mut context::Context)
+                                                                  -> *const c_char {
+    if c.is_null() {
+        return std::ptr::null() as *const c_char;
+    }
+    let cont = Box::from_raw (c);
+    let res = cont.state.lock ().unwrap ()
+        .stream_parser_get_structure ();
+    std::mem::forget (cont);
+    string_to_chars (&res)
+}
 
 #[no_mangle]
-pub unsafe extern "C" fn qoe_backend_get (c: *mut context::Context)
-                                          -> *mut c_char {
-    let cont = Box::from_raw(c);
-    println!("Trying to get streams");
-    let res = cont.state.lock().unwrap()
-        .stream_parser_get_structure();
-    println!("Got streams");
+pub unsafe extern "C" fn qoe_backend_graph_get_structure (c: *mut context::Context)
+                                                          -> *const c_char {
+    if c.is_null() {
+        return std::ptr::null() as *const c_char;
+    }
+    let cont = Box::from_raw (c);
+    let res = cont.state.lock ()
+        .unwrap ()
+        .graph_get_structure ();
     std::mem::forget (cont);
-    let cstr = CString::new(res).unwrap();
-    let size = std::mem::size_of_val(&cstr);
-    let buf = libc::malloc(size);
-    println!("Size of buffer: {}", size);
-    libc::memcpy(buf, cstr.as_ptr() as *const libc::c_void, size);
-    buf as *mut c_char
+    string_to_chars (&res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn qoe_backend_graph_apply_structure (c: *mut context::Context,
+                                                            data: *const c_char,
+                                                            err: *mut *const c_char)
+                                                            -> i32 {
+    if c.is_null() {
+        *err = string_to_chars ("no context provided".as_bytes());
+        return -1;
+    }
+    let cont = Box::from_raw (c);
+    let data = chars_to_slice (data);
+    let res = cont.state.lock ()
+        .unwrap ()
+        .graph_apply_structure (&data);
+    std::mem::forget (cont);
+    match res {
+        Ok (()) => 0,
+        Err (e) => {
+            *err = string_to_chars (e.as_bytes());
+            -1
+        },
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn qoe_backend_wm_get_layout (c: *mut context::Context,
+                                                    err: *mut *const c_char)
+                                                    -> *const c_char {
+    if c.is_null() {
+        *err = string_to_chars ("no context provided".as_bytes());
+        return std::ptr::null() as *const c_char;
+    }
+    let cont = Box::from_raw (c);
+    let res = cont.state.lock ()
+        .unwrap ()
+        .wm_get_layout ();
+    std::mem::forget (cont);
+    match res {
+        Ok (v) => string_to_chars (&v),
+        Err(e) => {
+            *err = string_to_chars (e.as_bytes());
+            std::ptr::null () as *const c_char
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn qoe_backend_wm_apply_layout (c: *mut context::Context,
+                                                      data: *const c_char,
+                                                      err: *mut *const c_char)
+                                                      -> i32 {
+    if c.is_null() {
+        *err = string_to_chars ("no context provided".as_bytes());
+        return -1;
+    }
+    let cont = Box::from_raw (c);
+    let data = chars_to_slice (data);
+    let res = cont.state.lock ()
+        .unwrap ()
+        .wm_apply_layout (&data);
+    std::mem::forget (cont);
+    match res {
+        Ok (()) => 0,
+        Err (e) => {
+            *err = string_to_chars (e.as_bytes());
+            -1
+        },
+    }
 }

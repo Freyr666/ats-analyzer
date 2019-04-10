@@ -1,31 +1,12 @@
-use std::env::Args;
-
-#[derive(Debug)]
-pub enum Error {
-    HelpOption,
-    DescribeOption,
-    WrongOption (String)
-}
-
 pub type Uri = String;
 pub type Id  = String;
 
-#[derive(Debug)]
-pub struct Initial {
-    pub uris:     Vec<(Id,Uri)>,
-}
-
-pub enum UriParserState {
+enum UriParserState {
     Ip,
     Port
 }
 
-pub enum ArgsParserState {
-    Uri(String),
-    Positional
-}
-
-pub enum UriError {
+enum UriError {
     Prefix,
     OctetValue(i32,i32),
     OctetMissing(i32),
@@ -35,7 +16,7 @@ pub enum UriError {
     BadSymbol(char),
 }
 
-pub fn uri_error_to_string(e : &UriError) -> String {
+fn uri_error_to_string(e : &UriError) -> String {
     match *e {
         UriError::Prefix                  => String::from("Bad prefix"),
         UriError::OctetValue(ref v,ref o) => format!("bad value ({}) in ip octet = {}", v, o + 1),
@@ -47,13 +28,13 @@ pub fn uri_error_to_string(e : &UriError) -> String {
     }
 }
 
-pub fn check_ip_octet(v : i32, octet : i32) -> Result<i32, UriError> {
+fn check_ip_octet(v : i32, octet : i32) -> Result<i32, UriError> {
     if octet > 3             { Err (UriError::OctetNumber(octet)) }
     else if v < 0 || v > 255 { Err (UriError::OctetValue(v,octet)) }
     else                     { Ok (v) }
 }
 
-pub fn validate_uri(uri : &str) -> Result<&str, UriError> {
+fn validate_uri(uri : &str) -> Result<&str, UriError> {
 
     let prefix = "udp://";
     if !uri.starts_with(prefix) { return Err (UriError::Prefix) }
@@ -122,6 +103,17 @@ pub fn validate_uri(uri : &str) -> Result<&str, UriError> {
     }
 }
 
+pub fn validate (data: &Vec<(String, String)>) -> Result<&Vec<(Id,Uri)>,String> {
+    for &(_,ref uri) in data {
+        match validate_uri (uri) {
+            Err(e) => return Err(uri_error_to_string(&e)),
+            Ok (_) => (),
+        }
+    }
+    Ok(data)
+}
+
+/*
 impl Initial {
 
     pub fn new(args : Args) -> Result<Initial, Error> {
@@ -171,13 +163,5 @@ impl Initial {
         }
     }
 
-    pub fn usage() -> &'static str {
-        "Usage:\n\
-         [-opt arg] id1 uri1 [id2 uri2 id3 uri3]\n\
-         Options:\n\
-         \t-p,\t--protocol\tprotocol description
-         \t-h,\t--help   \thelp\n\
-         Additional:\n\
-         \turi format: udp://[ip] or udp://[ip]:[port]\n"
-    }
 }
+*/
