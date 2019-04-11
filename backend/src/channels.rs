@@ -1,12 +1,26 @@
-use std::sync::{Arc,Mutex};
 use std::sync::mpsc::*;
-use signals::Signal;
-/*
-pub struct Chan<T> {
+use std::thread;
 
+pub struct Callbacks<T> {
+    pub process: Box<Fn(&T) + Send + Sync + 'static>,
+    pub thread_reg: Box<Fn() + Send + Sync + 'static>,
+    pub thread_unreg: Box<Fn() + Send + Sync + 'static>,
 }
 
-impl Chan<T> {
-    Signal
+pub fn create <T> (cb: Callbacks<T>) -> Sender<T>
+where T: Send + 'static {
+
+    let (sender, receiver): (Sender<T>, Receiver<T>) = channel();
+
+    thread::spawn(move || {
+        (cb.thread_reg)();
+        println!("Started");
+        for msg in receiver {
+            (cb.process)(&msg);
+        }
+        println!("Finished");
+        (cb.thread_unreg)();
+    });
+
+    sender
 }
-*/

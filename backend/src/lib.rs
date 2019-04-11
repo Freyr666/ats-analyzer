@@ -118,12 +118,28 @@ pub struct init_val {
     arg1: *const c_char,
 }
 
-type Vecu8CB = extern "C" fn(*mut c_char);
+#[repr(C)]
+pub struct callback {
+    cb: extern "C" fn(*mut c_char),
+    reg_thread: extern "C" fn(),
+    unreg_thread: extern "C" fn(),
+}
+
+#[repr(C)]
+pub struct data_callback {
+    cb: extern "C" fn(*mut c_char, i32, i32, *mut c_char, u64),
+    reg_thread: extern "C" fn(),
+    unreg_thread: extern "C" fn(),
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
                                              vals_num: u32,
-                                             streams_cb: Vecu8CB,
+                                             streams_cb: callback,
+                                         /*    graph_cb: callback,
+                                             wm_cb: callback,
+                                             vdata_cb: data_callback,
+                                             adata_cb: data_callback,*/
                                              err: *mut *const c_char)
                                              -> *const context::Context {
 
@@ -136,12 +152,18 @@ pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
         vec.push(v);
     }
 
+    let proc = streams_cb.cb;
+    let reg  = streams_cb.reg_thread;
+    let unreg = streams_cb.unreg_thread;
+    
+    let streams_cb : channels::Callbacks<Vec<u8>> = channels::Callbacks {
+        process: Box::new(move |data| {proc(string_to_chars(data));}),
+        thread_reg: Box::new(move || {reg();}),
+        thread_unreg: Box::new(move || {unreg();}),
+    };
+    
     let context = initial::validate(&vec)
-        .and_then (|v| {
-            context::Context::new (&v, move |data| {
-                streams_cb(string_to_chars(data));
-            })
-        });
+        .and_then (|v| context::Context::new (&v, streams_cb));
     
     match context {
         Ok (v) => {
@@ -171,6 +193,7 @@ pub unsafe extern "C" fn qoe_backend_free (c: *mut context::Context) {
     }
     let mut cont = Box::from_raw(c);
     cont.quit ();
+    std::mem::drop(cont);
 }
 /*
 #[no_mangle]

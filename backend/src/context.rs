@@ -2,6 +2,7 @@
 //use chatterer::Logger;
 //use settings::Configuration;
 use probe::Probe;
+use channels;
 //use control::Control;
 use streams::StreamParser;
 use metadata::Structure;
@@ -14,11 +15,11 @@ use std::sync::{Arc,Mutex};
 pub struct ContextState {
     stream_parser: StreamParser,
     graph:         Graph,
-    
+    probes:        Vec<Probe>,
 }
 
 pub struct Context {
-    pub state:       Arc<Mutex<ContextState>>,
+    pub state:   Arc<Mutex<ContextState>>,
     //control:     Control,
     mainloop:    glib::MainLoop,
 }
@@ -62,10 +63,9 @@ impl ContextState {
 }
 
 impl Context {
-    pub fn new<Fstr> (uris : &Vec<(String,String)>,
-                streams_cb: Fstr)
-                -> Result<Box<Context>, String>
-    where Fstr: Fn(&Vec<u8>) + Send + Sync + 'static {
+    pub fn new (uris : &Vec<(String,String)>,
+                streams_cb: channels::Callbacks<Vec<u8>>,
+    ) -> Result<Box<Context>, String> {
         
         gst::init().unwrap();
 
@@ -78,16 +78,16 @@ impl Context {
             probes.push(Probe::new(&uris[sid]));
         };
 
+        let stream_sender = channels::create (streams_cb);
+
         //let     config        = Configuration::new(i.msg_type, control.sender.clone());
-        let mut stream_parser = StreamParser::new(/*control.sender.clone()*/);
+        let mut stream_parser = StreamParser::new(stream_sender);
         let     graph         = Graph::new().unwrap();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
             stream_parser.connect_probe(probe);
         }
-
-        stream_parser.connect_streams_changed (streams_cb);
         
         //let wm = graph.get_wm();
 
@@ -103,7 +103,7 @@ impl Context {
         //graph.connect_destructive(&mut stream_parser.update.lock().unwrap());
         //graph.connect_settings(&mut config.update.lock().unwrap());
 
-        let state = Arc::new (Mutex::new (ContextState { stream_parser, graph }));
+        let state = Arc::new (Mutex::new (ContextState { stream_parser, graph, probes }));
         
         info!("Context was created");
         Ok(Box::new(Context { state, mainloop }))

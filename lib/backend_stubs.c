@@ -11,19 +11,23 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 
+#include <stdio.h>
+
 #include "qoebackend.h"
 
 atomic_bool running = false;
 
-value * streams_closure = NULL;
-
-void streams_thread_register (void) {
+void thread_register (void) {
+        printf("Reg thread\n");
         caml_c_thread_register();
 }
 
-void streams_thread_unregister (void) {
+void thread_unregister (void) {
+        printf("Unreg thread\n");
         caml_c_thread_unregister();
 }
+
+value * streams_closure = NULL;
 
 void streams_callback (char* s) {
         CAMLparam0 ();
@@ -79,6 +83,11 @@ caml_qoe_backend_create (value array,
         char     *error = NULL;
         uint32_t size;
         struct init_val * args;
+        struct callback streams_funs = {
+                .cb = streams_callback,
+                .reg_thread = thread_register,
+                .unreg_thread = thread_unregister,
+        };
 
         if (atomic_load (&running) == true) {
                 caml_failwith ("Other pipeline instance is already running");
@@ -97,7 +106,7 @@ caml_qoe_backend_create (value array,
 
         caml_release_runtime_system ();
         
-        context = qoe_backend_create (args, size, streams_callback, &error);
+        context = qoe_backend_create (args, size, streams_funs, &error);
 
         for (int i = 0; i < size; i++) {
                 caml_stat_free (args[i].tag);

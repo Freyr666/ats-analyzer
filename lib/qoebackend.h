@@ -12,6 +12,19 @@ struct init_val {
         char * tag;
         char * arg1; 
 };
+
+struct callback {
+        void(*cb)(char*);
+        void(*reg_thread)();
+        void(*unreg_thread)();
+};
+
+struct data_callback {
+        void(*cb)(char*, int32_t, int32_t, char*, uint64_t);
+        void(*reg_thread)();
+        void(*unreg_thread)();
+};
+
 /** 
  * Initialize backend logger if needed
  */
@@ -23,7 +36,7 @@ void qoe_backend_init_logger (void);
  */
 Context* qoe_backend_create (struct init_val * vals,
                              uint32_t vals_n,
-                             void(*f)(char*),
+                             struct callback, /* Streams */
                              char **error);
 
 /**

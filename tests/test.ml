@@ -24,7 +24,7 @@ let main () =
   >>= fun () ->
   Backend.free back;
   t >>= fun () ->
-  Lwt_io.printf "Streams 2: %s\n" (Backend.stream_parser_get_structure back)
+  Lwt_unix.sleep 20.0
 
 let () =
   Lwt_main.run (main ())
