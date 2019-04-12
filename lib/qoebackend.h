@@ -37,6 +37,8 @@ void qoe_backend_init_logger (void);
 Context* qoe_backend_create (struct init_val * vals,
                              uint32_t vals_n,
                              struct callback, /* Streams */
+                             struct callback, /* Graph */
+                             struct callback, /* Wm */
                              char **error);
 
 /**

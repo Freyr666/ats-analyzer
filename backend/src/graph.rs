@@ -26,17 +26,16 @@ pub struct GraphState {
 }
 
 pub struct Graph {
-    pub signal:  Arc<Mutex<Signal<Vec<u8>>>>,
-
-    state:       Arc<Mutex<GraphState>>,
+    sender:  Arc<Mutex<Sender<Vec<u8>>>>,
+    state:   Arc<Mutex<GraphState>>,
 }
 
 impl GraphState {
-    pub fn new () -> GraphState {
+    pub fn new (sender_wm: Sender<Vec<u8>>) -> GraphState {
         let settings  = None;
         let structure = Vec::new();
         let pipeline  = gst::Pipeline::new(None);
-        let wm        = Arc::new(Mutex::new(Wm::new()));
+        let wm        = Arc::new(Mutex::new(Wm::new(sender_wm)));
         //let mux       = Arc::new(Mutex::new(Mux::new(sender.clone())));
         let vrend     = None;
         let arend     = None;
@@ -44,7 +43,8 @@ impl GraphState {
         let roots     = Vec::new();
         wm.lock().unwrap().init(&pipeline);
         //mux.lock().unwrap().init(&pipeline);
-        GraphState { settings, structure, pipeline, wm, /*mux,*/ bus, roots, arend, vrend }
+        GraphState { settings, structure, pipeline, wm,
+                     /*mux,*/ bus, roots, arend, vrend }
     }
 
     pub fn reset (&mut self) {
@@ -129,10 +129,12 @@ impl GraphState {
 
 impl Graph {
     
-    pub fn new () -> Result<Graph,String> {
-        let signal = Arc::new(Mutex::new( Signal::new() ));
-        let state  = Arc::new(Mutex::new(GraphState::new() ));
-        Ok(Graph { signal, state } )
+    pub fn new (sender_graph: Sender<Vec<u8>>,
+                sender_wm: Sender<Vec<u8>>)
+                -> Result<Graph,String> {
+        let sender = Arc::new(Mutex::new( sender_graph ));
+        let state  = Arc::new(Mutex::new( GraphState::new(sender_wm) ));
+        Ok(Graph { sender, state } )
     }
 
     pub fn get_wm (&self) -> Arc<Mutex<Wm>> {
@@ -145,7 +147,7 @@ impl Graph {
 
     pub fn set_structure (&self, s: Vec<Structure>) -> Result<(),String> {
         // TODO talk only when applied successfully
-        self.signal.lock().unwrap().emit(&serde_json::to_vec(&s).unwrap());
+        self.sender.lock().unwrap().send(serde_json::to_vec(&s).unwrap());
         self.state.lock().unwrap().apply_streams(s)
         //if res.is_ok() {
         //    self.chat.lock().unwrap().talk()

@@ -32,22 +32,48 @@ value * streams_closure = NULL;
 void streams_callback (char* s) {
         CAMLparam0 ();
         CAMLlocal1 (arg);
-
-        /* TODO add streams_thread_register cb
-         * caml_c_thread_register();
-         */
-
+        
         caml_acquire_runtime_system ();
 
         arg = caml_copy_string(s);
         caml_callback (*streams_closure, arg);
 
         caml_release_runtime_system();
-
-        /* TODO add streams_thread_unregister cb
-         * caml_c_thread_unregister();
-         */
         
+        free(s);
+        CAMLreturn0;
+}
+
+value * graph_closure = NULL;
+
+void graph_callback (char* s) {
+        CAMLparam0 ();
+        CAMLlocal1 (arg);
+
+        caml_acquire_runtime_system ();
+
+        arg = caml_copy_string(s);
+        caml_callback (*graph_closure, arg);
+
+        caml_release_runtime_system();
+
+        free(s);
+        CAMLreturn0;
+}
+
+value * wm_closure = NULL;
+
+void wm_callback (char* s) {
+        CAMLparam0 ();
+        CAMLlocal1 (arg);
+
+        caml_acquire_runtime_system ();
+
+        arg = caml_copy_string(s);
+        caml_callback (*wm_closure, arg);
+
+        caml_release_runtime_system();
+
         free(s);
         CAMLreturn0;
 }
@@ -75,8 +101,10 @@ caml_qoe_backend_init_logger (value unit) {
 
 CAMLprim value
 caml_qoe_backend_create (value array,
-                         value streams_cb) {
-        CAMLparam2 (array, streams_cb);
+                         value streams_cb,
+                         value graph_cb,
+                         value wm_cb) {
+        CAMLparam4 (array, streams_cb, graph_cb, wm_cb);
         CAMLlocal3 (tmp, ctx, res);
 
         Context  *context = NULL;
@@ -85,6 +113,16 @@ caml_qoe_backend_create (value array,
         struct init_val * args;
         struct callback streams_funs = {
                 .cb = streams_callback,
+                .reg_thread = thread_register,
+                .unreg_thread = thread_unregister,
+        };
+        struct callback graph_funs = {
+                .cb = graph_callback,
+                .reg_thread = thread_register,
+                .unreg_thread = thread_unregister,
+        };
+        struct callback wm_funs = {
+                .cb = wm_callback,
                 .reg_thread = thread_register,
                 .unreg_thread = thread_unregister,
         };
@@ -103,10 +141,27 @@ caml_qoe_backend_create (value array,
                 args[i].tag = caml_stat_strdup(String_val(Field(tmp,0)));
                 args[i].arg1 = caml_stat_strdup(String_val(Field(tmp,1)));
         }
+        
+        res = alloc_tuple (4);
+
+        ctx = alloc_custom (&context_ops, sizeof(Context*), 0, 1);
+        Field(res, 0) = ctx;
+        Field(res, 1) = streams_cb;
+        Field(res, 2) = graph_cb;
+        Field(res, 3) = wm_cb;
+        // Save callbacks
+        streams_closure = &Field(res, 1);
+        graph_closure = &Field(res, 2);
+        wm_closure = &Field(res, 3);
 
         caml_release_runtime_system ();
         
-        context = qoe_backend_create (args, size, streams_funs, &error);
+        context = qoe_backend_create (args,
+                                      size,
+                                      streams_funs,
+                                      graph_funs,
+                                      wm_funs,
+                                      &error);
 
         for (int i = 0; i < size; i++) {
                 caml_stat_free (args[i].tag);
@@ -116,6 +171,8 @@ caml_qoe_backend_create (value array,
         
         caml_acquire_runtime_system ();
         //printf ("Context received at %p\n", context);
+        // Save the context
+        Context_val(Field(res, 0)) = context;
         
         if (context == NULL) {
                 if (error) {
@@ -125,16 +182,6 @@ caml_qoe_backend_create (value array,
                         caml_failwith ("Unknown error");
                 }
         }
-
-        ctx = alloc_custom (&context_ops, sizeof(Context*), 0, 1);
-        Context_val(ctx) = context;
-
-        res = alloc_tuple (2);
-
-        Field(res, 0) = ctx;
-        Field(res, 1) = streams_cb;
-
-        streams_closure = &Field(res, 1);
         
         CAMLreturn(res);
 }

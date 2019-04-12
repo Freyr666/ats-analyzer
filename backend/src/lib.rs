@@ -136,9 +136,9 @@ pub struct data_callback {
 pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
                                              vals_num: u32,
                                              streams_cb: callback,
-                                         /*    graph_cb: callback,
+                                             graph_cb: callback,
                                              wm_cb: callback,
-                                             vdata_cb: data_callback,
+                                            /* vdata_cb: data_callback,
                                              adata_cb: data_callback,*/
                                              err: *mut *const c_char)
                                              -> *const context::Context {
@@ -161,9 +161,29 @@ pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
         thread_reg: Box::new(move || {reg();}),
         thread_unreg: Box::new(move || {unreg();}),
     };
+
+    let proc = graph_cb.cb;
+    let reg  = graph_cb.reg_thread;
+    let unreg = graph_cb.unreg_thread;
+    
+    let graph_cb : channels::Callbacks<Vec<u8>> = channels::Callbacks {
+        process: Box::new(move |data| {proc(string_to_chars(data));}),
+        thread_reg: Box::new(move || {reg();}),
+        thread_unreg: Box::new(move || {unreg();}),
+    };
+
+    let proc = wm_cb.cb;
+    let reg  = wm_cb.reg_thread;
+    let unreg = wm_cb.unreg_thread;
+    
+    let wm_cb : channels::Callbacks<Vec<u8>> = channels::Callbacks {
+        process: Box::new(move |data| {proc(string_to_chars(data));}),
+        thread_reg: Box::new(move || {reg();}),
+        thread_unreg: Box::new(move || {unreg();}),
+    };
     
     let context = initial::validate(&vec)
-        .and_then (|v| context::Context::new (&v, streams_cb));
+        .and_then (|v| context::Context::new (&v, streams_cb, graph_cb, wm_cb));
     
     match context {
         Ok (v) => {

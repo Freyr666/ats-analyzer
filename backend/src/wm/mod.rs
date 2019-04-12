@@ -34,9 +34,8 @@ pub struct WmState {
 }
 
 pub struct Wm {
-    pub signal:  Arc<Mutex<Signal<Vec<u8>>>>,
-
-    state:       Arc<Mutex<Option<WmState>>>,
+    sender:  Arc<Mutex<Sender<Vec<u8>>>>,
+    state:   Arc<Mutex<Option<WmState>>>,
 }
 
 fn enum_to_val(cls: &str, val: i32) -> glib::Value {
@@ -164,15 +163,15 @@ impl WmState {
 }
 
 impl Wm {
-    pub fn new () -> Wm {
-        let signal = Arc::new(Mutex::new( Signal::new() ));
+    pub fn new (sender: Sender<Vec<u8>>) -> Wm {
+        let sender = Arc::new(Mutex::new( sender ));
         let state = Arc::new(Mutex::new( None ));
-        Wm { signal, state }
+        Wm { sender, state }
     }
 
     pub fn init (&mut self, pipe: &gst::Pipeline) {
         let wm = WmState::new(pipe, (1280,720));
-        self.signal.lock().unwrap().emit(&serde_json::to_vec(&wm.to_template()).unwrap());
+        self.sender.lock().unwrap().send(serde_json::to_vec(&wm.to_template()).unwrap());
         *self.state.lock().unwrap() = Some(wm);
     }
     
@@ -185,13 +184,27 @@ impl Wm {
             None => (), // TODO invariant?
             Some (ref mut state) => 
                 if let Some(linked) = state.plug(&pad) {
-                    let chat  = self.signal.clone();
-                    let state = self.state.clone();
+                    let sender = Arc::downgrade (&self.sender);
+                    let state  = Arc::downgrade (&self.state);
+                    // TODO cleanup
                     linked.lock().unwrap().connect(move |&()| {
-                        match *state.lock().unwrap() {
-                            None            => (),
-                            Some(ref state) =>
-                                chat.lock().unwrap().emit(&serde_json::to_vec(&state.to_template()).unwrap()),
+                        match state.upgrade() {
+                            None => (),
+                            Some (ref state) =>
+                                match sender.upgrade () {
+                                    None => (),
+                                    Some (ref sender) => {
+                                        let data = &*state.lock().unwrap();
+                                        match data {
+                                            None => (), //TODO log
+                                            Some (v) => 
+                                                sender.lock().unwrap()
+                                                .send (serde_json::to_vec(&v.to_template())
+                                                       .unwrap())
+                                                .unwrap()
+                                        }
+                                    },
+                                },
                         }
                     });
                 }
@@ -221,6 +234,7 @@ impl Wm {
                     .collect();
                 let temp = WmTemplate::from_partial(templ, &widg);
                 wm.from_template(&temp)
+                // TODO send event
             }
         }
     }
