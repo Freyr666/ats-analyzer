@@ -1,5 +1,7 @@
 type t
 
+module Gstbuffer = Gstbuffer
+   
 external init_logger : unit -> unit = "caml_qoe_backend_init_logger"
 
 (* TODO { type (SDI, external stream, internal UUID stream);

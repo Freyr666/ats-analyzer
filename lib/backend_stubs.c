@@ -79,13 +79,13 @@ void wm_callback (char* s) {
 }
 
 static struct custom_operations context_ops = {
-  "context",
-  custom_finalize_default,
-  custom_compare_default,
-  custom_hash_default,
-  custom_serialize_default,
-  custom_deserialize_default,
-  custom_compare_ext_default
+        "context",
+        custom_finalize_default,
+        custom_compare_default,
+        custom_hash_default,
+        custom_serialize_default,
+        custom_deserialize_default,
+        custom_compare_ext_default
 };
 
 #define Context_val(v) (*((Context **) Data_custom_val(v)))
