@@ -7,4 +7,4 @@ type buf = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1
    the callback result, the bigarray would be invalidated
    right after the callback would return its value
  *)
-external process : t -> (buf -> 'a) -> 'a = "caml_gstbuffer_process"
+external process_unsafe : t -> (buf -> 'a) -> 'a = "caml_gstbuffer_process"
