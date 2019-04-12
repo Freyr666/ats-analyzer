@@ -1,4 +1,4 @@
-use std::sync::{Arc,Mutex};
+use std::sync::{Arc,Mutex,Weak};
 use std::sync::mpsc::Sender;
 use gst::prelude::*;
 use gst;
@@ -58,8 +58,12 @@ pub struct VideoBranch {
 //}
 
 impl VideoBranch {
-    pub fn new (stream: String, channel: u32, pid: u32,
-                settings: Option<Settings>/*, sender: Sender<Vec<u8>>*/) -> VideoBranch {
+    pub fn new (stream: String,
+                channel: u32,
+                pid: u32,
+                settings: Option<Settings>,
+                sender: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>)
+                -> VideoBranch {
         debug!("VideoBranch::create");
         
         let common = CommonBranch::new();
@@ -75,7 +79,7 @@ impl VideoBranch {
         
         VideoBranch::apply_settings(&analyser, settings);
         // TODO consider lock removal
-        let vdata     = Arc::new(Mutex::new(VideoData::new()));//stream.clone(), channel, pid)));
+        //let vdata     = Arc::new(Mutex::new(VideoData::new()));//stream.clone(), channel, pid)));
 
         let stream_id     = stream.clone();
         let bin_weak      = bin.downgrade();
@@ -113,17 +117,32 @@ impl VideoBranch {
             upload.sync_state_with_parent().unwrap();
             analyser.sync_state_with_parent().unwrap();
 
-            let vdata       = Arc::downgrade(&vdata);
-            let vdata_lost  = vdata.clone();
-            let vdata_found = vdata.clone();
+            let stream_local = stream_id.clone();
+            let sender = sender.clone();
+            //let vdata       = Arc::downgrade(&vdata);
+            //let vdata_lost  = vdata.clone();
+            //let vdata_found = vdata.clone();
             // TODO add err check
             analyser.connect("data", true, move |vals| {
-                let vdata = vdata.upgrade().unwrap();
-                let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
-                vdata.lock().unwrap().send_msg(&d);
-                None
+                let stream = stream_local.clone();
+                match sender.upgrade() {
+                    None => None,
+                    Some (ref sender) => {
+                        sender.lock().unwrap()
+                            .send((stream,
+                                   channel,
+                                   pid,
+                                   vals[0].get::<gst::Buffer>().unwrap()))
+                            .unwrap();
+                        None
+                    },
+               // let vdata = vdata.upgrade().unwrap();
+               // let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
+               // vdata.lock().unwrap().send_msg(&d);
+               // None
+                }
             }).unwrap();
-
+            /* TODO
             analyser.connect("stream-lost", true, move |_| {
                 let vdata_lost = vdata_lost.upgrade().unwrap();
                 vdata_lost.lock().unwrap().send_lost();
@@ -137,7 +156,7 @@ impl VideoBranch {
                 debug!("Stream found sent");
                 None
             }).unwrap();
-
+             */
             let _ = pad.link(&sink_pad); // TODO
 
             let spad = SrcPad::new(stream_id.clone(), channel, pid, "video", &bin, &src_pad);
@@ -214,8 +233,12 @@ pub struct AudioBranch {
 }
 
 impl AudioBranch {
-    pub fn new (stream: String, channel: u32, pid: u32,
-                settings: Option<Settings> /*, sender: Sender<Vec<u8>>*/) -> AudioBranch {
+    pub fn new (stream: String,
+                channel: u32,
+                pid: u32,
+                settings: Option<Settings>,
+                sender: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>)
+                -> AudioBranch {
         debug!("AudioBranch::create");
         
         let common = CommonBranch::new();
@@ -271,17 +294,30 @@ impl AudioBranch {
             conv.sync_state_with_parent().unwrap();
             analyser.sync_state_with_parent().unwrap();
 
+            /*
             let adata       = Arc::downgrade(&adata);
             let adata_lost  = adata.clone();
             let adata_found = adata.clone();
-
+             */
+            let stream_local = stream_id.clone();
+            let sender = sender.clone();
+            
             analyser.connect("data", true, move |vals| {
-                let adata = adata.upgrade().unwrap();
-                let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
-                adata.lock().unwrap().send_msg(&d);
-                None
+                let stream = stream_local.clone();
+                match sender.upgrade() {
+                    None => None,
+                    Some (ref sender) => {
+                        sender.lock().unwrap()
+                            .send((stream,
+                                   channel,
+                                   pid,
+                                   vals[0].get::<gst::Buffer>().unwrap()))
+                            .unwrap();
+                        None
+                    },
+                }
             }).unwrap();
-
+            /*
             analyser.connect("stream-lost", true, move |_| {
                 let adata_lost = adata_lost.upgrade().unwrap();
                 adata_lost.lock().unwrap().send_lost();
@@ -293,7 +329,7 @@ impl AudioBranch {
                 adata_found.lock().unwrap().send_found();
                 None
             }).unwrap();
-            
+            */
             let _ = pad.link(&sink_pad); // TODO
 
             let spad = SrcPad::new(stream_id.clone(), channel, pid, "audio", &bin, &src_pad);
@@ -351,11 +387,25 @@ pub enum Branch {
 
 impl Branch {
 
-    pub fn new(stream: String, channel: u32, pid: u32, typ: &str,
-               settings: Option<Settings>/*, sender: Sender<Vec<u8>>*/) -> Option<Branch> {
+    pub fn new(stream: String,
+               channel: u32,
+               pid: u32,
+               typ: &str,
+               settings: Option<Settings>,
+               sender_vdata: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>,
+               sender_adata: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>)
+               -> Option<Branch> {
         match typ {
-            "video" => Some(Branch::Video(VideoBranch::new(stream, channel, pid, settings/*, sender*/))),
-            "audio" => Some(Branch::Audio(AudioBranch::new(stream, channel, pid, settings/*, sender*/))),
+            "video" => Some(Branch::Video(VideoBranch::new(stream,
+                                                           channel,
+                                                           pid,
+                                                           settings,
+                                                           sender_vdata))),
+            "audio" => Some(Branch::Audio(AudioBranch::new(stream,
+                                                           channel,
+                                                           pid,
+                                                           settings,
+                                                           sender_adata))),
             _       => None
         }
     }

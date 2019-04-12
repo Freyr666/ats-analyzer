@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 
+#include "gstbuffer_stubs.h"
 #include "qoebackend.h"
 
 atomic_bool running = false;
@@ -78,6 +79,56 @@ void wm_callback (char* s) {
         CAMLreturn0;
 }
 
+value * vdata_closure = NULL;
+
+void vdata_callback (char* s, uint32_t c, uint32_t p, void* b) {
+        CAMLparam0 ();
+        CAMLlocal2 (arg, buf);
+
+        value args[4];
+        
+        caml_acquire_runtime_system ();
+
+        arg = caml_copy_string(s);
+        buf = caml_gstbuffer_alloc ((GstBuffer*) b);
+
+        args[0] = arg;
+        args[1] = Val_int (c);
+        args[2] = Val_int (p);
+        args[3] = buf;
+        caml_callbackN (*vdata_closure, 4, args);
+
+        caml_release_runtime_system();
+
+        free(s);
+        CAMLreturn0;
+}
+
+value * adata_closure = NULL;
+
+void adata_callback (char* s, uint32_t c, uint32_t p, void* b) {
+        CAMLparam0 ();
+        CAMLlocal2 (arg, buf);
+
+        value args[4];
+
+        caml_acquire_runtime_system ();
+
+        arg = caml_copy_string(s);
+        buf = caml_gstbuffer_alloc ((GstBuffer*) b);
+
+        args[0] = arg;
+        args[1] = Val_int (c);
+        args[2] = Val_int (p);
+        args[3] = buf;
+        caml_callbackN (*adata_closure, 4, args);
+
+        caml_release_runtime_system();
+
+        free(s);
+        CAMLreturn0;
+}
+
 static struct custom_operations context_ops = {
         "context",
         custom_finalize_default,
@@ -100,11 +151,14 @@ caml_qoe_backend_init_logger (value unit) {
 }
 
 CAMLprim value
-caml_qoe_backend_create (value array,
-                         value streams_cb,
-                         value graph_cb,
-                         value wm_cb) {
-        CAMLparam4 (array, streams_cb, graph_cb, wm_cb);
+caml_qoe_backend_create_native  (value array,
+                                 value streams_cb,
+                                 value graph_cb,
+                                 value wm_cb,
+                                 value vdata_cb,
+                                 value adata_cb) {
+        CAMLparam5 (array, streams_cb, graph_cb, wm_cb, vdata_cb);
+        CAMLxparam1 (adata_cb);
         CAMLlocal3 (tmp, ctx, res);
 
         Context  *context = NULL;
@@ -126,6 +180,16 @@ caml_qoe_backend_create (value array,
                 .reg_thread = thread_register,
                 .unreg_thread = thread_unregister,
         };
+        struct data_callback vdata_funs = {
+                .cb = vdata_callback,
+                .reg_thread = thread_register,
+                .unreg_thread = thread_unregister,
+        };
+        struct data_callback adata_funs = {
+                .cb = adata_callback,
+                .reg_thread = thread_register,
+                .unreg_thread = thread_unregister,
+        };
 
         if (atomic_load (&running) == true) {
                 caml_failwith ("Other pipeline instance is already running");
@@ -142,17 +206,21 @@ caml_qoe_backend_create (value array,
                 args[i].arg1 = caml_stat_strdup(String_val(Field(tmp,1)));
         }
         
-        res = alloc_tuple (4);
+        res = alloc_tuple (6);
 
         ctx = alloc_custom (&context_ops, sizeof(Context*), 0, 1);
         Field(res, 0) = ctx;
         Field(res, 1) = streams_cb;
         Field(res, 2) = graph_cb;
         Field(res, 3) = wm_cb;
+        Field(res, 4) = vdata_cb;
+        Field(res, 5) = adata_cb;
         // Save callbacks
         streams_closure = &Field(res, 1);
         graph_closure = &Field(res, 2);
         wm_closure = &Field(res, 3);
+        vdata_closure = &Field(res, 4);
+        adata_closure = &Field(res, 5);
 
         caml_release_runtime_system ();
         
@@ -161,6 +229,8 @@ caml_qoe_backend_create (value array,
                                       streams_funs,
                                       graph_funs,
                                       wm_funs,
+                                      vdata_funs,
+                                      adata_funs,
                                       &error);
 
         for (int i = 0; i < size; i++) {
@@ -184,6 +254,13 @@ caml_qoe_backend_create (value array,
         }
         
         CAMLreturn(res);
+}
+
+CAMLprim value
+caml_qoe_backend_create_bytecode  (value * argv,
+                                   int argn ) {
+        return caml_qoe_backend_create_native (argv[0], argv[1], argv[2],
+                                               argv[3], argv[4], argv[5] );
 }
 
 CAMLprim value

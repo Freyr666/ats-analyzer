@@ -1,6 +1,6 @@
 use gst::prelude::*;
 use gst;
-use std::sync::{Arc,Mutex};
+use std::sync::{Arc,Mutex,Weak};
 use std::sync::mpsc::Sender;
 use metadata::{Channel,Structure};
 use settings::Settings;
@@ -23,8 +23,10 @@ impl Root {
                      settings: Option<Settings>,
                      added: Arc<Mutex<Signal<SrcPad>>>,
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
-                     bin: &gst::Pipeline, pad: &gst::Pad,
-                     /*sender: &Mutex<Sender<Vec<u8>>>*/) {
+                     bin: &gst::Pipeline,
+                     pad: &gst::Pad,
+                     sender_vdata: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>,
+                     sender_adata: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>) {
         let pname = pad.get_name();
         let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
         let name_toks: Vec<&str> = pname.split('_').collect();
@@ -41,14 +43,26 @@ impl Root {
 
         debug!("Root::build_branch [{}]", pid);
 
-        if let Some(branch) = Branch::new(stream, chan.number, pid, typ, settings/*, sender.lock().unwrap().clone()*/) {
+        if let Some(branch) = Branch::new(stream,
+                                          chan.number,
+                                          pid,
+                                          typ,
+                                          settings,
+                                          sender_vdata,
+                                          sender_adata) {
             branch.add_to_pipe(&bin);
             branch.plug(&pad);
             match branch {
-                Branch::Video(ref b) => b.pad_added.lock().unwrap().connect(move |p| added.lock().unwrap().emit(p)),
+                Branch::Video(ref b) => b.pad_added.lock().unwrap().connect(move |p| {
+                    added.lock().unwrap().emit(p)
+                }),
                 Branch::Audio(ref b) => {
-                    b.pad_added.lock().unwrap().connect(move |p| added.lock().unwrap().emit(p));
-                    b.audio_pad_added.lock().unwrap().connect(move |p| audio_added.lock().unwrap().emit(p));
+                    b.pad_added.lock().unwrap().connect(move |p| {
+                        added.lock().unwrap().emit(p)
+                    });
+                    b.audio_pad_added.lock().unwrap().connect(move |p| {
+                        audio_added.lock().unwrap().emit(p)
+                    });
                 },
             };
 
@@ -57,7 +71,12 @@ impl Root {
         }
     }
     
-    pub fn new(bin: &gst::Pipeline, m: &Structure, settings: Option<Settings>) -> Option<Root> {
+    pub fn new(bin: &gst::Pipeline,
+               m: &Structure,
+               settings: Option<Settings>,
+               sender_vdata: &Arc<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>,
+               sender_adata: &Arc<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>)
+               -> Option<Root> {
         debug!("Root::new");
 
         let src             = gst::ElementFactory::make("udpsrc", None).unwrap();
@@ -103,7 +122,9 @@ impl Root {
             let branches_weak = branches.clone();
             let pad_added_c = pad_added.clone();
             let audio_pad_added_c = audio_pad_added.clone();
-            /*let sender_c = Mutex::new(sender.clone());*/
+            
+            let sender_vdata = Arc::downgrade(sender_vdata);
+            let sender_adata = Arc::downgrade(sender_adata);
             
             demux.connect_pad_added(move | _, pad | {
                 let bin      = bin_weak.clone().upgrade().unwrap();
@@ -113,8 +134,10 @@ impl Root {
                                    stream.clone(), &chan,
                                    *settings,
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
-                                   &bin, pad,
-                                   /*&sender_c*/);
+                                   &bin,
+                                   pad,
+                                   sender_vdata.clone(),
+                                   sender_adata.clone());
             });
         };
 

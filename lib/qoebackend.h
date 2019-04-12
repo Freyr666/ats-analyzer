@@ -20,7 +20,7 @@ struct callback {
 };
 
 struct data_callback {
-        void(*cb)(char*, int32_t, int32_t, char*, uint64_t);
+        void(*cb)(char*, uint32_t, uint32_t, void*);
         void(*reg_thread)();
         void(*unreg_thread)();
 };
@@ -39,6 +39,8 @@ Context* qoe_backend_create (struct init_val * vals,
                              struct callback, /* Streams */
                              struct callback, /* Graph */
                              struct callback, /* Wm */
+                             struct data_callback, /* Vdata */
+                             struct data_callback, /* Adata */
                              char **error);
 
 /**

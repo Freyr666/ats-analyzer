@@ -127,7 +127,7 @@ pub struct callback {
 
 #[repr(C)]
 pub struct data_callback {
-    cb: extern "C" fn(*mut c_char, i32, i32, *mut c_char, u64),
+    cb: extern "C" fn(*mut c_char, u32, u32, *mut std::ffi::c_void),
     reg_thread: extern "C" fn(),
     unreg_thread: extern "C" fn(),
 }
@@ -138,8 +138,8 @@ pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
                                              streams_cb: callback,
                                              graph_cb: callback,
                                              wm_cb: callback,
-                                            /* vdata_cb: data_callback,
-                                             adata_cb: data_callback,*/
+                                             vdata_cb: data_callback,
+                                             adata_cb: data_callback,
                                              err: *mut *const c_char)
                                              -> *const context::Context {
 
@@ -181,9 +181,39 @@ pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
         thread_reg: Box::new(move || {reg();}),
         thread_unreg: Box::new(move || {unreg();}),
     };
+
+    let proc = vdata_cb.cb;
+    let reg  = vdata_cb.reg_thread;
+    let unreg = vdata_cb.unreg_thread;
+    
+    let vdata_cb : channels::Callbacks<(String,u32,u32,gst::Buffer)>
+        = channels::Callbacks {
+            process: Box::new(move |(s,c,p,d)| {proc(string_to_chars(s.as_bytes()),
+                                                     *c,
+                                                     *p,
+                                                     d.clone().into_ptr() as *mut std::ffi::c_void);}),
+            thread_reg: Box::new(move || {reg();}),
+            thread_unreg: Box::new(move || {unreg();}),
+    };
+
+    let proc = adata_cb.cb;
+    let reg  = adata_cb.reg_thread;
+    let unreg = adata_cb.unreg_thread;
+    
+    let adata_cb : channels::Callbacks<(String,u32,u32,gst::Buffer)>
+        = channels::Callbacks {
+            process: Box::new(move |(s,c,p,d)| {proc(string_to_chars(s.as_bytes()),
+                                                     *c,
+                                                     *p,
+                                                     d.clone().into_ptr() as *mut std::ffi::c_void);}),
+            thread_reg: Box::new(move || {reg();}),
+            thread_unreg: Box::new(move || {unreg();}),
+    };
+    
     
     let context = initial::validate(&vec)
-        .and_then (|v| context::Context::new (&v, streams_cb, graph_cb, wm_cb));
+        .and_then (|v| context::Context::new (&v, streams_cb, graph_cb, wm_cb,
+                                              vdata_cb, adata_cb));
     
     match context {
         Ok (v) => {

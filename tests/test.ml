@@ -32,6 +32,8 @@ let main () =
                ~streams:streams_cb
                ~graph:graph_cb
                ~wm:wm_cb
+               ~vdata:(fun _ _ _ _ -> ())
+               ~adata:(fun _ _ _ _ -> ())
   in
   let t = Lwt_preemptive.detach Backend.run back in
   Lwt_unix.sleep 20.0

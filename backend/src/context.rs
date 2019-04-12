@@ -67,6 +67,8 @@ impl Context {
                 streams_cb: channels::Callbacks<Vec<u8>>,
                 graph_cb: channels::Callbacks<Vec<u8>>,
                 wm_cb: channels::Callbacks<Vec<u8>>,
+                vdata_cb: channels::Callbacks<(String,u32,u32,gst::Buffer)>,
+                adata_cb: channels::Callbacks<(String,u32,u32,gst::Buffer)>,
     ) -> Result<Box<Context>, String> {
         
         gst::init().unwrap();
@@ -83,10 +85,15 @@ impl Context {
         let stream_sender = channels::create (streams_cb);
         let graph_sender = channels::create (graph_cb);
         let wm_sender = channels::create (wm_cb);
+        let vdata_sender = channels::create (vdata_cb);
+        let adata_sender = channels::create (adata_cb);
 
         //let     config        = Configuration::new(i.msg_type, control.sender.clone());
         let mut stream_parser = StreamParser::new(stream_sender);
-        let     graph         = Graph::new(graph_sender, wm_sender).unwrap();
+        let     graph         = Graph::new(graph_sender,
+                                           wm_sender,
+                                           vdata_sender,
+                                           adata_sender).unwrap();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
