@@ -4,8 +4,6 @@ use gst::prelude::*;
 use gst;
 use pad::SrcPad;
 use settings::Settings;
-use video_data::VideoData;
-use audio_data::AudioData;
 use signals::Signal;
 
 #[derive(Clone,Copy)]
@@ -85,8 +83,6 @@ impl VideoBranch {
         analyser.set_property("latency", &3u32).unwrap();
         
         VideoBranch::apply_settings(&analyser, settings);
-        // TODO consider lock removal
-        //let vdata     = Arc::new(Mutex::new(VideoData::new()));//stream.clone(), channel, pid)));
 
         let stream_id     = stream.clone();
         let bin_weak      = bin.downgrade();
@@ -280,9 +276,6 @@ impl AudioBranch {
         let audio_pad_added = Arc::new(Mutex::new(Signal::new()));
 
         AudioBranch::apply_settings(&analyser, settings);
-
-        // TODO consider lock removal
-        let adata = Arc::new(Mutex::new(AudioData::new()));//stream.clone(), channel, pid)));
 
         let stream_id = stream.clone();
         let bin_weak      = bin.downgrade();
