@@ -1,3 +1,5 @@
+type error = [ `Qoe_backend of string ]
+
 module Make
          (Id : Qoe_backend_types.Basic.STREAM_ID)
          (Uri_string : Qoe_backend_types.Basic.URI)
@@ -23,10 +25,32 @@ module Make
               
   val init_logger : unit -> unit
     
-  val create : (string * string) array -> t * events
+  val create : (string * string) array -> ((t * events), [> error]) Lwt_result.t
 
   val run : t -> unit Lwt.t
 
   val destroy : t -> unit
+
+  module Stream_parser : sig
+
+    val get_structure : t -> (Structure.t, [> error]) Lwt_result.t
+
+  end
+
+  module Graph : sig
+
+    val get_structure : t -> (Structure.t, [> error]) Lwt_result.t
+
+    val apply_structure : t -> Structure.t -> (unit, [> error]) Lwt_result.t
+
+  end
+
+  module Mosaic : sig
+
+    val get_layout : t -> (Wm.t, [> error]) Lwt_result.t
+
+    val apply_layout : t -> Wm.t -> (unit, [> error]) Lwt_result.t
+
+  end
 
 end
