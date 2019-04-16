@@ -14,13 +14,14 @@ module Make
 
   module Qoe_status : module type of Qoe_backend_types.Qoe_status.Make (Id)
   
-  type t
+  type t = Qoe_backend.t
 
   type events = { streams : Structure.t list React.event
                 ; graph : Structure.t list React.event
                 ; wm : Wm.t React.event
                 ; vdata : Qoe_errors.Video_data.t React.event
                 ; adata : Qoe_errors.Audio_data.t React.event
+                ; status : Qoe_status.t React.event
                 }
               
   val init_logger : unit -> unit
@@ -33,15 +34,15 @@ module Make
 
   module Stream_parser : sig
 
-    val get_structure : t -> (Structure.t, [> error]) Lwt_result.t
+    val get_structure : t -> (Structure.t list, [> error]) Lwt_result.t
 
   end
 
   module Graph : sig
 
-    val get_structure : t -> (Structure.t, [> error]) Lwt_result.t
+    val get_structure : t -> (Structure.t list, [> error]) Lwt_result.t
 
-    val apply_structure : t -> Structure.t -> (unit, [> error]) Lwt_result.t
+    val apply_structure : t -> Structure.t list -> (unit, [> error]) Lwt_result.t
 
   end
 

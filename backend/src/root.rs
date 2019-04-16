@@ -6,7 +6,7 @@ use metadata::{Channel,Structure};
 use settings::Settings;
 use signals::Signal;
 use pad::SrcPad;
-use branch::Branch;
+use branch::{Typ,Branch};
 use std::u32;
 
 pub struct Root {
@@ -25,8 +25,8 @@ impl Root {
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
                      bin: &gst::Pipeline,
                      pad: &gst::Pad,
-                     sender_vdata: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>,
-                     sender_adata: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>) {
+                     sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
+                     sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>) {
         let pname = pad.get_name();
         let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
         let name_toks: Vec<&str> = pname.split('_').collect();
@@ -48,8 +48,8 @@ impl Root {
                                           pid,
                                           typ,
                                           settings,
-                                          sender_vdata,
-                                          sender_adata) {
+                                          sender_data,
+                                          sender_status) {
             branch.add_to_pipe(&bin);
             branch.plug(&pad);
             match branch {
@@ -74,8 +74,8 @@ impl Root {
     pub fn new(bin: &gst::Pipeline,
                m: &Structure,
                settings: Option<Settings>,
-               sender_vdata: &Arc<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>,
-               sender_adata: &Arc<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>)
+               sender_data: &Arc<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
+               sender_status: &Arc<Mutex<Sender<(String,u32,u32,bool)>>>)
                -> Option<Root> {
         debug!("Root::new");
 
@@ -123,8 +123,8 @@ impl Root {
             let pad_added_c = pad_added.clone();
             let audio_pad_added_c = audio_pad_added.clone();
             
-            let sender_vdata = Arc::downgrade(sender_vdata);
-            let sender_adata = Arc::downgrade(sender_adata);
+            let sender_data = Arc::downgrade(sender_data);
+            let sender_status = Arc::downgrade(sender_status);
             
             demux.connect_pad_added(move | _, pad | {
                 let bin      = bin_weak.clone().upgrade().unwrap();
@@ -136,8 +136,8 @@ impl Root {
                                    pad_added_c.clone(), audio_pad_added_c.clone(),
                                    &bin,
                                    pad,
-                                   sender_vdata.clone(),
-                                   sender_adata.clone());
+                                   sender_data.clone(),
+                                   sender_status.clone());
             });
         };
 

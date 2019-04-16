@@ -4,6 +4,7 @@ use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
 use signals::Signal;
 use root::Root;
+use branch::Typ;
 use wm::Wm;
 use wm::template::{WmTemplate,WmTemplatePartial};
 use metadata::Structure;
@@ -12,8 +13,8 @@ use settings::Settings;
 use renderer::{VideoR,AudioR,Renderer};
 
 pub struct GraphState {
-    sender_vdata: Arc<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>,
-    sender_adata: Arc<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>,
+    sender_data: Arc<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
+    sender_status: Arc<Mutex<Sender<(String,u32,u32,bool)>>>,
     settings:    Option<Settings>,
     pub structure: Vec<Structure>,
 
@@ -33,11 +34,11 @@ pub struct Graph {
 
 impl GraphState {
     pub fn new (sender_wm: Sender<Vec<u8>>,
-                sender_vdata: Sender<(String,u32,u32,gst::Buffer)>,
-                sender_adata: Sender<(String,u32,u32,gst::Buffer)>)
+                sender_data: Sender<(Typ,String,u32,u32,gst::Buffer)>,
+                sender_status: Sender<(String,u32,u32,bool)>)
                 -> GraphState {
-        let sender_vdata = Arc::new(Mutex::new(sender_vdata));
-        let sender_adata = Arc::new(Mutex::new(sender_adata));
+        let sender_data = Arc::new(Mutex::new(sender_data));
+        let sender_status = Arc::new(Mutex::new(sender_status));
         let settings  = None;
         let structure = Vec::new();
         let pipeline  = gst::Pipeline::new(None);
@@ -49,7 +50,7 @@ impl GraphState {
         let roots     = Vec::new();
         wm.lock().unwrap().init(&pipeline);
         //mux.lock().unwrap().init(&pipeline);
-        GraphState { sender_vdata, sender_adata,
+        GraphState { sender_data, sender_status,
                      settings, structure, pipeline, wm,
                      /*mux,*/ bus, roots, arend, vrend }
     }
@@ -105,8 +106,8 @@ impl GraphState {
             if let Some(root) = Root::new(&self.pipeline,
                                           &stream,
                                           self.settings,
-                                          &self.sender_vdata,
-                                          &self.sender_adata) {
+                                          &self.sender_data,
+                                          &self.sender_status) {
                 //let pipe   = self.pipeline.clone();
                 let wm     = self.wm.clone();
                 //let mux    = self.mux.clone();
@@ -141,13 +142,13 @@ impl Graph {
     
     pub fn new (sender_graph: Sender<Vec<u8>>,
                 sender_wm: Sender<Vec<u8>>,
-                sender_vdata: Sender<(String,u32,u32,gst::Buffer)>,
-                sender_adata: Sender<(String,u32,u32,gst::Buffer)>)
+                sender_data: Sender<(Typ,String,u32,u32,gst::Buffer)>,
+                sender_status: Sender<(String,u32,u32,bool)>)
                 -> Result<Graph,String> {
         let sender = Arc::new(Mutex::new( sender_graph ));
         let state  = Arc::new(Mutex::new( GraphState::new(sender_wm,
-                                                          sender_vdata,
-                                                          sender_adata) ));
+                                                          sender_data,
+                                                          sender_status) ));
         Ok(Graph { sender, state } )
     }
 

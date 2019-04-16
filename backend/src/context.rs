@@ -8,6 +8,7 @@ use streams::StreamParser;
 use metadata::Structure;
 use wm::template::WmTemplatePartial;
 use graph::Graph;
+use branch::Typ;
 use gst;
 use glib;
 use std::sync::{Arc,Mutex};
@@ -67,8 +68,8 @@ impl Context {
                 streams_cb: channels::Callbacks<Vec<u8>>,
                 graph_cb: channels::Callbacks<Vec<u8>>,
                 wm_cb: channels::Callbacks<Vec<u8>>,
-                vdata_cb: channels::Callbacks<(String,u32,u32,gst::Buffer)>,
-                adata_cb: channels::Callbacks<(String,u32,u32,gst::Buffer)>,
+                data_cb: channels::Callbacks<(Typ,String,u32,u32,gst::Buffer)>,
+                status_cb: channels::Callbacks<(String,u32,u32,bool)>,
     ) -> Result<Box<Context>, String> {
         
         gst::init().unwrap();
@@ -85,15 +86,15 @@ impl Context {
         let stream_sender = channels::create (streams_cb);
         let graph_sender = channels::create (graph_cb);
         let wm_sender = channels::create (wm_cb);
-        let vdata_sender = channels::create (vdata_cb);
-        let adata_sender = channels::create (adata_cb);
+        let data_sender = channels::create (data_cb);
+        let status_sender = channels::create (status_cb);
 
         //let     config        = Configuration::new(i.msg_type, control.sender.clone());
         let mut stream_parser = StreamParser::new(stream_sender);
         let     graph         = Graph::new(graph_sender,
                                            wm_sender,
-                                           vdata_sender,
-                                           adata_sender).unwrap();
+                                           data_sender,
+                                           status_sender).unwrap();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);

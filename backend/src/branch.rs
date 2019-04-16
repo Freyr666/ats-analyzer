@@ -8,6 +8,12 @@ use video_data::VideoData;
 use audio_data::AudioData;
 use signals::Signal;
 
+#[derive(Clone,Copy)]
+pub enum Typ {
+    Video = 0,
+    Audio = 1,
+}
+
 struct CommonBranch {
     decoder: gst::Element,
     bin: gst::Bin,
@@ -62,7 +68,8 @@ impl VideoBranch {
                 channel: u32,
                 pid: u32,
                 settings: Option<Settings>,
-                sender: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>)
+                sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
+                sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>)
                 -> VideoBranch {
         debug!("VideoBranch::create");
         
@@ -117,46 +124,66 @@ impl VideoBranch {
             upload.sync_state_with_parent().unwrap();
             analyser.sync_state_with_parent().unwrap();
 
-            let stream_local = stream_id.clone();
-            let sender = sender.clone();
-            //let vdata       = Arc::downgrade(&vdata);
-            //let vdata_lost  = vdata.clone();
-            //let vdata_found = vdata.clone();
+            let stream_data = stream_id.clone();
+            let sender_data = sender_data.clone();
+            
+            let stream_status_found = stream_id.clone();
+            let sender_status_found = sender_status.clone();
+
+            let stream_status_lost = stream_id.clone();
+            let sender_status_lost = sender_status.clone();
             // TODO add err check
             analyser.connect("data", true, move |vals| {
-                let stream = stream_local.clone();
-                match sender.upgrade() {
+                let stream = stream_data.clone();
+                match sender_data.upgrade() {
+                    None => None,
+                    Some (ref sender) => {
+                        sender.lock().unwrap()
+                            .send((Typ::Video,
+                                   stream,
+                                   channel,
+                                   pid, // TODO proper vals unwrap
+                                   vals[1].get::<gst::Buffer>().unwrap()))
+                            .unwrap();
+                        None
+                    },
+                }
+            }).unwrap();
+
+            analyser.connect("stream-lost", true, move |_| {
+                let stream = stream_status_lost.clone();
+                match sender_status_lost.upgrade () {
                     None => None,
                     Some (ref sender) => {
                         sender.lock().unwrap()
                             .send((stream,
                                    channel,
                                    pid,
-                                   vals[0].get::<gst::Buffer>().unwrap()))
+                                   false))
                             .unwrap();
+                        debug!("Stream lost sent");
                         None
                     },
-               // let vdata = vdata.upgrade().unwrap();
-               // let d: gst::Buffer = vals[1].get::<gst::Buffer>().expect("Expect d");
-               // vdata.lock().unwrap().send_msg(&d);
-               // None
                 }
             }).unwrap();
-            /* TODO
-            analyser.connect("stream-lost", true, move |_| {
-                let vdata_lost = vdata_lost.upgrade().unwrap();
-                vdata_lost.lock().unwrap().send_lost();
-                debug!("Stream lost sent");
-                None
+            
+            analyser.connect("stream-found", true, move |_| {
+                let stream = stream_status_found.clone();
+                match sender_status_found.upgrade () {
+                    None => None,
+                    Some (ref sender) => {
+                        sender.lock().unwrap()
+                            .send((stream,
+                                   channel,
+                                   pid,
+                                   true))
+                            .unwrap();
+                        debug!("Stream found sent");
+                        None
+                    },
+                }
             }).unwrap();
 
-            analyser.connect("stream-found", true, move |_| {
-                let vdata_found = vdata_found.upgrade().unwrap();
-                vdata_found.lock().unwrap().send_found();
-                debug!("Stream found sent");
-                None
-            }).unwrap();
-             */
             let _ = pad.link(&sink_pad); // TODO
 
             let spad = SrcPad::new(stream_id.clone(), channel, pid, "video", &bin, &src_pad);
@@ -237,7 +264,8 @@ impl AudioBranch {
                 channel: u32,
                 pid: u32,
                 settings: Option<Settings>,
-                sender: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>)
+                sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
+                sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>)
                 -> AudioBranch {
         debug!("AudioBranch::create");
         
@@ -294,42 +322,66 @@ impl AudioBranch {
             conv.sync_state_with_parent().unwrap();
             analyser.sync_state_with_parent().unwrap();
 
-            /*
-            let adata       = Arc::downgrade(&adata);
-            let adata_lost  = adata.clone();
-            let adata_found = adata.clone();
-             */
-            let stream_local = stream_id.clone();
-            let sender = sender.clone();
+            let stream_data = stream_id.clone();
+            let sender_data = sender_data.clone();
+            
+            let stream_status_found = stream_id.clone();
+            let sender_status_found = sender_status.clone();
+
+            let stream_status_lost = stream_id.clone();
+            let sender_status_lost = sender_status.clone();
             
             analyser.connect("data", true, move |vals| {
-                let stream = stream_local.clone();
-                match sender.upgrade() {
+                let stream = stream_data.clone();
+                match sender_data.upgrade() {
+                    None => None,
+                    Some (ref sender) => {
+                        sender.lock().unwrap()
+                            .send((Typ::Audio,
+                                   stream,
+                                   channel,
+                                   pid, // TODO proper vals unwrap
+                                   vals[1].get::<gst::Buffer>().unwrap()))
+                            .unwrap();
+                        None
+                    },
+                }
+            }).unwrap();
+            
+            analyser.connect("stream-lost", true, move |_| {
+                let stream = stream_status_lost.clone();
+                match sender_status_lost.upgrade () {
                     None => None,
                     Some (ref sender) => {
                         sender.lock().unwrap()
                             .send((stream,
                                    channel,
                                    pid,
-                                   vals[0].get::<gst::Buffer>().unwrap()))
+                                   false))
                             .unwrap();
+                        debug!("Stream lost sent");
                         None
                     },
                 }
             }).unwrap();
-            /*
-            analyser.connect("stream-lost", true, move |_| {
-                let adata_lost = adata_lost.upgrade().unwrap();
-                adata_lost.lock().unwrap().send_lost();
-                None
-            }).unwrap();
 
             analyser.connect("stream-found", true, move |_| {
-                let adata_found = adata_found.upgrade().unwrap();
-                adata_found.lock().unwrap().send_found();
-                None
+                let stream = stream_status_found.clone();
+                match sender_status_found.upgrade () {
+                    None => None,
+                    Some (ref sender) => {
+                        sender.lock().unwrap()
+                            .send((stream,
+                                   channel,
+                                   pid,
+                                   true))
+                            .unwrap();
+                        debug!("Stream found sent");
+                        None
+                    },
+                }
             }).unwrap();
-            */
+            
             let _ = pad.link(&sink_pad); // TODO
 
             let spad = SrcPad::new(stream_id.clone(), channel, pid, "audio", &bin, &src_pad);
@@ -392,20 +444,22 @@ impl Branch {
                pid: u32,
                typ: &str,
                settings: Option<Settings>,
-               sender_vdata: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>,
-               sender_adata: Weak<Mutex<Sender<(String,u32,u32,gst::Buffer)>>>)
+               sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
+               sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>)
                -> Option<Branch> {
         match typ {
             "video" => Some(Branch::Video(VideoBranch::new(stream,
                                                            channel,
                                                            pid,
                                                            settings,
-                                                           sender_vdata))),
+                                                           sender_data,
+                                                           sender_status))),
             "audio" => Some(Branch::Audio(AudioBranch::new(stream,
                                                            channel,
                                                            pid,
                                                            settings,
-                                                           sender_adata))),
+                                                           sender_data,
+                                                           sender_status))),
             _       => None
         }
     }

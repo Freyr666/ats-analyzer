@@ -1,7 +1,9 @@
 #include<stdint.h>
+#include<stdbool.h>
 
 typedef struct {} Context;
 
+enum {Video, Audio} typ;
 /*
  * Backend initialization struct
  * TODO add type: SDI, external stream, internal UUID stream
@@ -9,8 +11,8 @@ typedef struct {} Context;
  * arg1: streams's addr
  */
 struct init_val {
-        char * tag;
-        char * arg1; 
+  char *tag;
+  char *arg1;
 };
 
 struct callback {
@@ -20,10 +22,17 @@ struct callback {
 };
 
 struct data_callback {
-        void(*cb)(char*, uint32_t, uint32_t, void*);
+        void(*cb)(int32_t, char*, uint32_t, uint32_t, void*);
         void(*reg_thread)();
         void(*unreg_thread)();
 };
+
+struct status_callback {
+        void(*cb)(char*, uint32_t, uint32_t, bool);
+        void(*reg_thread)();
+        void(*unreg_thread)();
+};
+
 
 /** 
  * Initialize backend logger if needed
@@ -39,8 +48,8 @@ Context* qoe_backend_create (struct init_val * vals,
                              struct callback, /* Streams */
                              struct callback, /* Graph */
                              struct callback, /* Wm */
-                             struct data_callback, /* Vdata */
-                             struct data_callback, /* Adata */
+                             struct data_callback, /* data */
+                             struct status_callback, /* status */
                              char **error);
 
 /**

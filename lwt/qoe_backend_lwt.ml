@@ -23,6 +23,7 @@ module Make
                 ; wm : Wm.t React.event
                 ; vdata : Qoe_errors.Video_data.t React.event
                 ; adata : Qoe_errors.Audio_data.t React.event
+                ; status : Qoe_status.t React.event
                 }
               
   let init_logger = Qoe_backend.init_logger
@@ -42,30 +43,50 @@ module Make
     in
     cb, e
 
-  let make_video_event ()  =
+  let make_data_event ()  =
     let open Qoe_backend in
-    let open Qoe_errors.Video_data in
-    let e, push = Lwt_react.E.create () in
-    let data = ref None in
-    let notif = Lwt_unix.make_notification
-                  (fun () -> match !data with
-                             | None -> ()
-                             | Some data -> push data)
+    let video, push_v = Lwt_react.E.create () in
+    let audio, push_a = Lwt_react.E.create () in
+    let data_vid = ref None in
+    let data_aud = ref None in
+    let notif_vid = Lwt_unix.make_notification
+                      (fun () -> match !data_vid with
+                                 | None -> ()
+                                 | Some data -> push_v data)
     in
-    let cb id channel pid buf =
-      try let errors = Gstbuffer.process_unsafe buf Qoe_error_parser.get_video_errors in 
-          data := Some { stream = Id.of_string id
-                       ; channel
-                       ; pid
-                       ; errors
-                    };
-          Lwt_unix.send_notification notif
-      with _ -> ()
-    in cb, e
+    let notif_aud = Lwt_unix.make_notification
+                      (fun () -> match !data_aud with
+                                 | None -> ()
+                                 | Some data -> push_a data)
+    in
+    let cb typ id channel pid buf =
+      match typ with
+      | Qoe_backend.Video -> begin
+         let open Qoe_errors.Video_data in
+         try let errors = Gstbuffer.process_unsafe buf Qoe_error_parser.get_video_errors in 
+             data_vid := Some { stream = Id.of_string id
+                              ; channel
+                              ; pid
+                              ; errors
+                           };
+             Lwt_unix.send_notification notif_vid
+         with _ -> ()
+        end
+      | Qoe_backend.Audio -> begin
+          let open Qoe_errors.Audio_data in
+          try let errors = Gstbuffer.process_unsafe buf Qoe_error_parser.get_audio_errors in 
+              data_aud := Some { stream = Id.of_string id
+                               ; channel
+                               ; pid
+                               ; errors
+                            };
+              Lwt_unix.send_notification notif_aud
+          with _ -> ()
+        end
+    in cb, video, audio
 
-  let make_audio_event ()  =
-    let open Qoe_backend in
-    let open Qoe_errors.Audio_data in
+  let make_status_event ()  =
+    let open Qoe_status in
     let e, push = Lwt_react.E.create () in
     let data = ref None in
     let notif = Lwt_unix.make_notification
@@ -73,15 +94,13 @@ module Make
                              | None -> ()
                              | Some data -> push data)
     in
-    let cb id channel pid buf =
-      try let errors = Gstbuffer.process_unsafe buf Qoe_error_parser.get_audio_errors in 
-          data := Some { stream = Id.of_string id
-                       ; channel
-                       ; pid
-                       ; errors
-                    };
-          Lwt_unix.send_notification notif
-      with _ -> ()
+    let cb id channel pid playing =
+      data := Some { stream = Id.of_string id
+                   ; channel
+                   ; pid
+                   ; playing
+                };
+      Lwt_unix.send_notification notif
     in cb, e
 
   let of_json conv js =
@@ -118,19 +137,20 @@ module Make
       let streams_cb, streams = make_event (of_json Structure.many_of_yojson) in
       let graph_cb, graph = make_event (of_json Structure.many_of_yojson) in
       let wm_cb, wm = make_event (of_json Wm.of_yojson) in
-      let vdata_cb, vdata = make_video_event () in
-      let adata_cb, adata = make_audio_event () in
+      let data_cb, vdata, adata = make_data_event () in
+      let status_cb, status = make_status_event () in
       let backend = Qoe_backend.create args
                       ~streams:streams_cb
                       ~graph:graph_cb
                       ~wm:wm_cb
-                      ~vdata:vdata_cb
-                      ~adata:adata_cb
+                      ~data:data_cb
+                      ~status:status_cb
       and events = { streams
                    ; graph
                    ; wm
                    ; vdata
                    ; adata
+                   ; status
                    }
       in Lwt.return_ok (backend, events)
     with Failure e -> Lwt.return_error (`Qoe_backend e)
@@ -145,7 +165,7 @@ module Make
 
     let get_structure backend =
       get
-        Structure.of_yojson
+        Structure.many_of_yojson
         Qoe_backend.stream_parser_get_structure
         backend
 
@@ -155,13 +175,13 @@ module Make
 
     let get_structure backend =
       get
-        Structure.of_yojson
+        Structure.many_of_yojson
         Qoe_backend.graph_get_structure
         backend
       
     let apply_structure backend data =
       set
-        Structure.to_yojson
+        Structure.many_to_yojson
         Qoe_backend.graph_apply_structure
         data
         backend

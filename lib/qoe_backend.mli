@@ -1,7 +1,9 @@
 type t
 
 module Gstbuffer = Gstbuffer
-   
+
+type typ = Video | Audio
+                 
 val init_logger : unit -> unit
 
 (* TODO { type (SDI, external stream, internal UUID stream);
@@ -10,12 +12,13 @@ val init_logger : unit -> unit
  *        arg2: alsa audio source
  *      }
  *)
+  
 val create : (string * string) array
              -> streams:(string -> unit)
              -> graph:(string -> unit)
              -> wm:(string -> unit)
-             -> vdata:(string -> int -> int -> Gstbuffer.t -> unit)
-             -> adata:(string -> int -> int -> Gstbuffer.t -> unit)
+             -> data:(typ -> string -> int -> int -> Gstbuffer.t -> unit)
+             -> status:(string -> int -> int -> bool -> unit)
              -> t
 
 (* Blocks *)

@@ -1,6 +1,8 @@
 type t
 
 module Gstbuffer = Gstbuffer
+
+type typ = Video | Audio
    
 external init_logger : unit -> unit = "caml_qoe_backend_init_logger"
 
@@ -14,8 +16,8 @@ external create : (string * string) array
                   -> streams:(string -> unit)
                   -> graph:(string -> unit)
                   -> wm:(string -> unit)
-                  -> vdata:(string -> int -> int -> Gstbuffer.t -> unit)
-                  -> adata:(string -> int -> int -> Gstbuffer.t -> unit)
+                  -> data:(typ -> string -> int -> int -> Gstbuffer.t -> unit)
+                  -> status:(string -> int -> int -> bool -> unit)
                   -> t =
   "caml_qoe_backend_create_bytecode"
     "caml_qoe_backend_create_native"

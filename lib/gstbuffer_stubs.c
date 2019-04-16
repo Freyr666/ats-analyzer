@@ -34,7 +34,7 @@ caml_gstbuffer_process (value buf,
         
         // caml_release_runtime_system ();
 
-        if (! gst_buffer_map (b, &info, GST_MAP_READ | GST_MAP_WRITE)) {
+        if (! gst_buffer_map (b, &info, GST_MAP_READ)) {
                 //  caml_acquire_runtime_system ();
                 // goto error;
                 caml_failwith ("Couldn't map the buffer");

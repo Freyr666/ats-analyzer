@@ -79,9 +79,9 @@ void wm_callback (char* s) {
         CAMLreturn0;
 }
 
-value * vdata_closure = NULL;
+value * data_closure = NULL;
 
-void vdata_callback (char* s, uint32_t c, uint32_t p, void* b) {
+void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
         CAMLparam0 ();
         CAMLlocal2 (arg, buf);
 
@@ -92,11 +92,12 @@ void vdata_callback (char* s, uint32_t c, uint32_t p, void* b) {
         arg = caml_copy_string(s);
         buf = caml_gstbuffer_alloc ((GstBuffer*) b);
 
-        args[0] = arg;
-        args[1] = Val_int (c);
-        args[2] = Val_int (p);
-        args[3] = buf;
-        caml_callbackN (*vdata_closure, 4, args);
+        args[0] = Val_int (typ);
+        args[1] = arg;
+        args[2] = Val_int (c);
+        args[3] = Val_int (p);
+        args[4] = buf;
+        caml_callbackN (*data_closure, 5, args);
 
         caml_release_runtime_system();
 
@@ -104,9 +105,9 @@ void vdata_callback (char* s, uint32_t c, uint32_t p, void* b) {
         CAMLreturn0;
 }
 
-value * adata_closure = NULL;
+value * status_closure = NULL;
 
-void adata_callback (char* s, uint32_t c, uint32_t p, void* b) {
+void status_callback (char* s, uint32_t c, uint32_t p, bool b) {
         CAMLparam0 ();
         CAMLlocal2 (arg, buf);
 
@@ -120,8 +121,8 @@ void adata_callback (char* s, uint32_t c, uint32_t p, void* b) {
         args[0] = arg;
         args[1] = Val_int (c);
         args[2] = Val_int (p);
-        args[3] = buf;
-        caml_callbackN (*adata_closure, 4, args);
+        args[3] = Val_bool(b);
+        caml_callbackN (*status_closure, 4, args);
 
         caml_release_runtime_system();
 
@@ -155,10 +156,10 @@ caml_qoe_backend_create_native  (value array,
                                  value streams_cb,
                                  value graph_cb,
                                  value wm_cb,
-                                 value vdata_cb,
-                                 value adata_cb) {
-        CAMLparam5 (array, streams_cb, graph_cb, wm_cb, vdata_cb);
-        CAMLxparam1 (adata_cb);
+                                 value data_cb,
+                                 value status_cb) {
+        CAMLparam5 (array, streams_cb, graph_cb, wm_cb, data_cb);
+        CAMLxparam1 (status_cb);
         CAMLlocal3 (tmp, ctx, res);
 
         Context  *context = NULL;
@@ -180,13 +181,13 @@ caml_qoe_backend_create_native  (value array,
                 .reg_thread = thread_register,
                 .unreg_thread = thread_unregister,
         };
-        struct data_callback vdata_funs = {
-                .cb = vdata_callback,
+        struct data_callback data_funs = {
+                .cb = data_callback,
                 .reg_thread = thread_register,
                 .unreg_thread = thread_unregister,
         };
-        struct data_callback adata_funs = {
-                .cb = adata_callback,
+        struct status_callback status_funs = {
+                .cb = status_callback,
                 .reg_thread = thread_register,
                 .unreg_thread = thread_unregister,
         };
@@ -213,14 +214,14 @@ caml_qoe_backend_create_native  (value array,
         Field(res, 1) = streams_cb;
         Field(res, 2) = graph_cb;
         Field(res, 3) = wm_cb;
-        Field(res, 4) = vdata_cb;
-        Field(res, 5) = adata_cb;
+        Field(res, 4) = data_cb;
+        Field(res, 5) = status_cb;
         // Save callbacks
         streams_closure = &Field(res, 1);
         graph_closure = &Field(res, 2);
         wm_closure = &Field(res, 3);
-        vdata_closure = &Field(res, 4);
-        adata_closure = &Field(res, 5);
+        data_closure = &Field(res, 4);
+        status_closure = &Field(res, 5);
 
         caml_release_runtime_system ();
         
@@ -229,8 +230,8 @@ caml_qoe_backend_create_native  (value array,
                                       streams_funs,
                                       graph_funs,
                                       wm_funs,
-                                      vdata_funs,
-                                      adata_funs,
+                                      data_funs,
+                                      status_funs,
                                       &error);
 
         for (int i = 0; i < size; i++) {
