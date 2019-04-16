@@ -1,0 +1,4 @@
+(library
+  (name       qoe_errors_parser)
+  (c_names    qoe_parser)
+  (libraries  qoe_backend_types))
