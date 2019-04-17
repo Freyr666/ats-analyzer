@@ -149,6 +149,10 @@ let main () =
   @@ Lwt_react.E.map_p (fun (s : Qoe.Qoe_status.t) ->
          Lwt_io.printf "Got status: %d %d %b\n" s.channel s.pid s.playing)
        events.status;
+  Lwt_react.E.keep
+  @@ Lwt_react.E.map_p (fun (s : Qoe.Qoe_errors.Video_data.t) ->
+         Lwt_io.printf "Got vdata: %d %d freeze frame: %b %b %f %f %f\n" s.channel s.pid s.errors.freeze.peak_flag s.errors.freeze.cont_flag s.errors.freeze.params.max s.errors.freeze.params.avg s.errors.freeze.params.avg)
+       events.vdata;
   let t = Qoe.run back in
   Lwt_unix.sleep 10.0
   >>= fun () ->

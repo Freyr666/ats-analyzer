@@ -1,7 +1,5 @@
 type t
 
-module Gstbuffer = Gstbuffer
-
 type typ = Video | Audio
    
 external init_logger : unit -> unit = "caml_qoe_backend_init_logger"

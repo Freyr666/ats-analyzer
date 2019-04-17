@@ -1,4 +1,10 @@
 (library
   (name       qoe_errors_parser)
   (c_names    qoe_parser)
-  (libraries  qoe_backend_types))
+  (c_flags    (:include c_flags.sexp))
+  (libraries  qoe_backend_types gstbuffer))
+
+(rule
+  (targets c_flags.sexp)
+  (deps    (:discover config/discover.exe))
+  (action  (run %{discover})))

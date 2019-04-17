@@ -3,8 +3,7 @@ module C = Configurator.V1
 let () =
   C.main ~name:"backend" (fun c ->
       let default : C.Pkg_config.package_conf =
-        { libs   = [ "-lqoebackend"
-                   ; "-lgstreamer-1.0"
+        { libs   = [ "-lgstreamer-1.0"
                    ; "-lgobject-2.0"
                    ; "-lglib-2.0"
                    ]
@@ -20,7 +19,7 @@ let () =
         | Some pc ->
            match (C.Pkg_config.query pc ~package:"gstreamer-1.0") with
            | None -> default
-           | Some deps -> { deps with libs = "-lqoebackend"::deps.libs }
+           | Some deps -> deps
       in
 
       C.Flags.write_sexp "c_flags.sexp"         conf.cflags;

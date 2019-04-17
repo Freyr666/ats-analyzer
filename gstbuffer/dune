@@ -1,0 +1,11 @@
+(library
+  (name              gstbuffer)
+  (c_names           gstbuffer_stubs)
+  (install_c_headers gstbuffer_stubs)
+  (c_flags           (:include c_flags.sexp))
+  (c_library_flags   (:include c_library_flags.sexp)))
+
+(rule
+  (targets c_flags.sexp c_library_flags.sexp)
+  (deps    (:discover config/discover.exe))
+  (action  (run %{discover})))

@@ -44,7 +44,6 @@ module Make
     cb, e
 
   let make_data_event ()  =
-    let open Qoe_backend in
     let video, push_v = Lwt_react.E.create () in
     let audio, push_a = Lwt_react.E.create () in
     let data_vid = ref None in
@@ -63,25 +62,27 @@ module Make
       match typ with
       | Qoe_backend.Video -> begin
          let open Qoe_errors.Video_data in
-         try let errors = Gstbuffer.process_unsafe buf Qoe_error_parser.get_video_errors in 
+         try let errors = Qoe_error_parser.get_video_errors buf in 
              data_vid := Some { stream = Id.of_string id
                               ; channel
                               ; pid
                               ; errors
                            };
              Lwt_unix.send_notification notif_vid
-         with _ -> ()
+         with Failure _ -> () (* TODO log errors *)
+            | _ -> ()
         end
       | Qoe_backend.Audio -> begin
           let open Qoe_errors.Audio_data in
-          try let errors = Gstbuffer.process_unsafe buf Qoe_error_parser.get_audio_errors in 
+          try let errors = Qoe_error_parser.get_audio_errors buf in 
               data_aud := Some { stream = Id.of_string id
                                ; channel
                                ; pid
                                ; errors
                             };
               Lwt_unix.send_notification notif_aud
-          with _ -> ()
+          with Failure _ -> () (* TODO log errors *)
+             | _ -> ()
         end
     in cb, video, audio
 

@@ -1,5 +1,3 @@
-type buf = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
-
 open Qoe_backend_types.Basic
          
 module Make (Id : STREAM_ID) (Time : USECONDS) = struct
@@ -34,7 +32,7 @@ module Make (Id : STREAM_ID) (Time : USECONDS) = struct
     ; cont_flag
     }
          
-  external video_errors_of_ba : buf -> video_errors = "caml_video_errors_of_ba"
+  external video_errors_of_ba : Gstbuffer.t -> video_errors = "caml_video_errors_of_ba"
 
   let get_video_errors ba =
     let open Qoe_errors.Video_data in
@@ -46,7 +44,7 @@ module Make (Id : STREAM_ID) (Time : USECONDS) = struct
     ; blocky = parsed_to_error ve.blocky
     }
 
-  external audio_errors_of_ba : buf -> audio_errors = "caml_audio_errors_of_ba"
+  external audio_errors_of_ba : Gstbuffer.t -> audio_errors = "caml_audio_errors_of_ba"
 
   let get_audio_errors ba =
     let open Qoe_errors.Audio_data in

@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
+#include "gstbuffer_stubs.h"
 /* 
  * TODO import types from plugins
  */
@@ -48,17 +50,32 @@ struct error64 {
 };
 
 CAMLprim value
-caml_video_errors_of_ba (value ba) {
-        CAMLparam1 (ba);
+caml_video_errors_of_ba (value buf) {
+        CAMLparam1 (buf);
         CAMLlocal4 (res, tup, time, pars);
         CAMLlocal3 (min, max, avg);
 
+        int        good;
+        GstMapInfo info;
+        GstBuffer  *b = Buffer_val(buf);
         struct error32 * errors;
-        int size = Caml_ba_array_val(ba)->dim[0];
 
-        if (size < sizeof (struct error32) * VIDEO_ERR_NUM) {
+        caml_release_runtime_system ();
+        good = gst_buffer_map (b, &info, GST_MAP_READ);
+        caml_acquire_runtime_system ();
+
+        if (! good) {
+                caml_failwith ("Couldn't map the buffer");
+        }
+
+        if (info.size < sizeof (struct error32) * VIDEO_ERR_NUM) {
+                caml_release_runtime_system ();
+                gst_buffer_unmap (b, &info);
+                caml_acquire_runtime_system ();
                 caml_failwith ("Array is smaller than expected");
         }
+
+        errors = (struct error32 *) info.data;
 
         res = caml_alloc_tuple (VIDEO_ERR_NUM);
         
@@ -84,21 +101,40 @@ caml_video_errors_of_ba (value ba) {
                 Field(res, p) = tup;
         }
 
+        caml_release_runtime_system ();
+        gst_buffer_unmap (b, &info);
+        caml_acquire_runtime_system ();
+
         CAMLreturn(res);
 }
 
 CAMLprim value
-caml_audio_errors_of_ba (value ba) {
-        CAMLparam1 (ba);
+caml_audio_errors_of_ba (value buf) {
+        CAMLparam1 (buf);
         CAMLlocal4 (res, tup, time, pars);
         CAMLlocal3 (min, max, avg);
 
+        int        good;
+        GstMapInfo info;
+        GstBuffer  *b = Buffer_val(buf);
         struct error64 * errors;
-        int size = Caml_ba_array_val(ba)->dim[0];
 
-        if (size < sizeof (struct error64) * AUDIO_ERR_NUM) {
+        caml_release_runtime_system ();
+        good = gst_buffer_map (b, &info, GST_MAP_READ);
+        caml_acquire_runtime_system ();
+
+        if (! good) {
+                caml_failwith ("Couldn't map the buffer");
+        }
+
+        if (info.size < sizeof (struct error64) * AUDIO_ERR_NUM) {
+                caml_release_runtime_system ();
+                gst_buffer_unmap (b, &info);
+                caml_acquire_runtime_system ();
                 caml_failwith ("Array is smaller than expected");
         }
+
+        errors = (struct error64 *) info.data;
 
         res = caml_alloc_tuple (AUDIO_ERR_NUM);
         
@@ -123,6 +159,10 @@ caml_audio_errors_of_ba (value ba) {
 
                 Field(res, p) = tup;
         }
+
+        caml_release_runtime_system ();
+        gst_buffer_unmap (b, &info);
+        caml_acquire_runtime_system ();
 
         CAMLreturn(res);
 }

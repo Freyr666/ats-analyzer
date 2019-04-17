@@ -14,11 +14,11 @@ where T: Send + 'static {
 
     thread::spawn(move || {
         (cb.thread_reg)();
-        println!("Started");
+        //println!("Started, {}", name);
         for msg in receiver {
             (cb.process)(&msg);
         }
-        println!("Finished");
+        //println!("Finished {}", name);
         (cb.thread_unreg)();
     });
 

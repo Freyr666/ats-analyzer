@@ -1,7 +1,5 @@
 type t
 
-module Gstbuffer = Gstbuffer
-
 type typ = Video | Audio
                  
 val init_logger : unit -> unit

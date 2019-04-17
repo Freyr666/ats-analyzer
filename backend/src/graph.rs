@@ -109,11 +109,15 @@ impl GraphState {
                                           &self.sender_data,
                                           &self.sender_status) {
                 //let pipe   = self.pipeline.clone();
-                let wm     = self.wm.clone();
+                let wm     = Arc::downgrade(&self.wm);
                 //let mux    = self.mux.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
                     debug!("Graph::apply_streams [attach pad {} {}]", p.stream, p.channel);
-                    wm.lock().unwrap().plug(p);
+                    match wm.upgrade () {
+                        None => (),
+                        Some (ref wm) =>
+                            wm.lock().unwrap().plug(p),
+                    }
                     // TODO check
                     //let _ = pipe.set_state(gst::State::Playing);
                     //gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
@@ -151,11 +155,11 @@ impl Graph {
                                                           sender_status) ));
         Ok(Graph { sender, state } )
     }
-
+/*
     pub fn get_wm (&self) -> Arc<Mutex<Wm>> {
         self.state.lock().unwrap().wm.clone()
     }
-
+*/
     pub fn get_structure (&self) -> Vec<Structure> {
         self.state.lock().unwrap().structure.clone()
     }
