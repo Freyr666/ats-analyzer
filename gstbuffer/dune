@@ -1,5 +1,6 @@
 (library
   (name              gstbuffer)
+  (public_name       gstbuffer)
   (c_names           gstbuffer_stubs)
   (install_c_headers gstbuffer_stubs)
   (c_flags           (:include c_flags.sexp))

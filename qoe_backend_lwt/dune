@@ -1,6 +1,6 @@
 (library
   (name        qoe_backend_lwt)
-;;  (public_name qoe_backend_lwt)
+  (public_name qoe_backend_lwt)
   (libraries   qoe_backend
                qoe_backend_types
                qoe_errors_parser

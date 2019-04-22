@@ -1,5 +1,6 @@
 (library
   (name       qoe_errors_parser)
+  (public_name qoe_errors_parser)
   (c_names    qoe_parser)
   (c_flags    (:include c_flags.sexp))
   (libraries  qoe_backend_types gstbuffer))
