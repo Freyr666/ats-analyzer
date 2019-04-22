@@ -23,7 +23,7 @@ depends: [
   "dune" {build}
   "qoe_backend"
   "qoe_backend_types"
-  "qoe_error_parser"
+  "qoe_errors_parser"
   "lwt"
   "lwt_react"
 ]
