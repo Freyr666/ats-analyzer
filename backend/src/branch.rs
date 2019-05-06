@@ -27,7 +27,7 @@ impl CommonBranch {
                 f.set_rank(0)
             }
         };
-
+        
         let decoder = gst::ElementFactory::make("decodebin",None).unwrap();
         
         bin.add_many(&[/*&queue,*/ &decoder]).unwrap();

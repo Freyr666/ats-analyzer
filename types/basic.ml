@@ -16,7 +16,7 @@ module type URI = sig
 end
   
 module type USECONDS = sig
-  type t = Ptime.span
+  type t = Ptime.t
   val of_int64 : int64 -> t
   val of_yojson : Yojson.Safe.json -> (t, string) result
   val to_yojson : t -> Yojson.Safe.json
