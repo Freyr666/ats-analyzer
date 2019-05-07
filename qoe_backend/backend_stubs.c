@@ -28,7 +28,7 @@ void thread_unregister (void) {
         caml_c_thread_unregister();
 }
 
-value * streams_closure = NULL;
+value streams_closure = 0;
 
 void streams_callback (char* s) {
         CAMLparam0 ();
@@ -37,7 +37,7 @@ void streams_callback (char* s) {
         caml_acquire_runtime_system ();
 
         arg = caml_copy_string(s);
-        caml_callback (*streams_closure, arg);
+        caml_callback (streams_closure, arg);
 
         caml_release_runtime_system();
         
@@ -45,7 +45,7 @@ void streams_callback (char* s) {
         CAMLreturn0;
 }
 
-value * graph_closure = NULL;
+value graph_closure = 0;
 
 void graph_callback (char* s) {
         CAMLparam0 ();
@@ -54,7 +54,7 @@ void graph_callback (char* s) {
         caml_acquire_runtime_system ();
 
         arg = caml_copy_string(s);
-        caml_callback (*graph_closure, arg);
+        caml_callback (graph_closure, arg);
 
         caml_release_runtime_system();
 
@@ -62,7 +62,7 @@ void graph_callback (char* s) {
         CAMLreturn0;
 }
 
-value * wm_closure = NULL;
+value wm_closure = 0;
 
 void wm_callback (char* s) {
         CAMLparam0 ();
@@ -71,7 +71,7 @@ void wm_callback (char* s) {
         caml_acquire_runtime_system ();
 
         arg = caml_copy_string(s);
-        caml_callback (*wm_closure, arg);
+        caml_callback (wm_closure, arg);
 
         caml_release_runtime_system();
 
@@ -79,7 +79,7 @@ void wm_callback (char* s) {
         CAMLreturn0;
 }
 
-value * data_closure = NULL;
+value data_closure = 0;
 
 void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
         CAMLparam0 ();
@@ -97,7 +97,7 @@ void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
         args[2] = Val_int (c);
         args[3] = Val_int (p);
         args[4] = buf;
-        caml_callbackN (*data_closure, 5, args);
+        caml_callbackN (data_closure, 5, args);
 
         caml_release_runtime_system();
 
@@ -105,7 +105,7 @@ void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
         CAMLreturn0;
 }
 
-value * status_closure = NULL;
+value status_closure = 0;
 
 void status_callback (char* s, uint32_t c, uint32_t p, bool b) {
         CAMLparam0 ();
@@ -122,7 +122,7 @@ void status_callback (char* s, uint32_t c, uint32_t p, bool b) {
         args[1] = Val_int (c);
         args[2] = Val_int (p);
         args[3] = Val_bool(b);
-        caml_callbackN (*status_closure, 4, args);
+        caml_callbackN (status_closure, 4, args);
 
         caml_release_runtime_system();
 
@@ -216,19 +216,19 @@ caml_qoe_backend_create_native  (value array,
         caml_initialize(&Field(res, 3), wm_cb);
         caml_initialize(&Field(res, 4), data_cb);
         caml_initialize(&Field(res, 5), status_cb);
-
-        caml_register_global_root(&Field(res, 1));
-        caml_register_global_root(&Field(res, 2));
-        caml_register_global_root(&Field(res, 3));
-        caml_register_global_root(&Field(res, 4));
-        caml_register_global_root(&Field(res, 5));
         
         // Save callbacks
-        streams_closure = &Field(res, 1);
-        graph_closure = &Field(res, 2);
-        wm_closure = &Field(res, 3);
-        data_closure = &Field(res, 4);
-        status_closure = &Field(res, 5);
+        streams_closure = Field(res, 1);
+        graph_closure = Field(res, 2);
+        wm_closure = Field(res, 3);
+        data_closure = Field(res, 4);
+        status_closure = Field(res, 5);
+
+        caml_register_global_root(&streams_closure);
+        caml_register_global_root(&graph_closure);
+        caml_register_global_root(&wm_closure);
+        caml_register_global_root(&data_closure);
+        caml_register_global_root(&status_closure);
 
         caml_release_runtime_system ();
         
@@ -296,12 +296,7 @@ caml_qoe_backend_free (value backend) {
         CAMLparam1 (backend);
         //CAMLlocal0 ();
         // TODO properly deallocate
-        Context * back = Context_val (Field (backend, 0));
-        caml_remove_global_root(&Field (backend, 1));
-        caml_remove_global_root(&Field (backend, 2));
-        caml_remove_global_root(&Field (backend, 3));
-        caml_remove_global_root(&Field (backend, 4));
-        caml_remove_global_root(&Field (backend, 5));
+        Context * back = Context_val (Field (backend, 0));  
 
         if (back == NULL)
                 caml_failwith ("Invalid context");
@@ -314,7 +309,13 @@ caml_qoe_backend_free (value backend) {
 
         Context_val (Field (backend, 0)) = NULL;
 
-        streams_closure = NULL;
+        caml_remove_global_root(&streams_closure);
+        caml_remove_global_root(&graph_closure);
+        caml_remove_global_root(&wm_closure);
+        caml_remove_global_root(&data_closure);
+        caml_remove_global_root(&status_closure);   
+
+        //streams_closure = NULL;
         
         atomic_store (&running, false);
         

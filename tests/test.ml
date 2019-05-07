@@ -149,6 +149,10 @@ let main () =
   >>=? fun (back, events) ->
   Gc.full_major ();
   Lwt_react.E.keep
+  @@ Lwt_react.E.map_p (fun (s : Qoe.Structure.t list) ->
+         Lwt_io.printf "Got graph data: %s\n" (Yojson.Safe.pretty_to_string @@ Qoe.Structure.many_to_yojson  s))
+       events.graph;
+  Lwt_react.E.keep
   @@ Lwt_react.E.map_p (fun (s : Qoe.Qoe_status.t) ->
          Lwt_io.printf "Got status: %d %d %b\n" s.channel s.pid s.playing)
        events.status;
