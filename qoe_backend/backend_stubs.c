@@ -160,7 +160,7 @@ caml_qoe_backend_create_native  (value array,
                                  value status_cb) {
         CAMLparam5 (array, streams_cb, graph_cb, wm_cb, data_cb);
         CAMLxparam1 (status_cb);
-        CAMLlocal3 (tmp, ctx, res);
+        CAMLlocal2 (tmp, ctx);
 
         Context  *context = NULL;
         char     *error = NULL;
@@ -207,22 +207,14 @@ caml_qoe_backend_create_native  (value array,
                 args[i].arg1 = caml_stat_strdup(String_val(Field(tmp,1)));
         }
         
-        res = alloc_tuple (6);
-
         ctx = alloc_custom (&context_ops, sizeof(Context*), 0, 1);
-        caml_initialize(&Field(res, 0), ctx);
-        caml_initialize(&Field(res, 1), streams_cb);
-        caml_initialize(&Field(res, 2), graph_cb);
-        caml_initialize(&Field(res, 3), wm_cb);
-        caml_initialize(&Field(res, 4), data_cb);
-        caml_initialize(&Field(res, 5), status_cb);
         
         // Save callbacks
-        streams_closure = Field(res, 1);
-        graph_closure = Field(res, 2);
-        wm_closure = Field(res, 3);
-        data_closure = Field(res, 4);
-        status_closure = Field(res, 5);
+        streams_closure = streams_cb;
+        graph_closure = graph_cb;
+        wm_closure = wm_cb;
+        data_closure = data_cb;
+        status_closure = status_cb;
 
         caml_register_global_root(&streams_closure);
         caml_register_global_root(&graph_closure);
@@ -250,7 +242,7 @@ caml_qoe_backend_create_native  (value array,
         caml_acquire_runtime_system ();
         //printf ("Context received at %p\n", context);
         // Save the context
-        Context_val(Field(res, 0)) = context;
+        Context_val(ctx) = context;
         
         if (context == NULL) {
                 if (error) {
@@ -261,7 +253,7 @@ caml_qoe_backend_create_native  (value array,
                 }
         }
         
-        CAMLreturn(res);
+        CAMLreturn(ctx);
 }
 
 CAMLprim value
@@ -276,7 +268,7 @@ caml_qoe_backend_run (value backend) {
         CAMLparam1 (backend);
         //CAMLlocal0 ();
 
-        Context * back = Context_val (Field (backend, 0));
+        Context * back = Context_val (backend);
 
         if (back == NULL)
                 caml_failwith ("Invalid context");
@@ -296,7 +288,7 @@ caml_qoe_backend_free (value backend) {
         CAMLparam1 (backend);
         //CAMLlocal0 ();
         // TODO properly deallocate
-        Context * back = Context_val (Field (backend, 0));  
+        Context * back = Context_val (backend);  
 
         if (back == NULL)
                 caml_failwith ("Invalid context");
@@ -307,7 +299,7 @@ caml_qoe_backend_free (value backend) {
 
         caml_acquire_runtime_system ();
 
-        Context_val (Field (backend, 0)) = NULL;
+        Context_val (backend) = NULL;
 
         caml_remove_global_root(&streams_closure);
         caml_remove_global_root(&graph_closure);
@@ -327,7 +319,7 @@ caml_qoe_backend_stream_parser_get_structure (value backend) {
         CAMLparam1 (backend);
         CAMLlocal1 (res);
         // TODO properly deallocate
-        Context * back = Context_val (Field (backend, 0));
+        Context * back = Context_val (backend);
         char    * streams;
 
         if (back == NULL)
@@ -350,7 +342,7 @@ caml_qoe_backend_graph_get_structure (value backend) {
         CAMLparam1 (backend);
         CAMLlocal1 (res);
         // TODO properly deallocate
-        Context * back = Context_val (Field (backend, 0));
+        Context * back = Context_val (backend);
         char    * streams;
 
         if (back == NULL)
@@ -374,7 +366,7 @@ caml_qoe_backend_graph_apply_structure (value backend,
         CAMLparam1 (backend);
         //CAMLlocal1 ();
         // TODO properly deallocate
-        Context *  back = Context_val (Field (backend, 0));
+        Context *  back = Context_val (backend);
         char    *  streams_str;
         char    ** error = NULL;
         int        res;
@@ -409,7 +401,7 @@ caml_qoe_backend_wm_get_layout (value backend) {
         CAMLparam1 (backend);
         CAMLlocal1 (res);
         // TODO properly deallocate
-        Context * back = Context_val (Field (backend, 0));
+        Context * back = Context_val (backend);
         char    * layout;
 
         if (back == NULL)
@@ -433,7 +425,7 @@ caml_qoe_backend_wm_apply_layout (value backend,
         CAMLparam1 (backend);
         //CAMLlocal1 ();
         // TODO properly deallocate
-        Context *  back = Context_val (Field (backend, 0));
+        Context *  back = Context_val (backend);
         char    *  layout_str;
         char    ** error = NULL;
         int        res;
