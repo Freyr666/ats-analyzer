@@ -211,10 +211,15 @@ caml_qoe_backend_create_native  (value array,
 
         ctx = alloc_custom (&context_ops, sizeof(Context*), 0, 1);
         caml_initialize(&Field(res, 0), ctx);
+        caml_register_global_root(&streams_cb);
         caml_initialize(&Field(res, 1), streams_cb);
+        caml_register_global_root(&graph_cb);
         caml_initialize(&Field(res, 2), graph_cb);
+        caml_register_global_root(&wm_cb);
         caml_initialize(&Field(res, 3), wm_cb);
+        caml_register_global_root(&data_cb);
         caml_initialize(&Field(res, 4), data_cb);
+        caml_register_global_root(&status_cb);
         caml_initialize(&Field(res, 5), status_cb);
         // Save callbacks
         streams_closure = &Field(res, 1);
