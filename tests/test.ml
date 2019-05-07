@@ -42,19 +42,21 @@ module ID = struct
 end
 
 module Period = struct
-  include Ptime.Span
+  include Ptime
 
   let ps_in_s = 1000_000_000_000L
 
   let to_yojson (v:t) : Yojson.Safe.json =
-    let d, ps = Ptime.Span.to_d_ps v in
+    let d, ps = Ptime.Span.to_d_ps @@ Ptime.to_span v in
     `List [ `Int d;`Intlit (Int64.to_string ps) ]
 
   let of_yojson (j:Yojson.Safe.json) : (t,string) result =
     let to_err j = Printf.sprintf "span_of_yojson: bad json value (%s)" @@ Yojson.Safe.to_string j in
     match j with
     | `List [ `Int d; `Intlit ps] -> (match Int64.of_string_opt ps with
-                                      | Some ps -> to_result (Ptime.Span.of_d_ps (d,ps))
+                                      | Some ps -> to_result (match Ptime.Span.of_d_ps (d,ps)
+                                                              with None -> None
+                                                                 | Some s -> Ptime.of_span s)
                                       | None    -> Error (to_err j))
     | _ -> Error (to_err j)
 
@@ -79,10 +81,10 @@ module Period = struct
       if Int64.compare M.second ps_in_s > 0
       then failwith "Time.Span.Conv64: second precision is more than 1ps"
 
-    type t = Ptime.Span.t
+    type t = Ptime.t
 
     let of_int64 (x : int64) : t =
-      Ptime.Span.of_float_s ((Int64.to_float x) /. (Int64.to_float M.second))
+      Ptime.of_float_s ((Int64.to_float x) /. (Int64.to_float M.second))
       |> get_exn
     (* let d  = Int64.(to_int (x / (24L * 60L * 60L * M.second))) in
      * let ps = Int64.((x mod (24L * 60L * 60L)) * (ps_in_s / M.second)) in
@@ -90,7 +92,7 @@ module Period = struct
      * @@ Option.flat_map Ptime.of_span (Ptime.Span.of_d_ps (d, ps)) *)
 
     let to_int64 (x : t) : int64 =
-      Ptime.Span.to_float_s x
+      Ptime.to_float_s x
       |> ( *. ) (Int64.to_float M.second)
       |> Int64.of_float
     (* let d, ps = Ptime.Span.to_d_ps @@ Ptime.to_span x in

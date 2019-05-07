@@ -54,7 +54,7 @@ impl WmState {
         
         mixer.set_property("background", &enum_to_val("GstGLVideoMixerBackground", 1)).unwrap();
         mixer.set_property("async-handling", &true).unwrap();
-        mixer.set_property("latency", &100_000_000i64).unwrap();
+        mixer.set_property("latency", &100_000_000u64).unwrap();
         caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(resolution)).unwrap()).unwrap();
 
         pipe.add_many(&[&mixer,&caps,&download]).unwrap();
