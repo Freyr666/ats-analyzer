@@ -133,13 +133,14 @@ impl VideoBranch {
                 let stream = stream_data.clone();
                 match sender_data.upgrade() {
                     None => None,
-                    Some (ref sender) => {
+                    Some (ref sender) => { // TODO proper vals unwrap
+                        let buf = vals[1].get::<gst::Buffer>().unwrap();
                         sender.lock().unwrap()
                             .send((Typ::Video,
                                    stream,
                                    channel,
                                    pid, // TODO proper vals unwrap
-                                   vals[1].get::<gst::Buffer>().unwrap()))
+                                   buf))
                             .unwrap();
                         None
                     },

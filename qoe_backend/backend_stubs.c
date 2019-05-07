@@ -30,63 +30,76 @@ void thread_unregister (void) {
 
 value streams_closure = 0;
 
-void streams_callback (char* s) {
+void streams_callback_with_lock (char* s) {
         CAMLparam0 ();
         CAMLlocal1 (arg);
         
-        caml_acquire_runtime_system ();
-
         arg = caml_copy_string(s);
         caml_callback (streams_closure, arg);
+        
+        CAMLreturn0;
+}
+
+void streams_callback (char* s) {        
+        caml_acquire_runtime_system ();
+
+        streams_callback_with_lock (s);
 
         caml_release_runtime_system();
-        
+
         free(s);
-        CAMLreturn0;
 }
 
 value graph_closure = 0;
 
-void graph_callback (char* s) {
+void graph_callback_with_lock (char* s) {
         CAMLparam0 ();
         CAMLlocal1 (arg);
-
-        caml_acquire_runtime_system ();
 
         arg = caml_copy_string(s);
         caml_callback (graph_closure, arg);
 
+        CAMLreturn0;
+}
+
+void graph_callback (char* s) {
+        caml_acquire_runtime_system ();
+
+        graph_callback_with_lock (s);
+        
         caml_release_runtime_system();
 
         free(s);
-        CAMLreturn0;
 }
 
 value wm_closure = 0;
 
-void wm_callback (char* s) {
+void wm_callback_with_lock (char* s) {
         CAMLparam0 ();
         CAMLlocal1 (arg);
-
-        caml_acquire_runtime_system ();
 
         arg = caml_copy_string(s);
         caml_callback (wm_closure, arg);
 
+        CAMLreturn0;
+}
+
+void wm_callback (char* s) {
+        caml_acquire_runtime_system ();
+
+        wm_callback_with_lock (s);
+
         caml_release_runtime_system();
 
         free(s);
-        CAMLreturn0;
 }
 
 value data_closure = 0;
 
-void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
+void data_callback_with_lock (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
         CAMLparam0 ();
         CAMLlocal2 (arg, buf);
 
-        printf ("Got buffer %p\n", b);
-        /*
         value args[5];
 
         arg = caml_copy_string(s);
@@ -97,24 +110,30 @@ void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
         args[2] = Val_int (c);
         args[3] = Val_int (p);
         args[4] = buf;
-
-        caml_acquire_runtime_system ();
         
         caml_callbackN (data_closure, 5, args);
 
-        caml_release_runtime_system();
-        */
-        gst_buffer_unref ((GstBuffer*) b);
-        free(s);
         CAMLreturn0;
+}
+
+void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
+        printf ("Got buffer %p counter %d\n", b, GST_OBJECT_REFCOUNT_VALUE(b));
+        
+        caml_acquire_runtime_system ();
+
+        data_callback_with_lock (typ, s, c, p, b);
+
+        caml_release_runtime_system();
+        
+        free(s);
 }
 
 value status_closure = 0;
 
-void status_callback (char* s, uint32_t c, uint32_t p, bool b) {
+void status_callback_with_lock (char* s, uint32_t c, uint32_t p, bool b) {
         CAMLparam0 ();
         CAMLlocal1 (arg);
-
+        
         value args[4];
 
         arg = caml_copy_string(s);
@@ -123,15 +142,20 @@ void status_callback (char* s, uint32_t c, uint32_t p, bool b) {
         args[1] = Val_int (c);
         args[2] = Val_int (p);
         args[3] = Val_bool(b);
-
-        caml_acquire_runtime_system ();
         
         caml_callbackN (status_closure, 4, args);
+
+        CAMLreturn0;
+}
+
+void status_callback (char* s, uint32_t c, uint32_t p, bool b) {
+        caml_acquire_runtime_system ();
+        
+        status_callback_with_lock (s, c, p, b);
 
         caml_release_runtime_system();
 
         free(s);
-        CAMLreturn0;
 }
 
 static struct custom_operations context_ops = {

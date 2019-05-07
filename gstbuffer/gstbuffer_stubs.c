@@ -3,7 +3,12 @@
 static void
 buffer_finalize(value buf) {
         GstBuffer *b = Buffer_val(buf);
-        gst_buffer_unref(b);
+        printf ("Collecting GstBuffer from OCaml\n");
+        printf ("Addr: %p\n", b);
+        if (b) {
+                printf ("Ref: %d\n", GST_OBJECT_REFCOUNT_VALUE(b));
+                gst_buffer_unref(b);
+        }
 }
 
 static struct custom_operations buffer_ops = {
@@ -17,9 +22,11 @@ static struct custom_operations buffer_ops = {
 
 CAMLexport value
 caml_gstbuffer_alloc (GstBuffer *b) {
-        value v = alloc_custom(&buffer_ops, sizeof(GstBuffer *), 0, 1);
+        CAMLparam0 ();
+        CAMLlocal1 (v);
+        v = alloc_custom(&buffer_ops, sizeof(GstBuffer *), 0, 1);
         Buffer_val(v) = b;
-        return v;
+        CAMLreturn(v);
 }
 
 CAMLprim value
