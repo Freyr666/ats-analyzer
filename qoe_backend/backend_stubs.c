@@ -211,16 +211,18 @@ caml_qoe_backend_create_native  (value array,
 
         ctx = alloc_custom (&context_ops, sizeof(Context*), 0, 1);
         caml_initialize(&Field(res, 0), ctx);
-        caml_register_global_root(&streams_cb);
         caml_initialize(&Field(res, 1), streams_cb);
-        caml_register_global_root(&graph_cb);
         caml_initialize(&Field(res, 2), graph_cb);
-        caml_register_global_root(&wm_cb);
         caml_initialize(&Field(res, 3), wm_cb);
-        caml_register_global_root(&data_cb);
         caml_initialize(&Field(res, 4), data_cb);
-        caml_register_global_root(&status_cb);
         caml_initialize(&Field(res, 5), status_cb);
+
+        caml_register_global_root(&Field(res, 1));
+        caml_register_global_root(&Field(res, 2));
+        caml_register_global_root(&Field(res, 3));
+        caml_register_global_root(&Field(res, 4));
+        caml_register_global_root(&Field(res, 5));
+        
         // Save callbacks
         streams_closure = &Field(res, 1);
         graph_closure = &Field(res, 2);
@@ -295,6 +297,11 @@ caml_qoe_backend_free (value backend) {
         //CAMLlocal0 ();
         // TODO properly deallocate
         Context * back = Context_val (Field (backend, 0));
+        caml_remove_global_root(&Field (backend, 1));
+        caml_remove_global_root(&Field (backend, 2));
+        caml_remove_global_root(&Field (backend, 3));
+        caml_remove_global_root(&Field (backend, 4));
+        caml_remove_global_root(&Field (backend, 5));
 
         if (back == NULL)
                 caml_failwith ("Invalid context");
