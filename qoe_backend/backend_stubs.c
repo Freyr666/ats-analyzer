@@ -85,9 +85,9 @@ void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
         CAMLparam0 ();
         CAMLlocal2 (arg, buf);
 
-        value args[4];
-        
-        caml_acquire_runtime_system ();
+        printf ("Got buffer %p\n", b);
+        /*
+        value args[5];
 
         arg = caml_copy_string(s);
         buf = caml_gstbuffer_alloc ((GstBuffer*) b);
@@ -97,10 +97,14 @@ void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
         args[2] = Val_int (c);
         args[3] = Val_int (p);
         args[4] = buf;
+
+        caml_acquire_runtime_system ();
+        
         caml_callbackN (data_closure, 5, args);
 
         caml_release_runtime_system();
-
+        */
+        gst_buffer_unref ((GstBuffer*) b);
         free(s);
         CAMLreturn0;
 }
@@ -109,19 +113,19 @@ value status_closure = 0;
 
 void status_callback (char* s, uint32_t c, uint32_t p, bool b) {
         CAMLparam0 ();
-        CAMLlocal2 (arg, buf);
+        CAMLlocal1 (arg);
 
         value args[4];
 
-        caml_acquire_runtime_system ();
-
         arg = caml_copy_string(s);
-        buf = caml_gstbuffer_alloc ((GstBuffer*) b);
 
         args[0] = arg;
         args[1] = Val_int (c);
         args[2] = Val_int (p);
         args[3] = Val_bool(b);
+
+        caml_acquire_runtime_system ();
+        
         caml_callbackN (status_closure, 4, args);
 
         caml_release_runtime_system();

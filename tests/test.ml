@@ -160,7 +160,9 @@ let main () =
   @@ Lwt_react.E.map_p (fun (s : Qoe.Qoe_errors.Video_data.t) ->
          Lwt_io.printf "Got vdata: %d %d freeze frame: %b %b %f %f %f\n" s.channel s.pid s.errors.freeze.peak_flag s.errors.freeze.cont_flag s.errors.freeze.params.max s.errors.freeze.params.avg s.errors.freeze.params.avg)
        events.vdata;
+  Gc.finalise (fun _ -> print_endline "Backend was collected") back;
   let t = Qoe.run back in
+  Gc.full_major ();
   Lwt_unix.sleep 10.0
   >>= fun () ->
   Qoe.Stream_parser.get_structure back
@@ -177,7 +179,12 @@ let main () =
   Lwt_io.printf "Applied: %s\n"
     (Yojson.Safe.pretty_to_string @@ Qoe.Structure.many_to_yojson s)
   >>= fun () ->
-  Lwt_unix.sleep 60.0
+  Lwt_unix.sleep 20.0
+  >>= fun () ->
+  Gc.full_major ();
+  Lwt_unix.sleep 20.0
+  >>= fun () ->
+  Lwt_io.printf "destroying back\n"
   >>= fun () ->
   Qoe.destroy back;
   t >>= fun () ->
