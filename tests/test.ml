@@ -147,6 +147,7 @@ let main () =
   Qoe.create [| (ID.to_string @@ ID.make "test"),
                 "udp://224.1.2.2:1234" |]
   >>=? fun (back, events) ->
+  Gc.full_major ();
   Lwt_react.E.keep
   @@ Lwt_react.E.map_p (fun (s : Qoe.Qoe_status.t) ->
          Lwt_io.printf "Got status: %d %d %b\n" s.channel s.pid s.playing)
