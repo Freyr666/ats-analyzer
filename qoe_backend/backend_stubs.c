@@ -396,7 +396,7 @@ caml_qoe_backend_graph_apply_structure (value backend,
         // TODO properly deallocate
         Context *  back = Context_val (backend);
         char    *  streams_str;
-        char    ** error = NULL;
+        char    *  error = NULL;
         int        res;
 
         if (back == NULL)
@@ -406,7 +406,7 @@ caml_qoe_backend_graph_apply_structure (value backend,
         
         caml_release_runtime_system ();
 
-        res = qoe_backend_graph_apply_structure (back, streams_str, error);
+        res = qoe_backend_graph_apply_structure (back, streams_str, &error);
 
         caml_stat_free (streams_str);
         
@@ -431,14 +431,14 @@ caml_qoe_backend_graph_get_settings (value backend) {
         // TODO properly deallocate
         Context * back = Context_val (backend);
         char    * settings;
-        char   ** error = NULL;
+        char    * error = NULL;
 
         if (back == NULL)
                 caml_failwith ("Invalid context");
 
         caml_release_runtime_system ();
 
-        settings = qoe_backend_graph_get_settings (back, error);
+        settings = qoe_backend_graph_get_settings (back, &error);
 
         caml_acquire_runtime_system ();
         // TODO reduce allocations
@@ -446,7 +446,7 @@ caml_qoe_backend_graph_get_settings (value backend) {
         if (settings == NULL) {
                 if (error) {
                         caml_failwith (*error);
-                        free (*error);
+                        free (*error); // TODO never free
                 } else {
                         caml_failwith ("Unknown error");
                 }
@@ -466,7 +466,7 @@ caml_qoe_backend_graph_apply_settings (value backend,
         // TODO properly deallocate
         Context *  back = Context_val (backend);
         char    *  settings_str;
-        char    ** error = NULL;
+        char    *  error = NULL;
         int        res;
 
         if (back == NULL)
@@ -476,7 +476,7 @@ caml_qoe_backend_graph_apply_settings (value backend,
         
         caml_release_runtime_system ();
 
-        res = qoe_backend_graph_apply_settings (back, settings_str, error);
+        res = qoe_backend_graph_apply_settings (back, settings_str, &error);
 
         caml_stat_free (settings_str);
         
@@ -525,7 +525,7 @@ caml_qoe_backend_wm_apply_layout (value backend,
         // TODO properly deallocate
         Context *  back = Context_val (backend);
         char    *  layout_str;
-        char    ** error = NULL;
+        char    *  error = NULL;
         int        res;
 
         if (back == NULL)
@@ -535,7 +535,7 @@ caml_qoe_backend_wm_apply_layout (value backend,
         
         caml_release_runtime_system ();
 
-        res = qoe_backend_wm_apply_layout (back, layout_str, error);
+        res = qoe_backend_wm_apply_layout (back, layout_str, &error);
 
         caml_stat_free (layout_str);
         
