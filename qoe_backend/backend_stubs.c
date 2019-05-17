@@ -476,7 +476,7 @@ caml_qoe_backend_graph_apply_settings (value backend,
         
         caml_release_runtime_system ();
 
-        res = qoe_backend_graph_apply_structure (back, settings_str, error);
+        res = qoe_backend_graph_apply_settings (back, settings_str, error);
 
         caml_stat_free (settings_str);
         
