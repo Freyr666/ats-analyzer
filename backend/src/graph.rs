@@ -39,7 +39,7 @@ impl GraphState {
                 -> GraphState {
         let sender_data = Arc::new(Mutex::new(sender_data));
         let sender_status = Arc::new(Mutex::new(sender_status));
-        let settings  = None;
+        let settings  = Some(Settings::new());//None;
         let structure = Vec::new();
         let pipeline  = gst::Pipeline::new(None);
         let wm        = Arc::new(Mutex::new(Wm::new(sender_wm)));
@@ -105,7 +105,6 @@ impl GraphState {
         for stream in &s {
             if let Some(root) = Root::new(&self.pipeline,
                                           &stream,
-                                          self.settings,
                                           &self.sender_data,
                                           &self.sender_status) {
                 //let pipe   = self.pipeline.clone();
@@ -129,6 +128,7 @@ impl GraphState {
             }
         };
         // TODO replace with retain_state
+        
         let _ = self.pipeline.set_state(gst::State::Playing);
         self.structure = s;
         Ok(())
@@ -136,8 +136,8 @@ impl GraphState {
 
     pub fn apply_settings (&mut self, s: Settings) -> Result<(),String> {
         debug!("Graph::apply_settings");
+        self.roots.iter_mut().for_each(|root : &mut Root| root.apply_settings(&s) );
         self.settings = Some(s);
-        self.roots.iter_mut().for_each(|root : &mut Root| root.apply_settings(s) );
         Ok(())
     }
 }
@@ -185,6 +185,17 @@ impl Graph {
             Ok(s)  => s.wm.lock().unwrap().set_layout(templ),
             Err(_) => Err(String::from("can't acquire wm state")), 
         }
+    }
+
+    pub fn get_settings (&self) -> Result<Settings,String> {
+        match self.state.lock().unwrap().settings {
+            Some (ref s) => Ok(s.clone()),
+            None => Err(String::from("no settings yet applied")),
+        }
+    }
+
+    pub fn set_settings (&self, s: Settings) -> Result<(),String> {
+        self.state.lock().unwrap().apply_settings(s)
     }
 
             /*

@@ -3,7 +3,7 @@ use std::sync::mpsc::Sender;
 use gst::prelude::*;
 use gst;
 use pad::SrcPad;
-use settings::Settings;
+use settings;
 use signals::Signal;
 
 #[derive(Clone,Copy)]
@@ -22,6 +22,7 @@ impl CommonBranch {
     pub fn new () -> CommonBranch {
         let bin   = gst::Bin::new(None);
 
+        // Diminish vaapi decoders' priority
         for el in &["vaapih264dec", "vaapimpeg2dec", "vaapidecodebin"] {
             if let Some(f) = gst::ElementFactory::find(&el) {
                 f.set_rank(0)
@@ -48,6 +49,8 @@ pub struct VideoBranch {
     stream:   String,
     channel:  u32,
     pid:      u32,
+    settings: Option<settings::Video>,
+    
     pads:     Arc<Mutex<Vec<SrcPad>>>,
     analyser: gst::Element,
     decoder:  gst::Element,
@@ -65,7 +68,6 @@ impl VideoBranch {
     pub fn new (stream: String,
                 channel: u32,
                 pid: u32,
-                settings: Option<Settings>,
                 sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
                 sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>)
                 -> VideoBranch {
@@ -82,8 +84,6 @@ impl VideoBranch {
 
         analyser.set_property("latency", &3u32).unwrap();
         
-        VideoBranch::apply_settings(&analyser, settings);
-
         let stream_id     = stream.clone();
         let bin_weak      = bin.downgrade();
         let analyser_weak = analyser.downgrade();
@@ -190,7 +190,9 @@ impl VideoBranch {
             pads_c.lock().unwrap().push(spad);
         });
         
-        VideoBranch { stream, channel, pid, pads,
+        VideoBranch { stream, channel, pid,
+                      settings : None,
+                      pads,
                       analyser, decoder, bin,
                       sink, pad_added }
     }
@@ -206,38 +208,44 @@ impl VideoBranch {
        // self.bin.sync_children_states().unwrap();
     }
 
-    pub fn apply_settings (analyser: &gst::Element, s: Option<Settings>) {
-        if let Some(s) = s {
-            let vset = s.video;
-            analyser.set_property("loss", &vset.loss).unwrap();
-            analyser.set_property("black-pixel-lb", &vset.black.black_pixel).unwrap();
-            analyser.set_property("pixel-diff-lb", &vset.freeze.pixel_diff).unwrap();
-            analyser.set_property("black-cont", &vset.black.black.cont).unwrap();
-            analyser.set_property("black-cont-en", &vset.black.black.cont_en).unwrap();
-            analyser.set_property("black-peak", &vset.black.black.peak).unwrap();
-            analyser.set_property("black-peak-en", &vset.black.black.peak_en).unwrap();
-            analyser.set_property("black-duration", &vset.black.black.duration).unwrap();
-            analyser.set_property("luma-cont", &vset.black.luma.cont).unwrap();
-            analyser.set_property("luma-cont-en", &vset.black.luma.cont_en).unwrap();
-            analyser.set_property("luma-peak", &vset.black.luma.peak).unwrap();
-            analyser.set_property("luma-peak-en", &vset.black.luma.peak_en).unwrap();
-            analyser.set_property("luma-duration", &vset.black.luma.duration).unwrap();
-            analyser.set_property("freeze-cont", &vset.freeze.freeze.cont).unwrap();
-            analyser.set_property("freeze-cont-en", &vset.freeze.freeze.cont_en).unwrap();
-            analyser.set_property("freeze-peak", &vset.freeze.freeze.peak).unwrap();
-            analyser.set_property("freeze-peak-en", &vset.freeze.freeze.peak_en).unwrap();
-            analyser.set_property("freeze-duration", &vset.freeze.freeze.duration).unwrap();
-            analyser.set_property("diff-cont", &vset.freeze.diff.cont).unwrap();
-            analyser.set_property("diff-cont-en", &vset.freeze.diff.cont_en).unwrap();
-            analyser.set_property("diff-peak", &vset.freeze.diff.peak).unwrap();
-            analyser.set_property("diff-peak-en", &vset.freeze.diff.peak_en).unwrap();
-            analyser.set_property("diff-duration", &vset.freeze.diff.duration).unwrap();
-            analyser.set_property("blocky-cont", &vset.blocky.blocky.cont).unwrap();
-            analyser.set_property("blocky-cont-en", &vset.blocky.blocky.cont_en).unwrap();
-            analyser.set_property("blocky-peak", &vset.blocky.blocky.peak).unwrap();
-            analyser.set_property("blocky-peak-en", &vset.blocky.blocky.peak_en).unwrap();
-            analyser.set_property("blocky-duration", &vset.blocky.blocky.duration).unwrap();
-        }
+    pub fn apply_settings (&mut self, s: &settings::Settings) {
+        let vset = s.get_video(&(self.stream.clone(), self.channel, self.pid));
+
+        match self.settings { // Skip if is already applied
+            Some (v) => if v == vset { return },
+            None => (),
+        };
+        
+        self.analyser.set_property("loss", &vset.loss).unwrap();
+        self.analyser.set_property("black-pixel-lb", &vset.black.black_pixel).unwrap();
+        self.analyser.set_property("pixel-diff-lb", &vset.freeze.pixel_diff).unwrap();
+        self.analyser.set_property("black-cont", &vset.black.black.cont).unwrap();
+        self.analyser.set_property("black-cont-en", &vset.black.black.cont_en).unwrap();
+        self.analyser.set_property("black-peak", &vset.black.black.peak).unwrap();
+        self.analyser.set_property("black-peak-en", &vset.black.black.peak_en).unwrap();
+        self.analyser.set_property("black-duration", &vset.black.black.duration).unwrap();
+        self.analyser.set_property("luma-cont", &vset.black.luma.cont).unwrap();
+        self.analyser.set_property("luma-cont-en", &vset.black.luma.cont_en).unwrap();
+        self.analyser.set_property("luma-peak", &vset.black.luma.peak).unwrap();
+        self.analyser.set_property("luma-peak-en", &vset.black.luma.peak_en).unwrap();
+        self.analyser.set_property("luma-duration", &vset.black.luma.duration).unwrap();
+        self.analyser.set_property("freeze-cont", &vset.freeze.freeze.cont).unwrap();
+        self.analyser.set_property("freeze-cont-en", &vset.freeze.freeze.cont_en).unwrap();
+        self.analyser.set_property("freeze-peak", &vset.freeze.freeze.peak).unwrap();
+        self.analyser.set_property("freeze-peak-en", &vset.freeze.freeze.peak_en).unwrap();
+        self.analyser.set_property("freeze-duration", &vset.freeze.freeze.duration).unwrap();
+        self.analyser.set_property("diff-cont", &vset.freeze.diff.cont).unwrap();
+        self.analyser.set_property("diff-cont-en", &vset.freeze.diff.cont_en).unwrap();
+        self.analyser.set_property("diff-peak", &vset.freeze.diff.peak).unwrap();
+        self.analyser.set_property("diff-peak-en", &vset.freeze.diff.peak_en).unwrap();
+        self.analyser.set_property("diff-duration", &vset.freeze.diff.duration).unwrap();
+        self.analyser.set_property("blocky-cont", &vset.blocky.blocky.cont).unwrap();
+        self.analyser.set_property("blocky-cont-en", &vset.blocky.blocky.cont_en).unwrap();
+        self.analyser.set_property("blocky-peak", &vset.blocky.blocky.peak).unwrap();
+        self.analyser.set_property("blocky-peak-en", &vset.blocky.blocky.peak_en).unwrap();
+        self.analyser.set_property("blocky-duration", &vset.blocky.blocky.duration).unwrap();
+
+        self.settings = Some(vset);
     }
 }
 
@@ -246,6 +254,8 @@ pub struct AudioBranch {
     stream:   String,
     channel:  u32,
     pid:      u32,
+    settings: Option<settings::Audio>,
+    
     pads:     Arc<Mutex<Vec<SrcPad>>>,
     analyser: gst::Element,
     decoder:  gst::Element,
@@ -260,7 +270,6 @@ impl AudioBranch {
     pub fn new (stream: String,
                 channel: u32,
                 pid: u32,
-                settings: Option<Settings>,
                 sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
                 sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>)
                 -> AudioBranch {
@@ -275,8 +284,6 @@ impl AudioBranch {
         let sink      = common.sink;
         let pad_added = Arc::new(Mutex::new(Signal::new()));
         let audio_pad_added = Arc::new(Mutex::new(Signal::new()));
-
-        AudioBranch::apply_settings(&analyser, settings);
 
         let stream_id = stream.clone();
         let bin_weak      = bin.downgrade();
@@ -388,7 +395,9 @@ impl AudioBranch {
             pads_c.lock().unwrap().push(aspad);
         });
 
-        AudioBranch { stream, channel, pid, pads,
+        AudioBranch { stream, channel, pid,
+                      settings : None,
+                      pads,
                       analyser, decoder, bin, sink,
                       pad_added, audio_pad_added }
     }
@@ -404,23 +413,29 @@ impl AudioBranch {
         self.bin.sync_children_states().unwrap();
     }
 
-    pub fn apply_settings (analyser: &gst::Element, s: Option<Settings>) {
-        if let Some(s) = s {
-            let aset = s.audio;
-            analyser.set_property("loss", &aset.loss).unwrap();
-            analyser.set_property("silence-cont", &aset.silence.silence.cont).unwrap();
-            analyser.set_property("silence-cont-en", &aset.silence.silence.cont_en).unwrap();
-            analyser.set_property("silence-peak", &aset.silence.silence.peak).unwrap();
-            analyser.set_property("silence-peak-en", &aset.silence.silence.peak_en).unwrap();
-            analyser.set_property("silence-duration", &aset.silence.silence.duration).unwrap();
-            analyser.set_property("loudness-cont", &aset.loudness.loudness.cont).unwrap();
-            analyser.set_property("loudness-cont-en", &aset.loudness.loudness.cont_en).unwrap();
-            analyser.set_property("loudness-peak", &aset.loudness.loudness.peak).unwrap();
-            analyser.set_property("loudness-peak-en", &aset.loudness.loudness.peak_en).unwrap();
-            analyser.set_property("loudness-duration", &aset.loudness.loudness.duration).unwrap();
-            //analyser.set_property("adv-diff", &aset.adv.adv_diff).unwrap();
-            //analyser.set_property("adv-buff", &aset.adv.adv_buf).unwrap();
-        }
+    pub fn apply_settings (&mut self, s: &settings::Settings) {
+        let aset = s.get_audio(&(self.stream.clone(), self.channel, self.pid));
+
+        match self.settings { // Skip if is already applied
+            Some (v) => if v == aset { return },
+            None => (),
+        };
+        
+        self.analyser.set_property("loss", &aset.loss).unwrap();
+        self.analyser.set_property("silence-cont", &aset.silence.silence.cont).unwrap();
+        self.analyser.set_property("silence-cont-en", &aset.silence.silence.cont_en).unwrap();
+        self.analyser.set_property("silence-peak", &aset.silence.silence.peak).unwrap();
+        self.analyser.set_property("silence-peak-en", &aset.silence.silence.peak_en).unwrap();
+        self.analyser.set_property("silence-duration", &aset.silence.silence.duration).unwrap();
+        self.analyser.set_property("loudness-cont", &aset.loudness.loudness.cont).unwrap();
+        self.analyser.set_property("loudness-cont-en", &aset.loudness.loudness.cont_en).unwrap();
+        self.analyser.set_property("loudness-peak", &aset.loudness.loudness.peak).unwrap();
+        self.analyser.set_property("loudness-peak-en", &aset.loudness.loudness.peak_en).unwrap();
+        self.analyser.set_property("loudness-duration", &aset.loudness.loudness.duration).unwrap();
+        //self.analyser.set_property("adv-diff", &aset.adv.adv_diff).unwrap();
+        //self.analyser.set_property("adv-buff", &aset.adv.adv_buf).unwrap();
+
+        self.settings = Some(aset);
     }
 
 }
@@ -437,7 +452,6 @@ impl Branch {
                channel: u32,
                pid: u32,
                typ: &str,
-               settings: Option<Settings>,
                sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
                sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>)
                -> Option<Branch> {
@@ -445,13 +459,11 @@ impl Branch {
             "video" => Some(Branch::Video(VideoBranch::new(stream,
                                                            channel,
                                                            pid,
-                                                           settings,
                                                            sender_data,
                                                            sender_status))),
             "audio" => Some(Branch::Audio(AudioBranch::new(stream,
                                                            channel,
                                                            pid,
-                                                           settings,
                                                            sender_data,
                                                            sender_status))),
             _       => None
@@ -472,10 +484,10 @@ impl Branch {
         }
     }
 
-    pub fn apply_settings (&mut self, s: Settings) {
+    pub fn apply_settings (&mut self, s: &settings::Settings) {
         match *self {
-            Branch::Video(ref br) => VideoBranch::apply_settings(&br.analyser, Some(s)),
-            Branch::Audio(ref br) => AudioBranch::apply_settings(&br.analyser, Some(s)),
+            Branch::Video(ref mut br) => br.apply_settings(s),
+            Branch::Audio(ref mut br) => br.apply_settings(s),
         }
     }
 }

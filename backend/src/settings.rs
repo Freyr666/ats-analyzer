@@ -1,8 +1,7 @@
-use std::sync::{Arc,Mutex};
-use signals::Msg;
-use std::sync::mpsc::Sender;
+use std::collections::HashMap;
+use branch::Typ;
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Default,Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Setting {
     pub peak_en : bool,
     pub peak    : f32,
@@ -11,42 +10,42 @@ pub struct Setting {
     pub duration: f32,
 }
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Default,Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Black {
     pub black       : Setting,
     pub luma        : Setting,
     pub black_pixel : u32,
 }
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Default,Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Freeze {
     pub freeze     : Setting,
     pub diff       : Setting,
     pub pixel_diff : u32,
 }
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Default,Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Blocky {
     pub blocky      : Setting,
 }
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Default,Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Silence {
     pub silence : Setting,
 }
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Default,Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Loudness {
     pub loudness : Setting,
 }
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Default,Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Adv {
     pub adv_diff : f32,
     pub adv_buf  : i32,
 }
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Default,Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Video {
     pub loss   : f32,
     pub black  : Black,
@@ -54,7 +53,7 @@ pub struct Video {
     pub blocky : Blocky,
 }
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Default,Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Audio {
     pub loss     : f32,
     pub silence  : Silence,
@@ -62,68 +61,49 @@ pub struct Audio {
     pub adv      : Adv
 }
 
-#[derive(Copy,Clone,PartialEq,Serialize,Deserialize,Debug)]
+#[derive(Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct Settings {
-    pub video : Video,
-    pub audio : Audio,
+    default_video : Video,
+    default_audio : Audio,
+    video : HashMap<(String,u32,u32), Video>, // TODO consider Cow<str>
+    audio : HashMap<(String,u32,u32), Audio>,
 }
 
-pub struct Configuration {
-    settings:   Arc<Mutex<Option<Settings>>>,
+impl Settings {
+    pub fn new () -> Settings { //default_video: Video, default_audio: Audio) -> Settings {
+        let mut res = Settings { default_video : Video::default(),
+                             default_audio : Audio::default(),
+                             video : HashMap::new(),
+                             audio : HashMap::new(),
+        };
 
-   /* pub chat:   Arc<Mutex<Notifier>>,*/
-    pub update: Arc<Mutex<Msg<Settings,Result<(),String>>>>,
-}
+        res.video.insert((String::from("test"),42,13), res.default_video);
+        res.audio.insert((String::from("test"),42,13), res.default_audio);
 
-
-/*
-impl Addressable for Configuration {
-    fn get_name (&self) -> &str { "settings" }
-    fn get_format (&self) -> MsgType { self.format }
-}
-
-impl Replybox for Configuration {
-
-    fn reply (&self) ->
-        Box<Fn(Vec<u8>) -> Vec<u8> + Send + Sync> {
-            let signal   = self.update.clone();
-            let settings = self.settings.clone();
-            Box::new(move | data: Vec<u8> | {
-                
-                
-                match data {
-                    Request::Get =>
-                        if let Ok(s) = settings.lock() {
-                            match *s {
-                                Some(ref s) => Ok(Reply::Get(*s)),
-                                None        => Err(String::from("no settings available"))
-                            }
-                        } else {
-                            Err(String::from("can't acquire the settings"))
-                        },
-                    Request::Set(data) => {
-                        let mut s = settings.lock().unwrap();
-                        *s = Some(data);
-                        match signal.lock().unwrap().emit(data) {
-                            None    => Err(String::from("Settings are not connected to the graph")),
-                            Some(r) => match r {
-                                Ok(()) => Ok(Reply::Set),
-                                Err(e) => Err(e),
-                            }
-                        }
-                    }
-                }
-            })
-        }
-}
-*/
-
-impl Configuration {
-    pub fn new () -> Configuration {
-        let update     = Arc::new(Mutex::new(Msg::new()));
-        let settings   = Arc::new(Mutex::new(None));
-       /* let chat       = Arc::new(Mutex::new(Notifier::new("settings", sender ))); */
-
-        Configuration { update, settings }
+        res
     }
+
+    pub fn get_video (&self, k: &(String,u32,u32)) -> Video {
+        match self.video.get(k) {
+            Some (v) => *v,
+            None => self.default_video,
+        }
+    }
+
+    pub fn get_audio (&self, k: &(String,u32,u32)) -> Audio {
+        match self.audio.get(k) {
+            Some (v) => *v,
+            None => self.default_audio,
+        }
+    }
+
+    pub fn set_video (&mut self, k: (String,u32,u32), v: Video) {
+        let _ = self.video.insert(k, v);
+    }
+
+    pub fn set_audio (&mut self, k: (String,u32,u32), v: Audio) {
+        let _ = self.audio.insert(k, v);
+    }
+
+    
 }

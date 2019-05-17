@@ -30,6 +30,10 @@ val graph_get_structure : t -> string
 
 val graph_apply_structure : t -> string -> unit
 
+val graph_get_settings : t -> string
+
+val graph_apply_settings : t -> string -> unit
+
 val wm_get_layout : t -> string
 
 val wm_apply_layout : t -> string -> unit

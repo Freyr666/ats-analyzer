@@ -425,6 +425,76 @@ caml_qoe_backend_graph_apply_structure (value backend,
 }
 
 CAMLprim value
+caml_qoe_backend_graph_get_settings (value backend) {
+        CAMLparam1 (backend);
+        CAMLlocal1 (res);
+        // TODO properly deallocate
+        Context * back = Context_val (backend);
+        char    * settings;
+        char   ** error = NULL;
+
+        if (back == NULL)
+                caml_failwith ("Invalid context");
+
+        caml_release_runtime_system ();
+
+        settings = qoe_backend_graph_get_settings (back, error);
+
+        caml_acquire_runtime_system ();
+        // TODO reduce allocations
+
+        if (settings == NULL) {
+                if (error) {
+                        caml_failwith (*error);
+                        free (*error);
+                } else {
+                        caml_failwith ("Unknown error");
+                }
+        }  
+        
+        res = caml_copy_string(settings);
+        free (settings);
+        
+        CAMLreturn(res);
+}
+
+CAMLprim value
+caml_qoe_backend_graph_apply_settings (value backend,
+                                       value settings) {
+        CAMLparam1 (backend);
+        //CAMLlocal1 ();
+        // TODO properly deallocate
+        Context *  back = Context_val (backend);
+        char    *  settings_str;
+        char    ** error = NULL;
+        int        res;
+
+        if (back == NULL)
+                caml_failwith ("Invalid context");
+
+        settings_str = caml_stat_strdup(String_val(settings));
+        
+        caml_release_runtime_system ();
+
+        res = qoe_backend_graph_apply_structure (back, settings_str, error);
+
+        caml_stat_free (settings_str);
+        
+        caml_acquire_runtime_system ();
+        // TODO reduce allocations
+        if (res != 0) {
+                if (error) {
+                        caml_failwith (*error);
+                        free (*error);
+                } else {
+                        caml_failwith ("Unknown error");
+                }
+        }
+        
+        CAMLreturn(Val_unit);
+}
+
+CAMLprim value
 caml_qoe_backend_wm_get_layout (value backend) {
         CAMLparam1 (backend);
         CAMLlocal1 (res);

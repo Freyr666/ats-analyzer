@@ -308,6 +308,52 @@ pub unsafe extern "C" fn qoe_backend_graph_apply_structure (c: *mut context::Con
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn qoe_backend_graph_get_settings (c: *mut context::Context,
+                                                         err: *mut *const c_char)
+                                                         -> *const c_char {
+    if c.is_null() {
+        *err = string_to_chars ("no context provided".as_bytes());
+        return std::ptr::null() as *const c_char;
+    }
+    let cont = Box::from_raw (c);
+    let res = cont.state.lock ()
+        .unwrap ()
+        .graph_get_settings ();
+    std::mem::forget (cont);
+    match res {
+        Ok (v) => string_to_chars (&v),
+        Err(e) => {
+            *err = string_to_chars (e.as_bytes());
+            std::ptr::null () as *const c_char
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn qoe_backend_graph_apply_settings (c: *mut context::Context,
+                                                           data: *const c_char,
+                                                           err: *mut *const c_char)
+                                                           -> i32 {
+    if c.is_null() {
+        *err = string_to_chars ("no context provided".as_bytes());
+        return -1;
+    }
+    let cont = Box::from_raw (c);
+    let data = chars_to_slice (data);
+    let res = cont.state.lock ()
+        .unwrap ()
+        .graph_apply_settings (&data);
+    std::mem::forget (cont);
+    match res {
+        Ok (()) => 0,
+        Err (e) => {
+            *err = string_to_chars (e.as_bytes());
+            -1
+        },
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn qoe_backend_wm_get_layout (c: *mut context::Context,
                                                     err: *mut *const c_char)
                                                     -> *const c_char {
