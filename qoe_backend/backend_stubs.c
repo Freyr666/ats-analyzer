@@ -117,7 +117,6 @@ void data_callback_with_lock (int32_t typ, char* s, uint32_t c, uint32_t p, void
 }
 
 void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
-        printf ("Got buffer %p counter %d\n", b, GST_OBJECT_REFCOUNT_VALUE(b));
         
         caml_acquire_runtime_system ();
 
