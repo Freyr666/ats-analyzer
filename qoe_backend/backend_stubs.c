@@ -414,8 +414,8 @@ caml_qoe_backend_graph_apply_structure (value backend,
         // TODO reduce allocations
         if (res != 0) {
                 if (error) {
-                        caml_failwith (*error);
-                        free (*error);
+                        caml_failwith (error);
+                        free (error); // TODO proper free
                 } else {
                         caml_failwith ("Unknown error");
                 }
@@ -445,8 +445,8 @@ caml_qoe_backend_graph_get_settings (value backend) {
 
         if (settings == NULL) {
                 if (error) {
-                        caml_failwith (*error);
-                        free (*error); // TODO never free
+                        caml_failwith (error);
+                        free (error); // TODO never free
                 } else {
                         caml_failwith ("Unknown error");
                 }
@@ -484,8 +484,8 @@ caml_qoe_backend_graph_apply_settings (value backend,
         // TODO reduce allocations
         if (res != 0) {
                 if (error) {
-                        caml_failwith (*error);
-                        free (*error);
+                        caml_failwith (error);
+                        free (error); // TODO never free
                 } else {
                         caml_failwith ("Unknown error");
                 }
@@ -543,8 +543,8 @@ caml_qoe_backend_wm_apply_layout (value backend,
         // TODO reduce allocations
         if (res != 0) {
                 if (error) {
-                        caml_failwith (*error);
-                        free (*error);
+                        caml_failwith (error);
+                        free (error); // TODO never free
                 } else {
                         caml_failwith ("Unknown error");
                 }

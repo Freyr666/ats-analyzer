@@ -49,7 +49,7 @@ impl ContextState {
         self.graph.get_settings().and_then( |s| {
             match serde_json::to_vec(&s) {
                 Ok(v) => Ok(v),
-                Err(_) => Err(String::from("msg format err")),
+                Err(e) => Err(e.to_string()),
             }
         })
     }
