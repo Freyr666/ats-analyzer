@@ -1,189 +1,133 @@
 //use chatterer::ChattererProxy;
 //use chatterer::Logger;
-use initial::Initial;
 //use settings::Configuration;
 use probe::Probe;
-use control::Control;
+use channels;
+use settings::SettingsFlat;
 use streams::StreamParser;
 use metadata::Structure;
 use wm::template::WmTemplatePartial;
 use graph::Graph;
+use branch::Typ;
 use gst;
 use glib;
 use std::sync::{Arc,Mutex};
-use std::sync::atomic::{AtomicBool,Ordering};
-use std::{thread,time};
-
-use chatterer::Description;
-use chatterer::control::{parse,Name,Method,Content};
-use chatterer::notif::Notifier;
-
-#[derive(Serialize)]
-enum Status { Ready }
 
 pub struct ContextState {
-    ready:         Arc<AtomicBool>,
     stream_parser: StreamParser,
     graph:         Graph,
-    
+    probes:        Vec<Probe>,
 }
 
 pub struct Context {
-    state:       Arc<Mutex<ContextState>>,
-    control:     Control,
+    pub state:   Arc<Mutex<ContextState>>,
     mainloop:    glib::MainLoop,
-    notif:       Notifier,
 }
 
 impl ContextState {
 
-    fn respond_readyness (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        match meth.method {
-            "accept" => {
-                if !self.ready.load(Ordering::Relaxed) {
-                    self.ready.store(true, Ordering::Relaxed);
-                    meth.respond_ok ("established")
-                        .serialize ()
-                } else {
-                    meth.respond_err::<&str> ("already connected")
-                        .serialize ()
-                }
-            },
-            _ => meth.respond_err::<()> ("not found")
-                     .serialize ()
+    pub fn stream_parser_get_structure (&self) -> Vec<u8> {
+        println!("Getting streams");
+        let s : &Vec<_> = &self.stream_parser.structures.lock().unwrap();
+        serde_json::to_vec(&s).unwrap()
+    }
+
+    pub fn graph_get_structure (&self) -> Vec<u8> {
+        let s = self.graph.get_structure();
+        serde_json::to_vec(&s).unwrap()
+    }
+
+    pub fn graph_apply_structure (&self, v: &[u8]) -> Result<(),String> {
+        if let Ok (structs) = serde_json::from_slice::<Vec<Structure>>(&v) {
+            self.graph.set_structure(structs)
+        } else {
+            Err (String::from("msg format err"))
         }
     }
 
-    fn respond_stream_parser (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        match meth.method {
-            "get" => {
-                let s : &Vec<_> = &self.stream_parser.structures.lock().unwrap();
-                meth.respond_ok (&s).serialize ()
-            },
-            _ => meth.respond_err::<()> ("not found")
-                     .serialize ()
-        }
+    pub fn graph_get_settings (&self) -> Result<Vec<u8>,String> {
+        self.graph.get_settings().and_then( |s| {
+            match serde_json::to_vec(&s) {
+                Ok(v) => Ok(v),
+                Err(e) => Err(e.to_string()),
+            }
+        })
     }
-    
-    fn respond_graph (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        match meth.method {
-            "get_structure" => {
-                let s = self.graph.get_structure();
-                meth.respond_ok (&s).serialize ()
-            },
-            "apply_structure" => {
-                let cont : Content<Vec<Structure>> = parse (&msg);
-                meth.respond (self.graph.set_structure(cont.content))
-                    .serialize ()
-            },
-            _ => meth.respond_err::<()> ("not found")
-                     .serialize ()
+
+    pub fn graph_apply_settings (&self, v: &[u8]) -> Result<(),String> {
+        if let Ok (set) = serde_json::from_slice::<SettingsFlat>(&v) {
+            self.graph.set_settings(set)
+        } else {
+            Err (String::from("msg format err"))
         }
     }
 
-    fn respond_wm (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        match meth.method {
-            "get_layout" => {
-                let templ = self.graph.get_wm_layout ();
-                meth.respond (templ).serialize ()
-            },
-            "apply_layout" => {
-                let templ : Content<WmTemplatePartial> = parse(&msg);
-                let resp = self.graph.set_wm_layout (templ.content);
-                meth.respond (resp).serialize ()
-            },
-            _ => meth.respond_err::<()> ("not found")
-                     .serialize ()
+    pub fn wm_get_layout (&self) -> Result<Vec<u8>,String> {
+        match self.graph.get_wm_layout () {
+            Ok(s)  => Ok(serde_json::to_vec(&s).unwrap()),
+            Err(e) => Err(e),
         }
     }
-    
-    fn respond_not_found (&self, msg: &Vec<u8>) -> Vec<u8> {
-        let meth : Method = parse(&msg);
-        meth.respond_err::<()> ("not found")
-            .serialize ()
-    }
-    
-    pub fn dispatch (&mut self, msg: &Vec<u8>) -> Vec<u8> {
-        let addr : Name = parse(&msg);
-        match addr.name {
-            "connection"    => self.respond_readyness (&msg),
-            "stream_parser" => self.respond_stream_parser (&msg),
-            "graph"         => self.respond_graph (&msg),
-            "wm"            => self.respond_wm (&msg),
-            _ => self.respond_not_found (&msg),
-        }
-    }
-}
 
-impl Description for Context {
-    fn describe () -> String {
-        String::from("")
+    pub fn wm_apply_layout (&self, v: &[u8]) -> Result<(),String> {
+        if let Ok(templ) = serde_json::from_slice::<WmTemplatePartial>(&v) {
+            self.graph.set_wm_layout(templ)
+        } else {
+            Err (String::from("msg format err"))
+        }
     }
+    
 }
 
 impl Context {
-    pub fn new (i : &Initial) -> Result<Context, String> {
+    pub fn new (uris : &Vec<(String,String)>,
+                streams_cb: channels::Callbacks<Vec<u8>>,
+                graph_cb: channels::Callbacks<Vec<u8>>,
+                wm_cb: channels::Callbacks<Vec<u8>>,
+                data_cb: channels::Callbacks<(Typ,String,u32,u32,gst::Buffer)>,
+                status_cb: channels::Callbacks<(String,u32,u32,bool)>,
+    ) -> Result<Box<Context>, String> {
+        
         gst::init().unwrap();
 
         let mainloop = glib::MainLoop::new(None, false);
-        let control  = Control::new().unwrap();
-        
-        let notif       = Notifier::new("backend", control.sender.clone());
         
         let mut probes  = Vec::new();
 
-        for sid in 0..i.uris.len() {
-            probes.push(Probe::new(&i.uris[sid]));
+        for sid in 0..uris.len() {
+            probes.push(Probe::new(&uris[sid]));
         };
 
-        //let     config        = Configuration::new(i.msg_type, control.sender.clone());
-        let mut stream_parser = StreamParser::new(control.sender.clone());
-        let     graph         = Graph::new(control.sender.clone()).unwrap();
+        let stream_sender = channels::create (streams_cb);
+        let graph_sender = channels::create (graph_cb);
+        let wm_sender = channels::create (wm_cb);
+        let data_sender = channels::create (data_cb);
+        let status_sender = channels::create (status_cb);
+
+        let mut stream_parser = StreamParser::new(stream_sender);
+        let     graph         = Graph::new(graph_sender,
+                                           wm_sender,
+                                           data_sender,
+                                           status_sender).unwrap();
         
         for probe in &mut probes {
             probe.set_state(gst::State::Playing);
             stream_parser.connect_probe(probe);
         }
-        
-        //let wm = graph.get_wm();
 
-        /*
-        let dis = dispatcher.clone();
-        control.connect(move |s| {
-            // debug!("Control message received");
-            dis.lock().unwrap().dispatch(s).unwrap()
-            // debug!("Control message response ready");
-        });
-        */
-
-        //graph.connect_destructive(&mut stream_parser.update.lock().unwrap());
-        //graph.connect_settings(&mut config.update.lock().unwrap());
-
-        let ready = Arc::new(AtomicBool::new(false));
-
-        let state = Arc::new (Mutex::new (ContextState { ready, stream_parser, graph }));
+        let state = Arc::new (Mutex::new (ContextState { stream_parser, graph, probes }));
         
         info!("Context was created");
-        Ok(Context { state, control, mainloop, notif })
+        Ok(Box::new(Context { state, mainloop }))
     }
 
     pub fn run (&mut self) {
-        let ready   = self.state.lock().unwrap().ready.clone();
-        let context_state = self.state.clone();
-
-        self.control.connect(move |s| {
-            context_state.lock().unwrap().dispatch(&s)
-        });
-        
-        while !ready.load(Ordering::Relaxed) {
-            self.notif.talk(&Status::Ready);
-            thread::sleep(time::Duration::from_millis(100));
-        }
-        
         self.mainloop.run();
     }
+    // Should be called in separate thread since
+    // Mainloop::run is blocking
+    pub fn quit (&mut self) {
+        self.mainloop.quit()
+    }
+    
 }

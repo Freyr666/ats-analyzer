@@ -1,0 +1,12 @@
+(library
+  (name            qoe_backend)
+  (public_name     qoe_backend)
+  (c_names         backend_stubs)
+  (c_flags         (:include c_flags.sexp))
+  (c_library_flags (:standard -lqoebackend))
+  (libraries       gstbuffer))
+
+(rule
+  (targets c_flags.sexp)
+  (deps    (:discover config/discover.exe))
+  (action  (run %{discover})))

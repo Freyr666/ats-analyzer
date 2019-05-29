@@ -1,0 +1,29 @@
+opam-version: "2.0"
+name:         "qoe_backend_lwt"
+maintainer:   "Eugen Bulavin <ciceromarcus@yandex.ru>"
+homepage:     "https://github.com/Freyr666/ats-analyzer"
+bug-reports:  "https://github.com/Freyr666/ats-analyzer/issues"
+dev-repo:     "git+https://github.com/Freyr666/ats-analyzer.git"
+license:      "MIT"
+synopsis:     "LWT qoe backend interface"
+description: """
+An Lwt wrapper for qoe backend
+Please, do not even try to use it on without
+asking the permission since backend includes
+stuff covered by patents.
+"""
+
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+]
+
+depends: [
+  "ocaml" {>= "4.03.0"}
+  "dune" {build}
+  "qoe_backend"
+  "qoe_backend_types"
+  "qoe_errors_parser"
+  "lwt"
+  "lwt_react"
+]

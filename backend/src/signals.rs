@@ -1,11 +1,12 @@
 use std::collections::LinkedList;
 
 #[derive(Default)]
-pub struct Signal<T> {
+pub struct Signal<T : ?Sized> {
     callbacks: LinkedList<Box<Fn(&T) + Send + Sync + 'static>>
 }
 
-impl<T> Signal<T> {
+impl<T> Signal<T>
+where T : ?Sized {
     pub fn new() -> Signal<T> {
         Signal { callbacks: LinkedList::new() }
     }

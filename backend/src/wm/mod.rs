@@ -11,7 +11,6 @@ use std::sync::mpsc::Sender;
 use gst::prelude::*;
 use gst;
 use glib;
-use chatterer::notif::Notifier;
 use signals::Signal;
 use pad::{Type,SrcPad};
 use wm::widget::Widget;
@@ -35,9 +34,8 @@ pub struct WmState {
 }
 
 pub struct Wm {
-    pub chat:    Arc<Mutex<Notifier>>,
-
-    state:       Arc<Mutex<Option<WmState>>>,
+    sender:  Arc<Mutex<Sender<Vec<u8>>>>,
+    state:   Arc<Mutex<Option<WmState>>>,
 }
 
 fn enum_to_val(cls: &str, val: i32) -> glib::Value {
@@ -56,7 +54,7 @@ impl WmState {
         
         mixer.set_property("background", &enum_to_val("GstGLVideoMixerBackground", 1)).unwrap();
         mixer.set_property("async-handling", &true).unwrap();
-        mixer.set_property("latency", &100_000_000i64).unwrap();
+        mixer.set_property("latency", &100_000_000u64).unwrap();
         caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(resolution)).unwrap()).unwrap();
 
         pipe.add_many(&[&mixer,&caps,&download]).unwrap();
@@ -164,55 +162,16 @@ impl WmState {
     }
 }
 
-/*
-impl Replybox for Wm {
-    
-    fn reply (&self) ->
-        Box<Fn(Vec<u8>)->Vec<u8> + Send + Sync> {
-            let state = self.state.clone();
-
-            Box::new(move |req| {
-                req
-                
-                let mut state = match state.lock() {
-                    Ok(s)       => s,
-                    Err(_)      => return Err(String::from("can't acquire wm layout")),
-                };
-
-                let mut state = match *state {
-                    Some (ref mut s) => s,
-                    None             => return Err(String::from("Wm is not initialized")),
-                };
-                
-                match req {
-                    Request::Get => Ok(Reply::Get(state.to_template())),
-                    Request::Set(templ) => {
-                        let widg = state.widgets.iter()
-                            .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
-                            .collect();
-                        let temp = WmTemplate::from_partial(templ, &widg);
-                        match state.from_template(&temp) {
-                            Ok(()) => Ok(Reply::Set),
-                            Err(e) => Err(e),
-                        }
-                    }
-                }    
-                 
-            })
-        }
-}
-*/
-
 impl Wm {
     pub fn new (sender: Sender<Vec<u8>>) -> Wm {
-        let chat = Arc::new(Mutex::new( Notifier::new("wm", sender )));
+        let sender = Arc::new(Mutex::new( sender ));
         let state = Arc::new(Mutex::new( None ));
-        Wm { chat, state }
+        Wm { sender, state }
     }
 
     pub fn init (&mut self, pipe: &gst::Pipeline) {
         let wm = WmState::new(pipe, (1280,720));
-        self.chat.lock().unwrap().talk(&wm.to_template());
+        self.sender.lock().unwrap().send(serde_json::to_vec(&wm.to_template()).unwrap());
         *self.state.lock().unwrap() = Some(wm);
     }
     
@@ -225,13 +184,27 @@ impl Wm {
             None => (), // TODO invariant?
             Some (ref mut state) => 
                 if let Some(linked) = state.plug(&pad) {
-                    let chat  = self.chat.clone();
-                    let state = self.state.clone();
+                    let sender = Arc::downgrade (&self.sender);
+                    let state  = Arc::downgrade (&self.state);
+                    // TODO cleanup
                     linked.lock().unwrap().connect(move |&()| {
-                        match *state.lock().unwrap() {
-                            None            => (),
-                            Some(ref state) =>
-                                chat.lock().unwrap().talk(&state.to_template()),
+                        match state.upgrade() {
+                            None => (),
+                            Some (ref state) =>
+                                match sender.upgrade () {
+                                    None => (),
+                                    Some (ref sender) => {
+                                        let data = &*state.lock().unwrap();
+                                        match data {
+                                            None => (), //TODO log
+                                            Some (v) => 
+                                                sender.lock().unwrap()
+                                                .send (serde_json::to_vec(&v.to_template())
+                                                       .unwrap())
+                                                .unwrap()
+                                        }
+                                    },
+                                },
                         }
                     });
                 }
@@ -261,6 +234,7 @@ impl Wm {
                     .collect();
                 let temp = WmTemplate::from_partial(templ, &widg);
                 wm.from_template(&temp)
+                // TODO send event
             }
         }
     }

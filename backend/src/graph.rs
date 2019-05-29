@@ -2,18 +2,20 @@ use gst::prelude::*;
 use gst;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
-use chatterer::notif::Notifier;
+use signals::Signal;
 use root::Root;
+use branch::Typ;
 use wm::Wm;
 use wm::template::{WmTemplate,WmTemplatePartial};
 use metadata::Structure;
-use settings::Settings;
+use settings::{Settings,SettingsFlat};
 //use audio_mux::Mux;
 use renderer::{VideoR,AudioR,Renderer};
 
 pub struct GraphState {
-    sender:      Sender<Vec<u8>>,
-    settings:    Option<Settings>,
+    sender_data: Arc<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
+    sender_status: Arc<Mutex<Sender<(String,u32,u32,bool)>>>,
+    settings:      Settings,
     pub structure: Vec<Structure>,
 
     pipeline:    gst::Pipeline,
@@ -26,17 +28,21 @@ pub struct GraphState {
 }
 
 pub struct Graph {
-    pub chat:    Arc<Mutex<Notifier>>,
-
-    state:       Arc<Mutex<GraphState>>,
+    sender:  Arc<Mutex<Sender<Vec<u8>>>>,
+    state:   Arc<Mutex<GraphState>>,
 }
 
 impl GraphState {
-    pub fn new (sender: Sender<Vec<u8>>) -> GraphState {
-        let settings  = None;
+    pub fn new (sender_wm: Sender<Vec<u8>>,
+                sender_data: Sender<(Typ,String,u32,u32,gst::Buffer)>,
+                sender_status: Sender<(String,u32,u32,bool)>)
+                -> GraphState {
+        let sender_data = Arc::new(Mutex::new(sender_data));
+        let sender_status = Arc::new(Mutex::new(sender_status));
+        let settings  = Settings::new();
         let structure = Vec::new();
         let pipeline  = gst::Pipeline::new(None);
-        let wm        = Arc::new(Mutex::new(Wm::new(sender.clone())));
+        let wm        = Arc::new(Mutex::new(Wm::new(sender_wm)));
         //let mux       = Arc::new(Mutex::new(Mux::new(sender.clone())));
         let vrend     = None;
         let arend     = None;
@@ -44,7 +50,9 @@ impl GraphState {
         let roots     = Vec::new();
         wm.lock().unwrap().init(&pipeline);
         //mux.lock().unwrap().init(&pipeline);
-        GraphState { settings, structure, pipeline, wm, /*mux,*/ bus, roots, arend, vrend, sender }
+        GraphState { sender_data, sender_status,
+                     settings, structure, pipeline, wm,
+                     /*mux,*/ bus, roots, arend, vrend }
     }
 
     pub fn reset (&mut self) {
@@ -95,15 +103,20 @@ impl GraphState {
         debug!("Graph::apply_streams [loop]");
 
         for stream in &s {
-            if let Some(root) = Root::new(&self.pipeline, &stream,
-                                          self.settings,
-                                          self.sender.clone()) {
+            if let Some(mut root) = Root::new(&self.pipeline,
+                                              &stream,
+                                              &self.sender_data,
+                                              &self.sender_status) {
                 //let pipe   = self.pipeline.clone();
-                let wm     = self.wm.clone();
+                let wm     = Arc::downgrade(&self.wm);
                 //let mux    = self.mux.clone();
                 root.pad_added.lock().unwrap().connect(move |p| {
                     debug!("Graph::apply_streams [attach pad {} {}]", p.stream, p.channel);
-                    wm.lock().unwrap().plug(p);
+                    match wm.upgrade () {
+                        None => (),
+                        Some (ref wm) =>
+                            wm.lock().unwrap().plug(p),
+                    }
                     // TODO check
                     //let _ = pipe.set_state(gst::State::Playing);
                     //gst::debug_bin_to_dot_file(&pipe, gst::DebugGraphDetails::VERBOSE, "pipeline");
@@ -112,9 +125,12 @@ impl GraphState {
                 root.audio_pad_added.lock().unwrap().connect(move |p| {
                     //mux.lock().unwrap().plug(p);
                 });
+
+                root.apply_settings(&self.settings);
             }
         };
         // TODO replace with retain_state
+        
         let _ = self.pipeline.set_state(gst::State::Playing);
         self.structure = s;
         Ok(())
@@ -122,31 +138,37 @@ impl GraphState {
 
     pub fn apply_settings (&mut self, s: Settings) -> Result<(),String> {
         debug!("Graph::apply_settings");
-        self.settings = Some(s);
-        self.roots.iter_mut().for_each(|root : &mut Root| root.apply_settings(s) );
+        self.roots.iter_mut().for_each(|root : &mut Root| root.apply_settings(&s) );
+        self.settings = s;
         Ok(())
     }
 }
 
 impl Graph {
     
-    pub fn new (sender: Sender<Vec<u8>>) -> Result<Graph,String> {
-        let chat = Arc::new(Mutex::new( Notifier::new("applied_streams", sender.clone() )));
-        let state = Arc::new(Mutex::new(GraphState::new(sender.clone()) ));
-        Ok(Graph { chat, state } )
+    pub fn new (sender_graph: Sender<Vec<u8>>,
+                sender_wm: Sender<Vec<u8>>,
+                sender_data: Sender<(Typ,String,u32,u32,gst::Buffer)>,
+                sender_status: Sender<(String,u32,u32,bool)>)
+                -> Result<Graph,String> {
+        let sender = Arc::new(Mutex::new( sender_graph ));
+        let state  = Arc::new(Mutex::new( GraphState::new(sender_wm,
+                                                          sender_data,
+                                                          sender_status) ));
+        Ok(Graph { sender, state } )
     }
-
+/*
     pub fn get_wm (&self) -> Arc<Mutex<Wm>> {
         self.state.lock().unwrap().wm.clone()
     }
-
+*/
     pub fn get_structure (&self) -> Vec<Structure> {
         self.state.lock().unwrap().structure.clone()
     }
 
     pub fn set_structure (&self, s: Vec<Structure>) -> Result<(),String> {
         // TODO talk only when applied successfully
-        self.chat.lock().unwrap().talk(&s);
+        self.sender.lock().unwrap().send(serde_json::to_vec(&s).unwrap());
         self.state.lock().unwrap().apply_streams(s)
         //if res.is_ok() {
         //    self.chat.lock().unwrap().talk()
@@ -165,6 +187,16 @@ impl Graph {
             Ok(s)  => s.wm.lock().unwrap().set_layout(templ),
             Err(_) => Err(String::from("can't acquire wm state")), 
         }
+    }
+
+    pub fn get_settings (&self) -> Result<SettingsFlat,String> {
+        let s = &self.state.lock().unwrap().settings;
+        Ok(s.to_flat())
+    }
+
+    pub fn set_settings (&self, sf: SettingsFlat) -> Result<(),String> {
+        let s = Settings::from_flat(sf);
+        self.state.lock().unwrap().apply_settings(s)
     }
 
             /*
