@@ -62,12 +62,21 @@ pub struct Audio {
 }
 
 #[derive(Clone,PartialEq,Serialize,Deserialize,Debug)]
+pub struct SettingsFlat {
+    default_video : Video,
+    default_audio : Audio,
+    video : Vec<(String,u32,u32,Video)>,
+    audio : Vec<(String,u32,u32,Audio)>,
+}
+
+#[derive(Clone,PartialEq,Debug)]
 pub struct Settings {
     default_video : Video,
     default_audio : Audio,
     video : HashMap<(String,u32,u32), Video>, // TODO consider Cow<str>
     audio : HashMap<(String,u32,u32), Audio>,
 }
+    
 
 impl Settings {
     pub fn new () -> Settings { //default_video: Video, default_audio: Audio) -> Settings {
@@ -83,6 +92,36 @@ impl Settings {
         res
     }
 
+    pub fn from_flat (fs : SettingsFlat) -> Settings {
+        let mut video = HashMap::new();
+        let mut audio = HashMap::new();
+        for e in fs.video {
+            video.insert((e.0, e.1, e.2), e.3);
+        }
+        for e in fs.audio {
+            audio.insert((e.0, e.1, e.2), e.3);
+        }
+        Settings { video, audio,
+                   default_video : fs.default_video,
+                   default_audio : fs.default_audio,
+        }
+    }
+
+    pub fn to_flat (&self) -> SettingsFlat {
+        let video : Vec<_> = self.video
+            .iter()
+            .map(|((s,c,p),v)| (s.clone(),*c,*p,*v))
+            .collect();
+        let audio : Vec<_> = self.audio
+            .iter()
+            .map(|((s,c,p),v)| (s.clone(),*c,*p,*v))
+            .collect();
+        SettingsFlat { video, audio,
+                       default_video : self.default_video,
+                       default_audio : self.default_audio,
+        }
+    }
+    
     pub fn get_video (&self, k: &(String,u32,u32)) -> Video {
         match self.video.get(k) {
             Some (v) => *v,

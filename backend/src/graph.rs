@@ -8,7 +8,7 @@ use branch::Typ;
 use wm::Wm;
 use wm::template::{WmTemplate,WmTemplatePartial};
 use metadata::Structure;
-use settings::Settings;
+use settings::{Settings,SettingsFlat};
 //use audio_mux::Mux;
 use renderer::{VideoR,AudioR,Renderer};
 
@@ -187,14 +187,15 @@ impl Graph {
         }
     }
 
-    pub fn get_settings (&self) -> Result<Settings,String> {
+    pub fn get_settings (&self) -> Result<SettingsFlat,String> {
         match self.state.lock().unwrap().settings {
-            Some (ref s) => Ok(s.clone()),
+            Some (ref s) => Ok(s.to_flat()),
             None => Err(String::from("no settings yet applied")),
         }
     }
 
-    pub fn set_settings (&self, s: Settings) -> Result<(),String> {
+    pub fn set_settings (&self, sf: SettingsFlat) -> Result<(),String> {
+        let s = Settings::from_flat(sf);
         self.state.lock().unwrap().apply_settings(s)
     }
 

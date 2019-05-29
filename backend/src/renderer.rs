@@ -19,9 +19,9 @@ impl Renderer<VideoR> {
     pub fn new (port: i32, bin: &gst::Pipeline) -> Renderer<VideoR> {
         //let mut vaapi = true;
         let encoder = // TODO proper codec initialization with fallback to dummy impl
-            gst::ElementFactory::make("vaapivp9enc", None) //vaapivp8enc
+            gst::ElementFactory::make("vaapih264enc", None) //vaapivp8enc
             .unwrap();//_or({ vaapi = false; gst::ElementFactory::make("vp8enc", None).unwrap() });
-        let pay     = gst::ElementFactory::make("rtpvp9pay", None).unwrap(); //rtpvp8pay
+        let pay     = gst::ElementFactory::make("rtph264pay", None).unwrap(); //rtpvp8pay
         let output  = gst::ElementFactory::make("udpsink", None).unwrap();
         //let queue   = gst::ElementFactory::make("queue", None).unwrap();
         bin.add_many(&[&encoder,&pay,/*&queue,*/&output]).unwrap();

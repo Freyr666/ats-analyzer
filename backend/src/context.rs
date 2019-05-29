@@ -3,7 +3,7 @@
 //use settings::Configuration;
 use probe::Probe;
 use channels;
-use settings::Settings;
+use settings::SettingsFlat;
 use streams::StreamParser;
 use metadata::Structure;
 use wm::template::WmTemplatePartial;
@@ -55,7 +55,7 @@ impl ContextState {
     }
 
     pub fn graph_apply_settings (&self, v: &[u8]) -> Result<(),String> {
-        if let Ok (set) = serde_json::from_slice::<Settings>(&v) {
+        if let Ok (set) = serde_json::from_slice::<SettingsFlat>(&v) {
             self.graph.set_settings(set)
         } else {
             Err (String::from("msg format err"))
