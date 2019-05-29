@@ -165,13 +165,11 @@ let main () =
   Gc.full_major ();
   Lwt_unix.sleep 10.0
   >>= fun () ->
-  Qoe.Stream_parser.get_structure back
-  >>=? fun s ->
-  Lwt_io.printf "Streams: %s\n"
-    (Yojson.Safe.pretty_to_string @@ Qoe.Structure.many_to_yojson s)
+  let s = Qoe_backend.graph_get_settings back in
+  Lwt_io.printf "Settings: %s\n" s
+(*  >>= fun () ->
+  Qoe.Graph.apply_structure back s *)
   >>= fun () ->
-  Qoe.Graph.apply_structure back s
-  >>=? fun () ->
   Lwt_unix.sleep 10.0
   >>= fun () ->
   Qoe.Graph.get_structure back

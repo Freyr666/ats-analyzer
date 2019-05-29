@@ -3,7 +3,7 @@
 //use settings::Configuration;
 use probe::Probe;
 use channels;
-//use control::Control;
+use settings::SettingsFlat;
 use streams::StreamParser;
 use metadata::Structure;
 use wm::template::WmTemplatePartial;
@@ -21,7 +21,6 @@ pub struct ContextState {
 
 pub struct Context {
     pub state:   Arc<Mutex<ContextState>>,
-    //control:     Control,
     mainloop:    glib::MainLoop,
 }
 
@@ -41,6 +40,23 @@ impl ContextState {
     pub fn graph_apply_structure (&self, v: &[u8]) -> Result<(),String> {
         if let Ok (structs) = serde_json::from_slice::<Vec<Structure>>(&v) {
             self.graph.set_structure(structs)
+        } else {
+            Err (String::from("msg format err"))
+        }
+    }
+
+    pub fn graph_get_settings (&self) -> Result<Vec<u8>,String> {
+        self.graph.get_settings().and_then( |s| {
+            match serde_json::to_vec(&s) {
+                Ok(v) => Ok(v),
+                Err(e) => Err(e.to_string()),
+            }
+        })
+    }
+
+    pub fn graph_apply_settings (&self, v: &[u8]) -> Result<(),String> {
+        if let Ok (set) = serde_json::from_slice::<SettingsFlat>(&v) {
+            self.graph.set_settings(set)
         } else {
             Err (String::from("msg format err"))
         }
@@ -75,7 +91,6 @@ impl Context {
         gst::init().unwrap();
 
         let mainloop = glib::MainLoop::new(None, false);
-        //let control  = Control::new().unwrap();
         
         let mut probes  = Vec::new();
 
@@ -89,7 +104,6 @@ impl Context {
         let data_sender = channels::create (data_cb);
         let status_sender = channels::create (status_cb);
 
-        //let     config        = Configuration::new(i.msg_type, control.sender.clone());
         let mut stream_parser = StreamParser::new(stream_sender);
         let     graph         = Graph::new(graph_sender,
                                            wm_sender,
@@ -100,20 +114,6 @@ impl Context {
             probe.set_state(gst::State::Playing);
             stream_parser.connect_probe(probe);
         }
-        
-        //let wm = graph.get_wm();
-
-        /*
-        let dis = dispatcher.clone();
-        control.connect(move |s| {
-            // debug!("Control message received");
-            dis.lock().unwrap().dispatch(s).unwrap()
-            // debug!("Control message response ready");
-        });
-        */
-
-        //graph.connect_destructive(&mut stream_parser.update.lock().unwrap());
-        //graph.connect_settings(&mut config.update.lock().unwrap());
 
         let state = Arc::new (Mutex::new (ContextState { stream_parser, graph, probes }));
         
@@ -122,15 +122,10 @@ impl Context {
     }
 
     pub fn run (&mut self) {
-    //    let context_state = self.state.clone();
-/*
-        self.control.connect(move |s| {
-            context_state.lock().unwrap().dispatch(&s)
-        });
-  */      
         self.mainloop.run();
     }
-
+    // Should be called in separate thread since
+    // Mainloop::run is blocking
     pub fn quit (&mut self) {
         self.mainloop.quit()
     }

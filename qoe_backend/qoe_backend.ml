@@ -34,6 +34,12 @@ external graph_get_structure : t -> string =
 external graph_apply_structure : t -> string -> unit =
   "caml_qoe_backend_graph_apply_structure"
 
+external graph_get_settings : t -> string =
+  "caml_qoe_backend_graph_get_settings"
+
+external graph_apply_settings : t -> string -> unit =
+  "caml_qoe_backend_graph_apply_settings"
+
 external wm_get_layout : t -> string =
   "caml_qoe_backend_wm_get_layout"
 

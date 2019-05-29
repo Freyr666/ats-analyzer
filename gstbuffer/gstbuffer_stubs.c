@@ -3,10 +3,7 @@
 static void
 buffer_finalize(value buf) {
         GstBuffer *b = Buffer_val(buf);
-        printf ("Collecting GstBuffer from OCaml\n");
-        printf ("Addr: %p\n", b);
         if (b) {
-                printf ("Ref: %d\n", GST_OBJECT_REFCOUNT_VALUE(b));
                 gst_buffer_unref(b);
         }
 }

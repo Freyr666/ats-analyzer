@@ -10,6 +10,8 @@ module Make
 
   module Wm = Qoe_backend_types.Wm.Make (Id)
 
+  module Settings = Qoe_backend_types.Settings.Make (Id)
+
   module Qoe_errors = Qoe_backend_types.Qoe_errors.Make (Id) (Useconds)
 
   module Qoe_status = Qoe_backend_types.Qoe_status.Make (Id)
@@ -134,13 +136,29 @@ module Make
 
   (* TODO change args type to Id * URI *)
   let create args =
+    let to_string (id, uri) =
+      let id' = Id.to_string id
+      and uri' =
+        begin match Uri.scheme uri with
+        | Some "udp" -> ()
+        | _ -> failwith "uri should have scheme `udp`"
+        end;
+        begin match Uri.port uri with
+        | None -> failwith "uri should have port"
+        | _ -> ()
+        end;
+        Uri.to_string uri
+      in
+      id', uri'
+    in
     try
+      let args' = Array.map to_string args in
       let streams_cb, streams = make_event (of_json Structure.many_of_yojson) in
       let graph_cb, graph = make_event (of_json Structure.many_of_yojson) in
       let wm_cb, wm = make_event (of_json Wm.of_yojson) in
       let data_cb, vdata, adata = make_data_event () in
       let status_cb, status = make_status_event () in
-      let backend = Qoe_backend.create args
+      let backend = Qoe_backend.create args'
                       ~streams:streams_cb
                       ~graph:graph_cb
                       ~wm:wm_cb
@@ -155,6 +173,7 @@ module Make
                    }
       in Lwt.return_ok (backend, events)
     with Failure e -> Lwt.return_error (`Qoe_backend e)
+       | _ -> Lwt.return_error (`Qoe_backend "bad params")
 
   let run backend =
     Lwt_preemptive.detach Qoe_backend.run backend
@@ -201,6 +220,23 @@ module Make
       set
         Wm.to_yojson
         Qoe_backend.wm_apply_layout
+        data
+        backend
+
+  end
+
+  module Analysis_settings = struct
+
+    let get_settings backend =
+      get
+        Settings.of_yojson
+        Qoe_backend.graph_get_settings
+        backend
+
+    let apply_settings backend data =
+      set
+        Settings.to_yojson
+        Qoe_backend.graph_apply_settings
         data
         backend
 

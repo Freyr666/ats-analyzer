@@ -83,6 +83,20 @@ int32_t qoe_backend_graph_apply_structure (Context *ctx,
                                            char ** error);
 
 /**
+ * Returns applied settings as json string
+ */
+char * qoe_backend_graph_get_settings (Context *ctx,
+                                       char** error);
+
+/**
+ * Applies [settings] (json string) to the context's processing
+ * pipeline. Returns 0 on success and -1 on error, setting [error].
+ */
+int32_t qoe_backend_graph_apply_settings (Context *ctx,
+                                          const char* streams,
+                                          char ** error);
+
+/**
  * Returns applied WM layout as json string
  */
 char * qoe_backend_wm_get_layout (Context *ctx);

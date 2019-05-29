@@ -117,7 +117,6 @@ void data_callback_with_lock (int32_t typ, char* s, uint32_t c, uint32_t p, void
 }
 
 void data_callback (int32_t typ, char* s, uint32_t c, uint32_t p, void* b) {
-        printf ("Got buffer %p counter %d\n", b, GST_OBJECT_REFCOUNT_VALUE(b));
         
         caml_acquire_runtime_system ();
 
@@ -396,7 +395,7 @@ caml_qoe_backend_graph_apply_structure (value backend,
         // TODO properly deallocate
         Context *  back = Context_val (backend);
         char    *  streams_str;
-        char    ** error = NULL;
+        char    *  error = NULL;
         int        res;
 
         if (back == NULL)
@@ -406,7 +405,7 @@ caml_qoe_backend_graph_apply_structure (value backend,
         
         caml_release_runtime_system ();
 
-        res = qoe_backend_graph_apply_structure (back, streams_str, error);
+        res = qoe_backend_graph_apply_structure (back, streams_str, &error);
 
         caml_stat_free (streams_str);
         
@@ -414,8 +413,78 @@ caml_qoe_backend_graph_apply_structure (value backend,
         // TODO reduce allocations
         if (res != 0) {
                 if (error) {
-                        caml_failwith (*error);
-                        free (*error);
+                        caml_failwith (error);
+                        free (error); // TODO proper free
+                } else {
+                        caml_failwith ("Unknown error");
+                }
+        }
+        
+        CAMLreturn(Val_unit);
+}
+
+CAMLprim value
+caml_qoe_backend_graph_get_settings (value backend) {
+        CAMLparam1 (backend);
+        CAMLlocal1 (res);
+        // TODO properly deallocate
+        Context * back = Context_val (backend);
+        char    * settings;
+        char    * error = NULL;
+
+        if (back == NULL)
+                caml_failwith ("Invalid context");
+
+        caml_release_runtime_system ();
+
+        settings = qoe_backend_graph_get_settings (back, &error);
+
+        caml_acquire_runtime_system ();
+        // TODO reduce allocations
+
+        if (settings == NULL) {
+                if (error) {
+                        caml_failwith (error);
+                        free (error); // TODO never free
+                } else {
+                        caml_failwith ("Unknown error");
+                }
+        }  
+        
+        res = caml_copy_string(settings);
+        free (settings);
+        
+        CAMLreturn(res);
+}
+
+CAMLprim value
+caml_qoe_backend_graph_apply_settings (value backend,
+                                       value settings) {
+        CAMLparam1 (backend);
+        //CAMLlocal1 ();
+        // TODO properly deallocate
+        Context *  back = Context_val (backend);
+        char    *  settings_str;
+        char    *  error = NULL;
+        int        res;
+
+        if (back == NULL)
+                caml_failwith ("Invalid context");
+
+        settings_str = caml_stat_strdup(String_val(settings));
+        
+        caml_release_runtime_system ();
+
+        res = qoe_backend_graph_apply_settings (back, settings_str, &error);
+
+        caml_stat_free (settings_str);
+        
+        caml_acquire_runtime_system ();
+        // TODO reduce allocations
+        if (res != 0) {
+                if (error) {
+                        caml_failwith (error);
+                        free (error); // TODO never free
                 } else {
                         caml_failwith ("Unknown error");
                 }
@@ -455,7 +524,7 @@ caml_qoe_backend_wm_apply_layout (value backend,
         // TODO properly deallocate
         Context *  back = Context_val (backend);
         char    *  layout_str;
-        char    ** error = NULL;
+        char    *  error = NULL;
         int        res;
 
         if (back == NULL)
@@ -465,7 +534,7 @@ caml_qoe_backend_wm_apply_layout (value backend,
         
         caml_release_runtime_system ();
 
-        res = qoe_backend_wm_apply_layout (back, layout_str, error);
+        res = qoe_backend_wm_apply_layout (back, layout_str, &error);
 
         caml_stat_free (layout_str);
         
@@ -473,8 +542,8 @@ caml_qoe_backend_wm_apply_layout (value backend,
         // TODO reduce allocations
         if (res != 0) {
                 if (error) {
-                        caml_failwith (*error);
-                        free (*error);
+                        caml_failwith (error);
+                        free (error); // TODO never free
                 } else {
                         caml_failwith ("Unknown error");
                 }

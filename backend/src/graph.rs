@@ -8,14 +8,14 @@ use branch::Typ;
 use wm::Wm;
 use wm::template::{WmTemplate,WmTemplatePartial};
 use metadata::Structure;
-use settings::Settings;
+use settings::{Settings,SettingsFlat};
 //use audio_mux::Mux;
 use renderer::{VideoR,AudioR,Renderer};
 
 pub struct GraphState {
     sender_data: Arc<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
     sender_status: Arc<Mutex<Sender<(String,u32,u32,bool)>>>,
-    settings:    Option<Settings>,
+    settings:      Settings,
     pub structure: Vec<Structure>,
 
     pipeline:    gst::Pipeline,
@@ -39,7 +39,7 @@ impl GraphState {
                 -> GraphState {
         let sender_data = Arc::new(Mutex::new(sender_data));
         let sender_status = Arc::new(Mutex::new(sender_status));
-        let settings  = None;
+        let settings  = Settings::new();
         let structure = Vec::new();
         let pipeline  = gst::Pipeline::new(None);
         let wm        = Arc::new(Mutex::new(Wm::new(sender_wm)));
@@ -103,11 +103,10 @@ impl GraphState {
         debug!("Graph::apply_streams [loop]");
 
         for stream in &s {
-            if let Some(root) = Root::new(&self.pipeline,
-                                          &stream,
-                                          self.settings,
-                                          &self.sender_data,
-                                          &self.sender_status) {
+            if let Some(mut root) = Root::new(&self.pipeline,
+                                              &stream,
+                                              &self.sender_data,
+                                              &self.sender_status) {
                 //let pipe   = self.pipeline.clone();
                 let wm     = Arc::downgrade(&self.wm);
                 //let mux    = self.mux.clone();
@@ -126,9 +125,12 @@ impl GraphState {
                 root.audio_pad_added.lock().unwrap().connect(move |p| {
                     //mux.lock().unwrap().plug(p);
                 });
+
+                root.apply_settings(&self.settings);
             }
         };
         // TODO replace with retain_state
+        
         let _ = self.pipeline.set_state(gst::State::Playing);
         self.structure = s;
         Ok(())
@@ -136,8 +138,8 @@ impl GraphState {
 
     pub fn apply_settings (&mut self, s: Settings) -> Result<(),String> {
         debug!("Graph::apply_settings");
-        self.settings = Some(s);
-        self.roots.iter_mut().for_each(|root : &mut Root| root.apply_settings(s) );
+        self.roots.iter_mut().for_each(|root : &mut Root| root.apply_settings(&s) );
+        self.settings = s;
         Ok(())
     }
 }
@@ -185,6 +187,16 @@ impl Graph {
             Ok(s)  => s.wm.lock().unwrap().set_layout(templ),
             Err(_) => Err(String::from("can't acquire wm state")), 
         }
+    }
+
+    pub fn get_settings (&self) -> Result<SettingsFlat,String> {
+        let s = &self.state.lock().unwrap().settings;
+        Ok(s.to_flat())
+    }
+
+    pub fn set_settings (&self, sf: SettingsFlat) -> Result<(),String> {
+        let s = Settings::from_flat(sf);
+        self.state.lock().unwrap().apply_settings(s)
     }
 
             /*
