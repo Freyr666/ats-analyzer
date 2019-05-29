@@ -81,13 +81,10 @@ pub struct Settings {
 impl Settings {
     pub fn new () -> Settings { //default_video: Video, default_audio: Audio) -> Settings {
         let mut res = Settings { default_video : Video::default(),
-                             default_audio : Audio::default(),
-                             video : HashMap::new(),
-                             audio : HashMap::new(),
+                                 default_audio : Audio::default(),
+                                 video : HashMap::new(),
+                                 audio : HashMap::new(),
         };
-
-        res.video.insert((String::from("test"),42,13), res.default_video);
-        res.audio.insert((String::from("test"),42,13), res.default_audio);
 
         res
     }

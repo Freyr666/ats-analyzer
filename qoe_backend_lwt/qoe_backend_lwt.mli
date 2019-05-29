@@ -10,6 +10,8 @@ module Make
 
   module Wm : module type of Qoe_backend_types.Wm.Make (Id)
 
+  module Settings : module type of Qoe_backend_types.Settings.Make (Id)
+
   module Qoe_errors : module type of Qoe_backend_types.Qoe_errors.Make (Id) (Useconds)
 
   module Qoe_status : module type of Qoe_backend_types.Qoe_status.Make (Id)
@@ -26,7 +28,7 @@ module Make
               
   val init_logger : unit -> unit
     
-  val create : (string * string) array -> ((t * events), [> error]) Lwt_result.t
+  val create : (Id.t * Uri_string.t) array -> ((t * events), [> error]) Lwt_result.t
 
   val run : t -> unit Lwt.t
 
@@ -51,6 +53,14 @@ module Make
     val get_layout : t -> (Wm.t, [> error]) Lwt_result.t
 
     val apply_layout : t -> Wm.t -> (unit, [> error]) Lwt_result.t
+
+  end
+
+  module Analysis_settings : sig
+
+    val get_settings : t -> (Settings.t, [> error]) Lwt_result.t
+
+    val apply_settings : t -> Settings.t -> (unit, [> error]) Lwt_result.t
 
   end
 
