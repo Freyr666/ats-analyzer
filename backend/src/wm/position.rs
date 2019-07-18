@@ -19,7 +19,7 @@ impl Position {
     pub fn get_x (&self) -> u32 { self.x.floor() as u32 }
     pub fn get_y (&self) -> u32 { self.y.floor() as u32 }
 
-    fn right (&self) -> f64 { self.x + self.y }
+    fn right (&self) -> f64 { self.x + self.w }
     fn bottom (&self) -> f64 { self.y + self.h }
 
     pub fn is_in (&self, other: &Position) -> bool {
@@ -41,6 +41,10 @@ impl Position {
                    w: self.w,
                    y: self.y + other.y,
                    h: self.h }
+    }
+
+    pub fn validate_normalized (&self) -> bool {
+        self.is_in(&Position::from_pair((1, 1)))
     }
 
     pub fn to_absolute (&self, (w, h): (f64, f64)) -> Position {

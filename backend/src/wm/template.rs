@@ -31,25 +31,24 @@ impl WmTemplate {
     pub fn validate (&self) -> Result<(),String> {
         let res_pos      = Position::from_pair(self.resolution);
         for &(ref cname, ref c) in &self.layout {
-            // if ! c.position.is_in(&res_pos) {
-            //     return Err(format!("container {}: is out of screen borders", cname))
-            // }
+            if ! c.position.validate_normalized() {
+                return Err(format!("container {}: invalid normalized coordinates", cname))
+            }
             for  &(ref wname, ref w) in &c.widgets {
-                let position = w.position
-                    .map(|w| w.adjusted_by_left_upper(&c.position))
-                    .unwrap_or(c.position);
-                
+                let position = w.position.unwrap_or(c.position);
+
                 if ! self.widgets.iter().any(|&(ref name,_)| *name == *wname) {
-                    return Err(format!("{}: no such widget", wname))
+                    return Err(format!("widget {}: no such widget", wname))
                 }
-                // if ! position.is_in(&c.position) {
-                //     return Err(format!("{}: is out of container's borders", wname))
-                // }
+                if ! position.validate_normalized() {
+                    return Err(format!("widget {}: invalid normalized coordinates", wname))
+                }
                 // not very optimal
                 if c.widgets.iter()
                     .any(|&(ref name, ref wdg)| {
                         let other_position = wdg.position.unwrap_or(c.position);
                         *name != *wname
+                        && wdg.layer == w.layer
                         && other_position.is_overlapped(&position)}) {
                     return Err(format!("{}: intersects with another widget", wname))
                 }
