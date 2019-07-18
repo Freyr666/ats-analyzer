@@ -6,18 +6,24 @@ pub struct Position {
     pub h: f64,
 }
 
+pub struct Offset {
+    pub left: u32,
+    pub top: u32
+}
+
+pub struct Resolution {
+    pub width: u32,
+    pub height: u32
+}
+
 impl Position {
     pub fn new () -> Position {
         Position { x: 0.0, y: 0.0, w: 0.0, h: 0.0 }
     }
 
-    pub fn from_pair ((w, h): (u32, u32)) -> Position {
-        Position { x: 0.0, y: 0.0, w: w as f64, h: h as f64 }
+    pub fn from_pair ((w, h): (f64, f64)) -> Position {
+        Position { x: 0.0, y: 0.0, w, h }
     }
-    pub fn get_height (&self) -> u32 { self.h.floor() as u32 }
-    pub fn get_width (&self) -> u32 { self.w.floor() as u32 }
-    pub fn get_x (&self) -> u32 { self.x.floor() as u32 }
-    pub fn get_y (&self) -> u32 { self.y.floor() as u32 }
 
     fn right (&self) -> f64 { self.x + self.w }
     fn bottom (&self) -> f64 { self.y + self.h }
@@ -43,16 +49,21 @@ impl Position {
                    h: self.h }
     }
 
-    pub fn validate_normalized (&self) -> bool {
-        self.is_in(&Position::from_pair((1, 1)))
+    pub fn validate (&self) -> bool {
+        self.is_in(&Position::from_pair((1.0, 1.0)))
     }
 
-    pub fn to_absolute (&self, (w, h): (f64, f64)) -> Position {
-        let w = self.w * w ;
-        let h = self.h * h;
-        Position { x: self.x * w / self.w,
-                   y: self.y * h / self.h,
-                   w,
-                   h }
+    pub fn to_absolute (&self, resolution: &Resolution) -> (Offset, Resolution) {
+        let width = self.w * (resolution.width as f64);
+        let height = self.h * (resolution.height as f64);
+        let top = self.x * width / self.w;
+        let left = self.y * height / self.h;
+        let offset =
+            Offset { left: left.floor() as u32,
+                     top: top.floor() as u32 };
+        let resolution =
+            Resolution { width: width.floor() as u32,
+                         height: height.floor() as u32 };
+        (offset, resolution)
     }
 }

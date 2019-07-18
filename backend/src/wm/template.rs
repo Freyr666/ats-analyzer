@@ -29,9 +29,8 @@ impl WmTemplate {
     }
 
     pub fn validate (&self) -> Result<(),String> {
-        let res_pos      = Position::from_pair(self.resolution);
         for &(ref cname, ref c) in &self.layout {
-            if ! c.position.validate_normalized() {
+            if ! c.position.validate() {
                 return Err(format!("container {}: invalid normalized coordinates", cname))
             }
             for  &(ref wname, ref w) in &c.widgets {
@@ -40,7 +39,7 @@ impl WmTemplate {
                 if ! self.widgets.iter().any(|&(ref name,_)| *name == *wname) {
                     return Err(format!("widget {}: no such widget", wname))
                 }
-                if ! position.validate_normalized() {
+                if ! position.validate() {
                     return Err(format!("widget {}: invalid normalized coordinates", wname))
                 }
                 // not very optimal
@@ -50,7 +49,7 @@ impl WmTemplate {
                         *name != *wname
                         && wdg.layer == w.layer
                         && other_position.is_overlapped(&position)}) {
-                    return Err(format!("{}: intersects with another widget", wname))
+                    return Err(format!("widget {}: intersects with another widget", wname))
                 }
             }
         }
