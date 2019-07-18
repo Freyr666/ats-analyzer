@@ -126,19 +126,12 @@ impl WmState {
         for &(ref cname, ref c) in &t.layout {
             let res = (t.resolution.0 as f64, t.resolution.1 as f64);
             let container_position = c.position.to_absolute(res);
-            let offset   = (container_position.get_x(), container_position.get_y());
             let mut widgets  = HashMap::new();
             for &(ref wname, ref w) in &c.widgets {
                 let widget = self.widgets[wname].clone();
                 let layer    = w.layer;
-                let position = match w.position {
-                    None => container_position,
-                    Some (pos) => {
-                        let parent = (container_position.w, container_position.h);
-                        pos.to_absolute(parent)
-                    }
-                };
-                widget.lock().unwrap().render(offset, position, layer);
+                let position = w.position.unwrap_or(Position::new());
+                widget.lock().unwrap().render(container_position, position, layer);
                 widgets.insert(wname.clone(), widget);
             }
             self.layout.insert(cname.clone(),

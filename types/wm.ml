@@ -65,7 +65,7 @@ module Make (Id : STREAM_ID) = struct
     ; y : float
     ; w : float
     ; h : float
-    } [@@deriving yojson, eq, ord]
+    } [@@deriving yojson, eq]
 
   type widget =
     { type_       : widget_type [@key "type"]
