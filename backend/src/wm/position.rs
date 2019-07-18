@@ -42,4 +42,13 @@ impl Position {
                    y: self.y + other.y,
                    h: self.h }
     }
+
+    pub fn to_absolute (&self, (w, h): (f64, f64)) -> Position {
+        let w = self.w * w ;
+        let h = self.h * h;
+        Position { x: self.x * w / self.w,
+                   y: self.y * h / self.h,
+                   w,
+                   h }
+    }
 }

@@ -31,9 +31,9 @@ impl WmTemplate {
     pub fn validate (&self) -> Result<(),String> {
         let res_pos      = Position::from_pair(self.resolution);
         for &(ref cname, ref c) in &self.layout {
-            if ! c.position.is_in(&res_pos) {
-                return Err(format!("container {}: is out of screen borders", cname))
-            }
+            // if ! c.position.is_in(&res_pos) {
+            //     return Err(format!("container {}: is out of screen borders", cname))
+            // }
             for  &(ref wname, ref w) in &c.widgets {
                 let position = w.position
                     .map(|w| w.adjusted_by_left_upper(&c.position))
@@ -42,9 +42,9 @@ impl WmTemplate {
                 if ! self.widgets.iter().any(|&(ref name,_)| *name == *wname) {
                     return Err(format!("{}: no such widget", wname))
                 }
-                if ! position.is_in(&c.position) {
-                    return Err(format!("{}: is out of container's borders", wname))
-                }
+                // if ! position.is_in(&c.position) {
+                //     return Err(format!("{}: is out of container's borders", wname))
+                // }
                 // not very optimal
                 if c.widgets.iter()
                     .any(|&(ref name, ref wdg)| {
