@@ -66,7 +66,7 @@ module Make (Id : STREAM_ID) = struct
     ; audio : audio Pid_map.t
     } [@@deriving eq]
 
-  let to_yojson v : Yojson.Safe.json =
+  let to_yojson v : Yojson.Safe.t =
     let video =
       Pid_map.to_seq v.video
       |> Seq.map (fun ((s,c,p),d) ->
@@ -84,7 +84,7 @@ module Make (Id : STREAM_ID) = struct
            ; "audio", audio
       ]
 
-  let of_yojson (js : Yojson.Safe.json) : (t,string) result =
+  let of_yojson (js : Yojson.Safe.t) : (t,string) result =
     let (>>=) r f = match r with
       | Ok x -> f x
       | Error _ as e -> e

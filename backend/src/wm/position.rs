@@ -1,40 +1,45 @@
 #[derive(Serialize,Deserialize,Clone,Copy,PartialEq,Debug)]
 pub struct Position {
-    pub left:   u32,
-    pub top:    u32,
-    pub right:  u32,
-    pub bottom: u32,
+    pub x: f64,
+    pub y: f64,
+    pub w: f64,
+    pub h: f64,
 }
 
 impl Position {
     pub fn new () -> Position {
-        Position { left: 0, top: 0, right: 0, bottom: 0 }
+        Position { x: 0.0, y: 0.0, w: 0.0, h: 0.0 }
     }
 
-    pub fn from_pair ((right,bottom): (u32,u32)) -> Position {
-        Position { left: 0, top: 0, right, bottom }
+    pub fn from_pair ((w, h): (u32, u32)) -> Position {
+        Position { x: 0.0, y: 0.0, w: w as f64, h: h as f64 }
     }
-    pub fn get_height (&self) -> u32 { self.bottom - self.top }
-    pub fn get_width (&self) -> u32 { self.right - self.left }
-    pub fn get_x (&self) -> u32 { self.left }
-    pub fn get_y (&self) -> u32 { self.top }
+    pub fn get_height (&self) -> u32 { self.h.floor() as u32 }
+    pub fn get_width (&self) -> u32 { self.w.floor() as u32 }
+    pub fn get_x (&self) -> u32 { self.x.floor() as u32 }
+    pub fn get_y (&self) -> u32 { self.y.floor() as u32 }
+
+    fn right (&self) -> f64 { self.x + self.y }
+    fn bottom (&self) -> f64 { self.y + self.h }
 
     pub fn is_in (&self, other: &Position) -> bool {
-        self.top >= other.top
-            && self.bottom <= other.bottom
-            && self.left >= other.left
-            && self.right <= other.right
+        self.y >= other.y
+            && self.bottom() <= other.bottom()
+            && self.x >= other.x
+            && self.right() <= other.right()
     }
 
     pub fn is_overlapped (&self, other: &Position) -> bool {
-        self.left < other.right && self.right > other.left &&
-            self.top > other.bottom && self.bottom < other.top
+        self.x < other.right()
+            && self.right() > other.x
+            && self.y < other.bottom()
+            && self.bottom() > other.y
     }
 
     pub fn adjusted_by_left_upper (&self, other: &Position) -> Position {
-        Position { left: self.left + other.left,
-                   right: self.right + other.left,
-                   top: self.top + other.top,
-                   bottom: self.bottom + other.top }
+        Position { x: self.x + other.x,
+                   w: self.w,
+                   y: self.y + other.y,
+                   h: self.h }
     }
 }
