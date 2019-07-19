@@ -5,14 +5,13 @@ use std::sync::{Arc,Mutex};
 use signals::Signal;
 use pad::{Type,SrcPad};
 use wm::position::Position;
-use wm::position::Offset;
-use wm::position::Resolution;
+use wm::position::Absolute;
 use wm::widget::{Widget,WidgetDesc,Domain};
 
 pub struct WidgetSoundbar {
     desc:      Arc<Mutex<WidgetDesc>>,
     enabled:   bool,
-    offset:    Offset,
+    offset:    (u32, u32),
     uid:       Option<String>,
     stream:    String,
     channel:   u32,
@@ -37,7 +36,7 @@ impl WidgetSoundbar {
             description: String::from("soundbar widget"),
             layer: 0,
         };
-        let offset   = Offset{left: 0, top: 0};
+        let offset   = (0, 0);
         let desc     = Arc::new(Mutex::new(desc));
         let linked   = Arc::new(Mutex::new(Signal::new()));
         let soundbar = gst::ElementFactory::make("glsoundbar", None).unwrap();
@@ -117,21 +116,19 @@ impl Widget for WidgetSoundbar {
         desc.position = None;
     }
 
-    fn render (&mut self,
-               offset: &Offset,
-               resolution: &Resolution,
-               position: Position,
-               layer: i32) {
+    fn render (&mut self, container: &Absolute, position: Position, layer: i32) {
         if ! self.enabled { self.enable (); }
 
         let mut desc  = self.desc.lock().unwrap();
+        let (off_x, off_y) = (container.left, container.top);
+        let resolution    = (container.width, container.height);
 
         desc.position = Some(position);
         desc.layer    = layer;
-        self.offset   = Offset{ left: offset.left, top: offset.top };
+        self.offset   = (off_x, off_y);
 
-        let (Offset{left: xpos, top: ypos},
-             Resolution{width, height}) = position.to_absolute(resolution);
+        let Absolute{left: xpos, top: ypos, width, height} =
+            position.to_absolute(resolution);
 
         if let Some(ref pad) = self.mixer_pad {
             let cps = format!("video/x-raw(ANY),height={},width={}", height, width);
@@ -139,8 +136,8 @@ impl Widget for WidgetSoundbar {
             pad.set_property("zorder", &((layer+1) as u32)).unwrap();
             pad.set_property("height", &(height as i32)).unwrap();
             pad.set_property("width", &(width as i32)).unwrap();
-            pad.set_property("xpos", &((xpos + self.offset.left) as i32)).unwrap();
-            pad.set_property("ypos", &((ypos + self.offset.top) as i32)).unwrap();
+            pad.set_property("xpos", &((xpos + off_x) as i32)).unwrap();
+            pad.set_property("ypos", &((ypos + off_y) as i32)).unwrap();
         };
     }
 

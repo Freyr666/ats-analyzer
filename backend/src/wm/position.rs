@@ -6,12 +6,9 @@ pub struct Position {
     pub h: f64,
 }
 
-pub struct Offset {
+pub struct Absolute {
     pub left: u32,
-    pub top: u32
-}
-
-pub struct Resolution {
+    pub top: u32,
     pub width: u32,
     pub height: u32
 }
@@ -53,17 +50,14 @@ impl Position {
         self.is_in(&Position::from_pair((1.0, 1.0)))
     }
 
-    pub fn to_absolute (&self, resolution: &Resolution) -> (Offset, Resolution) {
-        let width = self.w * (resolution.width as f64);
-        let height = self.h * (resolution.height as f64);
-        let top = self.x * width / self.w;
-        let left = self.y * height / self.h;
-        let offset =
-            Offset { left: left.floor() as u32,
-                     top: top.floor() as u32 };
-        let resolution =
-            Resolution { width: width.floor() as u32,
-                         height: height.floor() as u32 };
-        (offset, resolution)
+    pub fn to_absolute (&self, (w, h): (u32, u32)) -> Absolute {
+        let width = self.w * (w as f64);
+        let height = self.h * (h as f64);
+        let left = self.x * width / self.w;
+        let top = self.y * height / self.h;
+        Absolute { left: left.floor() as u32,
+                   top: top.floor() as u32,
+                   width: width.floor() as u32,
+                   height: height.floor() as u32 }
     }
 }

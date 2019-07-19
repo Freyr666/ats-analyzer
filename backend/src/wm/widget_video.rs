@@ -6,15 +6,14 @@ use pad::{Type,SrcPad};
 use signals::Signal;
 use std::sync::{Arc,Mutex};
 use wm::position::Position;
-use wm::position::Resolution;
-use wm::position::Offset;
+use wm::position::Absolute;
 use wm::widget::{Widget,WidgetDesc,Domain};
 
 pub struct WidgetVideo {
     desc:      Arc<Mutex<WidgetDesc>>,
     par:       Arc<Mutex<Option<(u32,u32)>>>,
     enabled:   bool,
-    offset:    Offset,
+    offset:    (u32, u32),
     uid:       Option<String>,
     stream:    String,
     channel:   u32,
@@ -44,7 +43,7 @@ impl WidgetVideo {
             description: String::from("video widget"),
             layer: 0,
         };
-        let offset = Offset{left: 0, top: 0};
+        let offset = (0, 0);
         let desc   = Arc::new(Mutex::new(desc));
         let par    = Arc::new(Mutex::new(None));
         let linked = Arc::new(Mutex::new(Signal::new()));
@@ -157,21 +156,19 @@ impl Widget for WidgetVideo {
         desc.position = None;
     }
 
-    fn render (&mut self,
-               offset: &Offset,
-               resolution: &Resolution,
-               position: Position,
-               layer: i32) {
+    fn render (&mut self, container: &Absolute, position: Position, layer: i32) {
         if ! self.enabled { self.enable (); }
 
         let mut desc  = self.desc.lock().unwrap();
+        let (off_x, off_y) = (container.left, container.top);
+        let resolution     = (container.width, container.height);
 
         desc.position = Some(position);
         desc.layer    = layer;
-        self.offset   = Offset{ left: offset.left, top: offset.top };
+        self.offset   = (off_x, off_y);
 
-        let (Offset{left: xpos, top: ypos},
-             Resolution{width, height}) = position.to_absolute(resolution);
+        let Absolute{left: xpos, top: ypos, width, height} =
+            position.to_absolute(resolution);
 
         // Non-square-pixel-related hack
         let (height, width) : (i32, i32) = if let Some(par) = *self.par.lock().unwrap() {
@@ -185,8 +182,8 @@ impl Widget for WidgetVideo {
             pad.set_property("zorder", &((layer+1) as u32)).unwrap();
             pad.set_property("height", &height).unwrap();
             pad.set_property("width", &width).unwrap();
-            pad.set_property("xpos", &((xpos + self.offset.left) as i32)).unwrap();
-            pad.set_property("ypos", &((ypos + self.offset.top) as i32)).unwrap();
+            pad.set_property("xpos", &((xpos + off_x) as i32)).unwrap();
+            pad.set_property("ypos", &((ypos + off_y) as i32)).unwrap();
         };
     }
     

@@ -3,8 +3,7 @@ use pad::{Type,SrcPad};
 use signals::Signal;
 use std::sync::{Arc,Mutex};
 use wm::position::Position;
-use wm::position::Resolution;
-use wm::position::Offset;
+use wm::position::Absolute;
 
 #[derive(Serialize,Deserialize,Clone,Debug)]
 pub enum Domain {
@@ -30,7 +29,7 @@ pub trait Widget {
     fn plug_sink (&mut self, gst::Pad);
     fn gen_uid (&mut self) -> String;
     fn get_desc (&self) -> WidgetDesc;
-    fn render (&mut self, &Offset, &Resolution, Position, i32);
+    fn render (&mut self, &Absolute, Position, i32);
     fn disable (&mut self);
     fn linked (&self) -> Arc<Mutex<Signal<()>>>;
 }

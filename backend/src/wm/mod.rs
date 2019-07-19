@@ -15,7 +15,7 @@ use signals::Signal;
 use pad::{Type,SrcPad};
 use wm::widget::Widget;
 use wm::position::Position;
-use wm::position::Resolution;
+use wm::position::Absolute;
 use wm::template::{WmTemplate,WmTemplatePartial,ContainerTemplate};
 
 pub struct Container {
@@ -125,15 +125,13 @@ impl WmState {
 
         self.layout = HashMap::new();
         for &(ref cname, ref c) in &t.layout {
-            let res = Resolution{width: t.resolution.0,
-                                 height: t.resolution.1 };
-            let (offset, resolution) = c.position.to_absolute(&res);
+            let absolute = c.position.to_absolute(t.resolution);
             let mut widgets = HashMap::new();
             for &(ref wname, ref w) in &c.widgets {
-                let widget = self.widgets[wname].clone();
+                let widget   = self.widgets[wname].clone();
                 let layer    = w.layer;
                 let position = w.position.unwrap_or(Position::from_pair((1.0, 1.0)));
-                widget.lock().unwrap().render(&offset, &resolution, position, layer);
+                widget.lock().unwrap().render(&absolute, position, layer);
                 widgets.insert(wname.clone(), widget);
             }
             self.layout.insert(cname.clone(),
