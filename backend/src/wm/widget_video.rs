@@ -167,8 +167,11 @@ impl Widget for WidgetVideo {
         desc.layer    = layer;
         self.offset   = (off_x, off_y);
 
-        let Absolute{left: xpos, top: ypos, width, height} =
-            position.to_absolute(resolution);
+        let absolute = position.to_absolute(resolution);
+        let Absolute{left: xpos, top: ypos, width, height} = match desc.aspect {
+            None => absolute,
+            Some (aspect) => absolute.adjust_aspect(aspect)
+        };
 
         // Non-square-pixel-related hack
         let (height, width) : (i32, i32) = if let Some(par) = *self.par.lock().unwrap() {

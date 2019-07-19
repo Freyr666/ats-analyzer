@@ -13,6 +13,27 @@ pub struct Absolute {
     pub height: u32
 }
 
+impl Absolute {
+    pub fn adjust_aspect (&self, aspect: (u32, u32)) -> Absolute {
+        let frame_width = (self.width as f64);
+        let frame_height = (self.height as f64);
+        let frame_dar = frame_width / frame_height;
+        let content_dar = (aspect.0 as f64) / (aspect.1 as f64);
+        if frame_dar < content_dar {
+            // letterbox
+            let height = ((frame_height * frame_dar / content_dar) as u32);
+            let top = self.top + (self.height - height) / 2;
+            Absolute { height, top, ..*self }
+        }
+        else {
+            // pillarbox
+            let width = ((frame_width * content_dar / frame_dar) as u32);
+            let left = self.left + (self.width - width) / 2;
+            Absolute { width, left, ..*self }
+        }
+    }
+}
+
 impl Position {
     pub fn new () -> Position {
         Position { x: 0.0, y: 0.0, w: 0.0, h: 0.0 }
