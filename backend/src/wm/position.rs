@@ -14,23 +14,28 @@ pub struct Absolute {
 }
 
 impl Absolute {
-    pub fn adjust_aspect (&self, aspect: (u32, u32)) -> Absolute {
+    pub fn adjust_aspect (&mut self, aspect: (u32, u32)) {
         let frame_width = (self.width as f64);
         let frame_height = (self.height as f64);
-        let frame_dar = frame_width / frame_height;
-        let content_dar = (aspect.0 as f64) / (aspect.1 as f64);
-        if frame_dar < content_dar {
+        let frame_aspect = frame_width / frame_height;
+        let content_aspect = (aspect.0 as f64) / (aspect.1 as f64);
+        if frame_aspect < content_aspect {
             // letterbox
-            let height = ((frame_height * frame_dar / content_dar) as u32);
-            let top = self.top + (self.height - height) / 2;
-            Absolute { height, top, ..*self }
+            let height = ((frame_height * frame_aspect / content_aspect) as u32);
+            self.top = self.top + (self.height - height) / 2;
+            self.height = height;
         }
         else {
             // pillarbox
-            let width = ((frame_width * content_dar / frame_dar) as u32);
-            let left = self.left + (self.width - width) / 2;
-            Absolute { width, left, ..*self }
+            let width = ((frame_width * content_aspect / frame_aspect) as u32);
+            self.left = self.left + (self.width - width) / 2;
+            self.width = width;
         }
+    }
+
+    pub fn adjust_non_square_pixel (&mut self, par: (u32, u32)) {
+        let (par_n, par_d) = par;
+        self.width = self.width * par_d / par_n;
     }
 }
 
@@ -71,7 +76,7 @@ impl Position {
         self.is_in(&Position::from_pair((1.0, 1.0)))
     }
 
-    pub fn to_absolute (&self, (w, h): (u32, u32)) -> Absolute {
+    pub fn denormalize (&self, (w, h): (u32, u32)) -> Absolute {
         let width = self.w * (w as f64);
         let height = self.h * (h as f64);
         let left = self.x * width / self.w;

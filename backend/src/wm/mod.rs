@@ -125,7 +125,7 @@ impl WmState {
 
         self.layout = HashMap::new();
         for &(ref cname, ref c) in &t.layout {
-            let absolute = c.position.to_absolute(t.resolution);
+            let absolute = c.position.denormalize(t.resolution);
             let mut widgets = HashMap::new();
             for &(ref wname, ref w) in &c.widgets {
                 let widget   = self.widgets[wname].clone();

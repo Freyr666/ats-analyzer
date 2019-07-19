@@ -121,14 +121,14 @@ impl Widget for WidgetSoundbar {
 
         let mut desc  = self.desc.lock().unwrap();
         let (off_x, off_y) = (container.left, container.top);
-        let resolution    = (container.width, container.height);
+        let resolution = (container.width, container.height);
 
         desc.position = Some(position);
         desc.layer    = layer;
         self.offset   = (off_x, off_y);
 
         let Absolute{left: xpos, top: ypos, width, height} =
-            position.to_absolute(resolution);
+            position.denormalize(resolution);
 
         if let Some(ref pad) = self.mixer_pad {
             let cps = format!("video/x-raw(ANY),height={},width={}", height, width);

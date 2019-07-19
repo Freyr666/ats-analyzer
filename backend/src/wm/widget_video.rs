@@ -161,30 +161,28 @@ impl Widget for WidgetVideo {
 
         let mut desc  = self.desc.lock().unwrap();
         let (off_x, off_y) = (container.left, container.top);
-        let resolution     = (container.width, container.height);
+        let resolution = (container.width, container.height);
 
         desc.position = Some(position);
         desc.layer    = layer;
         self.offset   = (off_x, off_y);
 
-        let absolute = position.to_absolute(resolution);
-        let Absolute{left: xpos, top: ypos, width, height} = match desc.aspect {
-            None => absolute,
+        let mut absolute = position.denormalize(resolution);
+        match desc.aspect {
+            None => (),
             Some (aspect) => absolute.adjust_aspect(aspect)
         };
-
         // Non-square-pixel-related hack
-        let (height, width) : (i32, i32) = if let Some(par) = *self.par.lock().unwrap() {
-            let (par_n, par_d) = par;
-            (height as i32, (width * par_d / par_n) as i32)
-        } else {
-            (height as i32, width as i32)
+        if let Some(par) = *self.par.lock().unwrap() {
+            absolute.adjust_non_square_pixel(par);
         };
+
+        let Absolute{left: xpos, top: ypos, width, height} = absolute;
 
         if let Some(ref pad) = self.mixer_pad {
             pad.set_property("zorder", &((layer+1) as u32)).unwrap();
-            pad.set_property("height", &height).unwrap();
-            pad.set_property("width", &width).unwrap();
+            pad.set_property("height", &(height as i32)).unwrap();
+            pad.set_property("width", &(width as i32)).unwrap();
             pad.set_property("xpos", &((xpos + off_x) as i32)).unwrap();
             pad.set_property("ypos", &((ypos + off_y) as i32)).unwrap();
         };
