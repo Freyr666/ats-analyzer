@@ -15,6 +15,7 @@ use signals::Signal;
 use pad::{Type,SrcPad};
 use wm::widget::Widget;
 use wm::position::Position;
+use wm::position::Absolute;
 use wm::template::{WmTemplate,WmTemplatePartial,ContainerTemplate};
 
 pub struct Container {
@@ -124,18 +125,17 @@ impl WmState {
 
         self.layout = HashMap::new();
         for &(ref cname, ref c) in &t.layout {
-            let container_position = c.position;
-            let offset   = (container_position.get_x(), container_position.get_y());
-            let mut widgets  = HashMap::new();
+            let absolute = c.position.denormalize(t.resolution);
+            let mut widgets = HashMap::new();
             for &(ref wname, ref w) in &c.widgets {
-                let widget = self.widgets[wname].clone();
+                let widget   = self.widgets[wname].clone();
                 let layer    = w.layer;
-                let position = w.position.unwrap_or(container_position);
-                widget.lock().unwrap().render(offset, position, layer);
+                let position = w.position.unwrap_or(Position::from_pair((1.0, 1.0)));
+                widget.lock().unwrap().render(&absolute, position, layer);
                 widgets.insert(wname.clone(), widget);
             }
             self.layout.insert(cname.clone(),
-                               Container { position: container_position, widgets } );
+                               Container { position: c.position, widgets } );
         }
         self.set_resolution(t.resolution);
         let _ = pipe.set_state(gst::State::Playing); // TODO

@@ -61,10 +61,10 @@ module Make (Id : STREAM_ID) = struct
     { color : int } [@@deriving yojson]
 
   type position =
-    { left : int
-    ; top : int
-    ; right : int
-    ; bottom : int
+    { x : float
+    ; y : float
+    ; w : float
+    ; h : float
     } [@@deriving yojson, eq]
 
   type widget =

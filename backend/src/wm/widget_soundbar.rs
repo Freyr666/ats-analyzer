@@ -5,6 +5,7 @@ use std::sync::{Arc,Mutex};
 use signals::Signal;
 use pad::{Type,SrcPad};
 use wm::position::Position;
+use wm::position::Absolute;
 use wm::widget::{Widget,WidgetDesc,Domain};
 
 pub struct WidgetSoundbar {
@@ -115,26 +116,30 @@ impl Widget for WidgetSoundbar {
         desc.position = None;
     }
 
-    fn render (&mut self, offset: (u32, u32), position: Position, layer: i32) {
+    fn render (&mut self, container: &Absolute, position: Position, layer: i32) {
         if ! self.enabled { self.enable (); }
 
-        let mut desc = self.desc.lock().unwrap();
-        let (off_x, off_y) = offset;
+        let mut desc  = self.desc.lock().unwrap();
+        let (off_x, off_y) = (container.left, container.top);
+        let resolution = (container.width, container.height);
+
         desc.position = Some(position);
         desc.layer    = layer;
-        self.offset   = offset;
+        self.offset   = (off_x, off_y);
+
+        let Absolute{left: xpos, top: ypos, width, height} =
+            position.denormalize(resolution);
 
         if let Some(ref pad) = self.mixer_pad {
-            let cps = format!("video/x-raw(ANY),height={},width={}",
-                              position.get_height(), position.get_width());
+            let cps = format!("video/x-raw(ANY),height={},width={}", height, width);
             self.caps.set_property("caps", &gst::Caps::from_string(&cps).unwrap()).unwrap();
             pad.set_property("zorder", &((layer+1) as u32)).unwrap();
-            pad.set_property("height", &(position.get_height() as i32)).unwrap();
-            pad.set_property("width", &(position.get_width() as i32)).unwrap();
-            pad.set_property("xpos", &((position.get_x() + off_x) as i32)).unwrap();
-            pad.set_property("ypos", &((position.get_y() + off_y) as i32)).unwrap();
+            pad.set_property("height", &(height as i32)).unwrap();
+            pad.set_property("width", &(width as i32)).unwrap();
+            pad.set_property("xpos", &((xpos + off_x) as i32)).unwrap();
+            pad.set_property("ypos", &((ypos + off_y) as i32)).unwrap();
         };
-    }   
+    }
 
     fn gen_uid(&mut self) -> String {
         if let Some(ref s) = self.uid {

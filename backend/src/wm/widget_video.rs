@@ -6,6 +6,7 @@ use pad::{Type,SrcPad};
 use signals::Signal;
 use std::sync::{Arc,Mutex};
 use wm::position::Position;
+use wm::position::Absolute;
 use wm::widget::{Widget,WidgetDesc,Domain};
 
 pub struct WidgetVideo {
@@ -155,29 +156,35 @@ impl Widget for WidgetVideo {
         desc.position = None;
     }
 
-    fn render (&mut self, offset: (u32, u32), position: Position, layer: i32) {
+    fn render (&mut self, container: &Absolute, position: Position, layer: i32) {
         if ! self.enabled { self.enable (); }
 
-        let mut desc = self.desc.lock().unwrap();
-        let (off_x, off_y) = offset;
+        let mut desc  = self.desc.lock().unwrap();
+        let (off_x, off_y) = (container.left, container.top);
+        let resolution = (container.width, container.height);
+
         desc.position = Some(position);
         desc.layer    = layer;
-        self.offset   = offset;
+        self.offset   = (off_x, off_y);
 
-        // Non-square-pixel-related hack 
-        let (height, width) : (i32, i32) = if let Some(par) = *self.par.lock().unwrap() {
-            let (par_n, par_d) = par;
-            (position.get_height()  as i32, (position.get_width() * par_d / par_n) as i32)
-        } else {
-            (position.get_height() as i32, position.get_width() as i32)
+        let mut absolute = position.denormalize(resolution);
+        match desc.aspect {
+            None => (),
+            Some (aspect) => absolute.adjust_aspect(aspect)
         };
+        // Non-square-pixel-related hack
+        if let Some(par) = *self.par.lock().unwrap() {
+            absolute.adjust_non_square_pixel(par);
+        };
+
+        let Absolute{left: xpos, top: ypos, width, height} = absolute;
 
         if let Some(ref pad) = self.mixer_pad {
             pad.set_property("zorder", &((layer+1) as u32)).unwrap();
-            pad.set_property("height", &height).unwrap();
-            pad.set_property("width", &width).unwrap();
-            pad.set_property("xpos", &((position.get_x() + off_x) as i32)).unwrap();
-            pad.set_property("ypos", &((position.get_y() + off_y) as i32)).unwrap();
+            pad.set_property("height", &(height as i32)).unwrap();
+            pad.set_property("width", &(width as i32)).unwrap();
+            pad.set_property("xpos", &((xpos + off_x) as i32)).unwrap();
+            pad.set_property("ypos", &((ypos + off_y) as i32)).unwrap();
         };
     }
     
