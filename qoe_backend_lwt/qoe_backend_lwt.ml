@@ -4,6 +4,7 @@ module Make
          (Id : Qoe_backend_types.Basic.STREAM_ID)
          (Uri_string : Qoe_backend_types.Basic.URI)
          (Useconds : Qoe_backend_types.Basic.USECONDS)
+         (Useconds_span : Qoe_backend_types.Basic.USECONDS_SPAN)
   = struct
 
   module Structure = Qoe_backend_types.Structure.Make (Id) (Uri_string)
@@ -12,11 +13,11 @@ module Make
 
   module Settings = Qoe_backend_types.Settings.Make (Id)
 
-  module Qoe_errors = Qoe_backend_types.Qoe_errors.Make (Id) (Useconds)
+  module Qoe_errors = Qoe_backend_types.Qoe_errors.Make (Id) (Useconds) (Useconds_span)
 
   module Qoe_status = Qoe_backend_types.Qoe_status.Make (Id)
 
-  module Qoe_error_parser = Qoe_errors_parser.Make (Id) (Useconds)
+  module Qoe_error_parser = Qoe_errors_parser.Make (Id) (Useconds) (Useconds_span)
   
   type t = Qoe_backend.t
 
@@ -63,25 +64,15 @@ module Make
     let cb typ id channel pid buf =
       match typ with
       | Qoe_backend.Video -> begin
-         let open Qoe_errors.Video_data in
-         try let errors = Qoe_error_parser.get_video_errors buf in 
-             data_vid := Some { stream = Id.of_string id
-                              ; channel
-                              ; pid
-                              ; errors
-                           };
+         try let errors = Qoe_error_parser.video_errors buf (Id.of_string id) channel pid in 
+             data_vid := Some errors;
              Lwt_unix.send_notification notif_vid
          with Failure _ -> () (* TODO log errors *)
             | _ -> ()
         end
       | Qoe_backend.Audio -> begin
-          let open Qoe_errors.Audio_data in
-          try let errors = Qoe_error_parser.get_audio_errors buf in 
-              data_aud := Some { stream = Id.of_string id
-                               ; channel
-                               ; pid
-                               ; errors
-                            };
+          try let errors = Qoe_error_parser.audio_errors buf (Id.of_string id) channel pid in 
+              data_aud := Some errors;
               Lwt_unix.send_notification notif_aud
           with Failure _ -> () (* TODO log errors *)
              | _ -> ()

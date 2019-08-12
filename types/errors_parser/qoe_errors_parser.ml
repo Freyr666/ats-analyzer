@@ -1,8 +1,8 @@
 open Qoe_backend_types.Basic
          
-module Make (Id : STREAM_ID) = struct
+module Make (Id : STREAM_ID) (Time : USECONDS) (Time_span : USECONDS_SPAN) = struct
 
-  module Qoe_errors = Qoe_backend_types.Qoe_errors.Make (Id)
+  module Qoe_errors = Qoe_backend_types.Qoe_errors.Make (Id) (Time) (Time_span)
 
   external get_video_errors
            : Gstbuffer.t -> Qoe_errors.Video_data.errors * Qoe_errors.Video_data.data
@@ -11,6 +11,26 @@ module Make (Id : STREAM_ID) = struct
   external get_audio_errors
            : Gstbuffer.t -> Qoe_errors.Audio_data.errors * Qoe_errors.Audio_data.data
     = "caml_audio_errors_of_ba"
+
+  let video_errors ba stream channel pid =
+    let open Qoe_errors.Video_data in
+    let errors, data = get_video_errors ba in
+    { stream
+    ; channel
+    ; pid
+    ; errors
+    ; data
+    }
+
+  let audio_errors ba stream channel pid =
+    let open Qoe_errors.Audio_data in
+    let errors, data = get_audio_errors ba in
+    { stream
+    ; channel
+    ; pid
+    ; errors
+    ; data
+    }
 
 (*
   type parsed = (int * int * (float * float * float) * int64 * bool * bool)

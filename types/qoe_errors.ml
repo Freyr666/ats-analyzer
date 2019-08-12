@@ -1,16 +1,16 @@
 open Basic
 
-module Make (Id : STREAM_ID) = struct
+module Make (Id : STREAM_ID) (Time : USECONDS) (Time_span : USECONDS_SPAN) = struct
 
   type point =
-    { time : Ptime.t
+    { time : Time.t
     ; data : float
     } [@@deriving yojson]
 
   type flag =
     { value : bool
-    ; time  : Ptime.t
-    ; span  : Ptime.span
+    ; time  : Time.t
+    ; span  : Time_span.t
     } [@@deriving yojson]
   
   type error =
@@ -79,7 +79,7 @@ module Make (Id : STREAM_ID) = struct
     | `Loudness_shortt
     | `Loudness_moment
     ] [@@deriving yojson, eq]
-
+(*
   let video_data_to_list Video_data.{ stream; channel; pid; errors = { black; luma; freeze; diff; blocky } } =
     [ stream, channel, pid, 0, black
     ; stream, channel, pid, 1, luma
@@ -94,7 +94,7 @@ module Make (Id : STREAM_ID) = struct
     ; stream, channel, pid, 7, silence_moment
     ; stream, channel, pid, 8, loudness_moment
     ]
-
+ *)
   let labels_of_int = function
     | 0 -> `Black
     | 1 -> `Luma

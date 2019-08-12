@@ -67,8 +67,8 @@ ms_to_days_ps (int64_t ms, int * days, int64_t * ps)
   int64_t day = 86400000000;
   int64_t ps_in_ms = 1000000;
 
-  *days = tm / day;
-  *ps = (tm % day) * ps_in_ms;
+  *days = ms / day;
+  *ps = (ms % day) * ps_in_ms;
 }
 
 value
@@ -96,7 +96,7 @@ ms_to_time (int64_t ms)
 CAMLprim value
 caml_video_errors_of_ba (value buf) {
   CAMLparam1 (buf);
-  CAMLlocal4 (res, errors, data, flag);
+  CAMLlocal4 (rval, errors, data, flag);
   CAMLlocal3 (tuple, tmp, array);
 
   GstMapInfo info;
@@ -205,7 +205,7 @@ caml_video_errors_of_ba (value buf) {
   gst_buffer_unmap (b, &info);
   caml_acquire_runtime_system ();
 
-  CAMLreturn(res);
+  CAMLreturn(rval);
 
  failure:
   {
@@ -219,7 +219,7 @@ caml_video_errors_of_ba (value buf) {
 CAMLprim value
 caml_audio_errors_of_ba (value buf) {
   CAMLparam1 (buf);
-  CAMLlocal4 (res, errors, data, flag);
+  CAMLlocal4 (rval, errors, data, flag);
   CAMLlocal3 (tuple, tmp, array);
 
   GstMapInfo info;
@@ -328,7 +328,7 @@ caml_audio_errors_of_ba (value buf) {
   gst_buffer_unmap (b, &info);
   caml_acquire_runtime_system ();
 
-  CAMLreturn(res);
+  CAMLreturn(rval);
 
  failure:
   {

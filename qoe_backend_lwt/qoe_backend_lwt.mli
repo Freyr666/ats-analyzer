@@ -4,6 +4,7 @@ module Make
          (Id : Qoe_backend_types.Basic.STREAM_ID)
          (Uri_string : Qoe_backend_types.Basic.URI)
          (Useconds : Qoe_backend_types.Basic.USECONDS)
+         (Useconds_span : Qoe_backend_types.Basic.USECONDS_SPAN)
        : sig
 
   module Structure : module type of Qoe_backend_types.Structure.Make (Id) (Uri_string)
@@ -12,7 +13,7 @@ module Make
 
   module Settings : module type of Qoe_backend_types.Settings.Make (Id)
 
-  module Qoe_errors : module type of Qoe_backend_types.Qoe_errors.Make (Id) (Useconds)
+  module Qoe_errors : module type of Qoe_backend_types.Qoe_errors.Make (Id) (Useconds) (Useconds_span)
 
   module Qoe_status : module type of Qoe_backend_types.Qoe_status.Make (Id)
   
