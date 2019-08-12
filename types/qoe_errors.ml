@@ -1,20 +1,21 @@
 open Basic
 
-module Make (Id : STREAM_ID) (Time : USECONDS) = struct
+module Make (Id : STREAM_ID) = struct
 
-  type params =
-    { min : float
-    ; max : float
-    ; avg : float
+  type point =
+    { time : Ptime.t
+    ; data : float
     } [@@deriving yojson]
 
+  type flag =
+    { value : bool
+    ; time  : Ptime.t
+    ; span  : Ptime.span
+    } [@@deriving yojson]
+  
   type error =
-    { counter   : int
-    ; size      : int
-    ; params    : params
-    ; timestamp : Time.t (* TODO to seconds & span -> Time.t *)
-    ; peak_flag : bool
-    ; cont_flag : bool
+    { cont_flag : flag
+    ; peak_flag : flag
     } [@@deriving yojson]
 
   module Video_data = struct
@@ -25,27 +26,45 @@ module Make (Id : STREAM_ID) (Time : USECONDS) = struct
       ; diff   : error
       ; blocky : error
       } [@@deriving yojson]
+
+    type data =
+      { black  : point array
+      ; luma   : point array
+      ; freeze : point array
+      ; diff   : point array
+      ; blocky : point array
+      } [@@deriving yojson]
+      
     type t =
       { stream     : Id.t
       ; channel    : int
       ; pid        : int
       ; errors     : errors
+      ; data       : data
       } [@@deriving yojson]
       
   end
 
   module Audio_data = struct
+    
     type errors =
       { silence_shortt  : error
       ; silence_moment  : error
       ; loudness_shortt : error
       ; loudness_moment : error
       } [@@deriving yojson]
+
+    type data =
+      { shortt : point array
+      ; moment : point array
+      } [@@deriving yojson]
+      
     type t =
       { stream     : Id.t
       ; channel    : int
       ; pid        : int
       ; errors     : errors
+      ; data       : data
       } [@@deriving yojson]
   end
 
