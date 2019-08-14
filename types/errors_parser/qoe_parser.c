@@ -82,7 +82,7 @@ ms_to_time (int64_t ms)
 
   ms_to_days_ps (ms, &days, &ps);
 
-  caml_ps = caml_copy_double (ps);
+  caml_ps = caml_copy_int64 (ps);
 
   rval = caml_alloc_tuple (2);
 
@@ -195,7 +195,7 @@ caml_video_errors_of_ba (value buf) {
       
       Store_field (data, p, array);
 
-      ptr += sizeof (struct data) + sizeof (struct point) * points->meaningful;
+      ptr += sizeof (struct data) + sizeof (struct point) * points->length;
     }
 
   Store_field (rval, 0, errors);
@@ -318,7 +318,7 @@ caml_audio_errors_of_ba (value buf) {
       
       Store_field (data, p, array);
 
-      ptr += sizeof (struct data) + sizeof (struct point) * points->meaningful;
+      ptr += sizeof (struct data) + sizeof (struct point) * points->length;
     }
 
   Store_field (rval, 0, errors);
