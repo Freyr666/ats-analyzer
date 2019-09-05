@@ -1,7 +1,7 @@
 use serde_json;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
-use metadata::Structure;
+use media_stream::structure::Structure;
 use signals::Signal;
 use probe::Probe;
 
@@ -41,7 +41,7 @@ impl StreamParser {
                                            &mut structs.lock().unwrap(),
                                            s),
             };
-        } );
+        });
     }
 /*
     pub fn connect_streams_changed<F> (&mut self, f: F)

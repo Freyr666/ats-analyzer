@@ -7,7 +7,7 @@ use root::Root;
 use branch::Typ;
 use wm::Wm;
 use wm::template::{WmTemplate,WmTemplatePartial};
-use metadata::Structure;
+use media_stream::structure::Structure;
 use settings::{Settings,SettingsFlat};
 //use audio_mux::Mux;
 use renderer::{VideoR,AudioR,Renderer};

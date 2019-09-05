@@ -14,6 +14,7 @@ extern crate serde_json;
 #[macro_use]
 extern crate log;
 
+extern crate media_stream;
 #[macro_use]
 extern crate serde_derive;
 extern crate libc;
@@ -29,7 +30,6 @@ pub mod signals;
 pub mod channels;
 pub mod initial;
 pub mod settings;
-pub mod metadata;
 pub mod parse;
 pub mod probe;
 pub mod streams;

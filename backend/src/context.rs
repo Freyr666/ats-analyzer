@@ -5,7 +5,7 @@ use probe::Probe;
 use channels;
 use settings::SettingsFlat;
 use streams::StreamParser;
-use metadata::Structure;
+use media_stream::structure::Structure;
 use wm::template::WmTemplatePartial;
 use graph::Graph;
 use branch::Typ;

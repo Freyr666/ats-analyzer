@@ -2,7 +2,7 @@ use gst::prelude::*;
 use gst;
 use std::sync::{Arc,Mutex,Weak};
 use std::sync::mpsc::Sender;
-use metadata::{Channel,Structure};
+use media_stream::structure::{Channel,Structure};
 use settings::Settings;
 use signals::Signal;
 use pad::SrcPad;

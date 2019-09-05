@@ -1,5 +1,5 @@
 use gst_mpegts_sys::*;
-use metadata::{Channel,Pid,Structure};
+use media_stream::{Channel,Pid,Structure};
 use std::slice;
 use std::str::FromStr;
 use std::ptr;
@@ -55,7 +55,7 @@ unsafe fn dump_pat (section: *mut GstMpegtsSection, metadata: &mut Structure) {
     let pat = gst_mpegts_section_get_pat (section);
 
     if pat.is_null() {
-        warn!("pat table is empty");
+        //warn!("pat table is empty");
         return
     }
 
@@ -81,7 +81,7 @@ unsafe fn dump_pmt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
     let pmt = gst_mpegts_section_get_pmt (section);
 
     if pmt.is_null() {
-        warn!("pmt table is empty");
+        //warn!("pmt table is empty");
         return
     }
 
@@ -123,7 +123,7 @@ unsafe fn dump_sdt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
     let sdt = gst_mpegts_section_get_sdt (section);
 
     if sdt.is_null() {
-        warn!("sdt table is empty");
+        //warn!("sdt table is empty");
         return
     }
     
