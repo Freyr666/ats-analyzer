@@ -22,7 +22,7 @@ depends: [
   "ocaml" {>= "4.03.0"}
   "dune" {build}
   "qoe_ts_parse"
-  "qoe_backend_types"
+  "qoe_media_stream"
   "lwt"
   "lwt_react"
 ]

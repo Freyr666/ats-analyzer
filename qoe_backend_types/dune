@@ -1,5 +1,5 @@
 (library
   (name        qoe_backend_types)
   (public_name qoe_backend_types)
-  (libraries   uuidm ptime uri)
+  (libraries   uuidm ptime uri qoe_media_stream)
   (preprocess  (pps ppx_deriving_yojson ppx_deriving.eq ppx_deriving.ord)))

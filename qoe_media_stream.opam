@@ -1,5 +1,5 @@
 opam-version: "2.0"
-name:         "qoe_backend_types"
+name:         "qoe_media_stream"
 maintainer:   "Eugen Bulavin <ciceromarcus@yandex.ru>"
 homepage:     "https://github.com/Freyr666/ats-analyzer"
 bug-reports:  "https://github.com/Freyr666/ats-analyzer/issues"

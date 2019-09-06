@@ -1,4 +1,4 @@
-open Basic
+open Qoe_media_stream.Basic
 
 module Make (Id : STREAM_ID) (Time : USECONDS) (Time_span : USECONDS_SPAN) = struct
 

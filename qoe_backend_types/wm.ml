@@ -16,7 +16,7 @@ type widget_type = Video
 [@@deriving yojson]
  *)
 
-open Basic
+open Qoe_media_stream.Basic
 
 module Make (Id : STREAM_ID) = struct
 

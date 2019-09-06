@@ -1,13 +1,13 @@
 type error = [ `Qoe_ts_probe of string ]
 
 module Make
-         (Id : Qoe_backend_types.Basic.STREAM_ID)
-         (Uri_string : Qoe_backend_types.Basic.URI)
-         (Useconds : Qoe_backend_types.Basic.USECONDS)
-         (Useconds_span : Qoe_backend_types.Basic.USECONDS_SPAN)
+         (Id :  Qoe_media_stream.Basic.STREAM_ID)
+         (Uri_string : Qoe_media_stream.Basic.URI)
+         (Useconds : Qoe_media_stream.Basic.USECONDS)
+         (Useconds_span : Qoe_media_stream.Basic.USECONDS_SPAN)
   = struct
 
-  module Structure = Qoe_backend_types.Structure.Make (Id) (Uri_string)
+  module Structure = Qoe_media_stream.Structure.Make (Id) (Uri_string)
 
   type t = Qoe_ts_probe.t
 
