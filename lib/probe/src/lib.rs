@@ -27,7 +27,7 @@ pub mod parse;
 pub mod probe;
 
 use std::ffi::CString;
-use std::os::raw::c_char;
+use std::os::raw::{c_char,c_void};
 
 unsafe fn string_to_chars (s: &[u8]) -> *mut c_char {
     let size = s.len();    
@@ -50,7 +50,8 @@ pub struct init_val {
 
 #[repr(C)]
 pub struct callback {
-    cb: extern "C" fn(*mut c_char),
+    id: i32,
+    cb: extern "C" fn(i32, *mut c_char),
     reg_thread: extern "C" fn(),
     unreg_thread: extern "C" fn(),
 }
@@ -69,12 +70,13 @@ pub unsafe extern "C" fn qoe_probe_create (val: *const init_val,
     let v = (chars_to_string ((*val).tag),
              chars_to_string ((*val).arg1));
 
+    let id  = streams_cb.id.clone();
     let proc = streams_cb.cb;
     let reg  = streams_cb.reg_thread;
     let unreg = streams_cb.unreg_thread;
     
     let streams_cb : util::channels::Callbacks<Vec<u8>> = util::channels::Callbacks {
-        process: Box::new(move |data| {proc(string_to_chars(data));}),
+        process: Box::new(move |data| {proc(id, string_to_chars(data));}),
         thread_reg: Box::new(move || {reg();}),
         thread_unreg: Box::new(move || {unreg();}),
     };
@@ -113,8 +115,8 @@ pub unsafe extern "C" fn qoe_probe_free (c: *mut probe::Probe) {
 
 // TODO check allocations
 #[no_mangle]
-pub unsafe extern "C" fn qoe_probe_probe_get_structure (c: *mut probe::Probe)
-                                                        -> *const c_char {
+pub unsafe extern "C" fn qoe_probe_get_structure (c: *mut probe::Probe)
+                                                  -> *const c_char {
     if c.is_null() {
         return std::ptr::null() as *const c_char;
     }

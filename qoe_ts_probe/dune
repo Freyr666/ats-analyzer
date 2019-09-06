@@ -1,0 +1,12 @@
+(library
+  (name            qoe_ts_probe)
+  (public_name     qoe_ts_probe)
+  (c_names         probe_stubs)
+  (c_flags         (:include c_flags.sexp))
+  (c_library_flags (:standard -ltsprobe -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0))
+  (libraries       threads))
+
+(rule
+  (targets c_flags.sexp)
+  (deps    (:discover config/discover.exe))
+  (action  (run %{discover})))

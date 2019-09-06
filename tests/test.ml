@@ -1,3 +1,18 @@
+let () =
+  let p1 = Qoe_ts_probe.create ("1", "udp://224.1.2.2:1234") ~streams:print_endline in
+  let p2 = Qoe_ts_probe.create ("2", "udp://224.1.2.2:1234") ~streams:print_endline in
+  Unix.sleep 5;
+  let t1 = Thread.create (fun p -> Qoe_ts_probe.run p) p1 in
+  let t2 = Thread.create (fun p -> Qoe_ts_probe.run p) p2 in
+  Unix.sleep 20;
+  Qoe_ts_probe.free p1;
+  Qoe_ts_probe.free p2;
+  Thread.join t1;
+  Thread.join t2
+  
+
+(*
+
 open Lwt.Infix
 
 let get_exn = function Some v -> v | None -> failwith "get exn None"
@@ -192,3 +207,6 @@ let () =
   match Lwt_main.run (main ()) with
   | Ok () -> ()
   | Error (`Qoe_backend e) -> Printf.printf "Exited with error: %s\n" e
+                              *)
+
+                                
