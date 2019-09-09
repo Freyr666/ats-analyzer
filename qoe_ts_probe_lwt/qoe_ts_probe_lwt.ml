@@ -1,13 +1,8 @@
 type error = [ `Qoe_ts_probe of string ]
 
-module Make
-         (Id :  Qoe_media_stream.Basic.STREAM_ID)
-         (Uri_string : Qoe_media_stream.Basic.URI)
-         (Useconds : Qoe_media_stream.Basic.USECONDS)
-         (Useconds_span : Qoe_media_stream.Basic.USECONDS_SPAN)
-  = struct
+module Make (Id :  Qoe_media_stream.Basic.STREAM_ID) = struct
 
-  module Structure = Qoe_media_stream.Structure.Make (Id) (Uri_string)
+  module Structure = Qoe_media_stream.Structure.Make (Id)
 
   type t = Qoe_ts_probe.t
 

@@ -1,7 +1,20 @@
 open Basic
 
-module Make (Id : STREAM_ID) (Uri_string : URI) = struct
+type uri = Uri.t
 
+let equal_uri = Uri.equal
+
+let uri_to_yojson x = `String (Uri.to_string x)
+
+let uri_of_yojson = function
+  | `String s -> begin
+      try Ok (Uri.of_string s)
+      with _ -> Error "uri_of_yojson"
+    end
+  | _ -> Error "uri_of_yojson"
+   
+module Make (Id : STREAM_ID) = struct
+  
   type video_pid =
     { codec        : string
     ; resolution   : (int * int)
@@ -52,10 +65,11 @@ module Make (Id : STREAM_ID) (Uri_string : URI) = struct
 
   type t =
     { id       : Id.t
-    ; uri      : Uri_string.t
+    ; uri      : uri
     ; channels : channel list
     } [@@deriving yojson,eq]
 
+(*
   type many = t list [@@deriving yojson,eq]
-
+ *)
 end
