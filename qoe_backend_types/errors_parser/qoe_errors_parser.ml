@@ -1,8 +1,8 @@
 open Qoe_backend_types.Basic
          
-module Make (Id : STREAM_ID) (Time : USECONDS) (Time_span : USECONDS_SPAN) = struct
+module Make (Id : STREAM_ID) = struct
 
-  module Qoe_errors = Qoe_backend_types.Qoe_errors.Make (Id) (Time) (Time_span)
+  module Qoe_errors = Qoe_backend_types.Qoe_errors.Make (Id)
 
   external get_video_errors
            : Gstbuffer.t -> Qoe_errors.Video_data.errors * Qoe_errors.Video_data.data

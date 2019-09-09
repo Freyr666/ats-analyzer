@@ -2,18 +2,15 @@ type error = [ `Qoe_backend of string ]
 
 module Make
          (Id : Qoe_backend_types.Basic.STREAM_ID)
-         (Uri_string : Qoe_backend_types.Basic.URI)
-         (Useconds : Qoe_backend_types.Basic.USECONDS)
-         (Useconds_span : Qoe_backend_types.Basic.USECONDS_SPAN)
        : sig
 
-  module Structure : module type of Qoe_backend_types.Structure.Make (Id) (Uri_string)
+  module Structure : module type of Qoe_backend_types.Structure.Make (Id)
 
   module Wm : module type of Qoe_backend_types.Wm.Make (Id)
 
   module Settings : module type of Qoe_backend_types.Settings.Make (Id)
 
-  module Qoe_errors : module type of Qoe_backend_types.Qoe_errors.Make (Id) (Useconds) (Useconds_span)
+  module Qoe_errors : module type of Qoe_backend_types.Qoe_errors.Make (Id)
 
   module Qoe_status : module type of Qoe_backend_types.Qoe_status.Make (Id)
   
@@ -29,7 +26,7 @@ module Make
               
   val init_logger : unit -> unit
     
-  val create : (Id.t * Uri_string.t) array -> ((t * events), [> error]) Lwt_result.t
+  val create : (Id.t * Uri.t) array -> ((t * events), [> error]) Lwt_result.t
 
   val run : t -> unit Lwt.t
 

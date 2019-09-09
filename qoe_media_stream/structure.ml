@@ -65,7 +65,7 @@ module Make (Id : STREAM_ID) = struct
     ; pids     : pid list
     } [@@deriving yojson,eq]
 
-(*
+
   type many = t list [@@deriving yojson,eq]
- *)
+ 
 end

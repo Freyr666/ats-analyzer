@@ -1,16 +1,48 @@
 open Qoe_media_stream.Basic
 
-module Make (Id : STREAM_ID) (Time : USECONDS) (Time_span : USECONDS_SPAN) = struct
+type time = Ptime.t
+
+type time_span = Ptime.Span.t
+
+let time_span_to_yojson (v : time_span) : Yojson.Safe.t =
+  let d, ps = Ptime.Span.to_d_ps v in
+  `List [`Int d; `Intlit (Int64.to_string ps)]
+
+let time_span_of_yojson (j : Yojson.Safe.t) : (time_span, string) result =
+  let to_err j =
+    Printf.sprintf "time_span_of_yojson: bad json value (%s)"
+    @@ Yojson.Safe.to_string j in
+  match j with
+  | `List [`Int d; `Intlit ps] ->
+     begin match Int64.of_string_opt ps with
+     | None -> Error "time_span_of_yojson: error"
+     | Some ps ->
+        Ok (Ptime.to_span @@ Ptime.v (d, ps))
+     end
+  | _ -> Error (to_err j)
+
+let time_to_yojson (v : time) : Yojson.Safe.t =
+  time_span_to_yojson @@ Ptime.to_span v
+
+let time_of_yojson (j : Yojson.Safe.t) : (time, string) result =
+  match time_span_of_yojson j with
+  | Error _ as e -> e
+  | Ok v ->
+     match Ptime.of_span v with
+     | Some v -> Ok v
+     | None -> Error "time_of_yojson: bad time span"
+   
+module Make (Id : STREAM_ID) = struct
 
   type point =
-    { time : Time.t
+    { time : time
     ; data : float
     } [@@deriving yojson]
 
   type flag =
     { value : bool
-    ; time  : Time.t
-    ; span  : Time_span.t
+    ; time  : time
+    ; span  : time_span
     } [@@deriving yojson]
   
   type error =
