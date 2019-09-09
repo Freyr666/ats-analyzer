@@ -1,11 +1,11 @@
 use gst_mpegts_sys::*;
-use media_stream::{Channel,Pid,Structure};
+use media_stream::{Pid,Structure};
 use std::slice;
 use std::str::FromStr;
 use std::ptr;
 use std::ffi;
 use libc;
-
+use std::collections::HashMap;
 
 fn stream_name (val: i32) -> &'static str {
 
@@ -51,7 +51,9 @@ fn stream_name (val: i32) -> &'static str {
     }
 }
 
-unsafe fn dump_pat (section: *mut GstMpegtsSection, metadata: &mut Structure) {
+unsafe fn dump_pat (section: *mut GstMpegtsSection,
+                    name_table: &mut HashMap<u32,(String,String)>,
+                    metadata: &mut Structure) {
     let pat = gst_mpegts_section_get_pat (section);
 
     if pat.is_null() {
@@ -59,25 +61,13 @@ unsafe fn dump_pat (section: *mut GstMpegtsSection, metadata: &mut Structure) {
         return
     }
 
-    let sz = (*pat).len as usize;
-    let patp = slice::from_raw_parts((*pat).pdata, sz);
-
-    for p in patp.iter().take(sz) {
-        let prog = *p as *mut GstMpegtsPatProgram;
-
-        if prog.is_null() { break }
-
-        let num = u32::from((*prog).program_number);
-        
-        if num == 0 { continue }
-
-        if ! metadata.channel_exists (num) {
-            metadata.add_channel(Channel::new_empty(num));
-        }
-    }
+    metadata.pids = vec![];
+    name_table.clear();
 }
 
-unsafe fn dump_pmt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
+unsafe fn dump_pmt (section: *mut GstMpegtsSection,
+                    name_table: &mut HashMap<u32,(String,String)>,
+                    metadata: &mut Structure) {
     let pmt = gst_mpegts_section_get_pmt (section);
 
     if pmt.is_null() {
@@ -85,13 +75,7 @@ unsafe fn dump_pmt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
         return
     }
 
-    let channel = if metadata.channel_exists (u32::from((*pmt).program_number)) {
-        metadata.find_channel_mut_unsafe(u32::from((*pmt).program_number))
-    } else {
-        // TODO check if channel be unique
-        metadata.add_channel(Channel::new_empty(u32::from((*pmt).program_number)));
-        metadata.find_channel_mut_unsafe(u32::from((*pmt).program_number))
-    };
+    let group_id = u32::from((*pmt).program_number);
 
     let sz = (*(*pmt).streams).len as usize;
     let streams = slice::from_raw_parts((*(*pmt).streams).pdata, sz);
@@ -101,25 +85,43 @@ unsafe fn dump_pmt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
 
         if stream.is_null() { break }
         if (*stream).stream_type == 0x86 { continue } /* Unknown type */
-        let pid = u32::from((*stream).pid);
+        let id = u32::from((*stream).pid);
         let stream_type = u32::from((*stream).stream_type);
 
         /* Getting pid's codec type */
         let stream_type_name = String::from_str(stream_name (stream_type as i32)).unwrap();
 
-        if channel.pid_exists(pid) {
-            let pid = channel.find_pid_mut(pid).unwrap();
+        let names = name_table.get (&group_id);
+        
+        /* Update pid if exists */
+        if let Some (pid) = metadata.find_pid_mut (id, Some (group_id)) {
             pid.stream_type = stream_type;
             pid.stream_type_name = stream_type_name;
-        } else {
-            channel.append_pid(Pid::new(u32::from((*stream).pid),
-                                        u32::from((*stream).stream_type),
-                                        stream_type_name));
+
+            if let Some ((service_name, provider_name)) = names {
+                pid.service_name = service_name.clone();
+                pid.provider_name = provider_name.clone();
+            };
+            return;
         };
+        /* Or else add a new pid */
+        let (service_name, provider_name) = match names {
+            Some ((x,y)) => (x.clone(), y.clone()),
+            None => (String::from(""), String::from(""))
+        };
+        let pid = Pid::new(id,
+                           Some (group_id),
+                           service_name,
+                           provider_name,
+                           stream_type,
+                           stream_type_name);
+        metadata.add_pid (pid);
     }
 }
 
-unsafe fn dump_sdt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
+unsafe fn dump_sdt (section: *mut GstMpegtsSection,
+                    name_table: &mut HashMap<u32,(String,String)>,
+                    metadata: &mut Structure) {
     let sdt = gst_mpegts_section_get_sdt (section);
 
     if sdt.is_null() {
@@ -137,15 +139,7 @@ unsafe fn dump_sdt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
         
         if (*service).service_id == 0 { continue }
 
-        let service_id = u32::from((*service).service_id);
-
-        let channel = if metadata.channel_exists (service_id) {
-            metadata.find_channel_mut_unsafe(service_id)
-        } else {
-            // TODO check if channel be unique
-            metadata.add_channel(Channel::new_empty(service_id));
-            metadata.find_channel_mut_unsafe(service_id)
-        };
+        let group_id = u32::from((*service).service_id);
 
         let desc_sz = (*(*service).descriptors).len as usize;
         let descriptors = slice::from_raw_parts((*(*service).descriptors).pdata, desc_sz);
@@ -160,30 +154,46 @@ unsafe fn dump_sdt (section: *mut GstMpegtsSection, metadata: &mut Structure) {
                 let mut service_name_c : *mut libc::c_char = ptr::null_mut();
                 let mut provider_name_c : *mut libc::c_char = ptr::null_mut();
                 let mut service_type : GstMpegtsDVBServiceType = 0;
-                let serv = gst_mpegts_descriptor_parse_dvb_service(desc, &mut service_type,
-                                                                   &mut service_name_c, &mut provider_name_c);
+                let serv = gst_mpegts_descriptor_parse_dvb_service(desc,
+                                                                   &mut service_type,
+                                                                   &mut service_name_c,
+                                                                   &mut provider_name_c);
 
                 let service_name = ffi::CStr::from_ptr(service_name_c);
                 let provider_name = ffi::CStr::from_ptr(provider_name_c);
-
+                let service_name =
+                    String::from_str(service_name.to_str().unwrap())
+                    .unwrap();
+                let provider_name =
+                    String::from_str(provider_name.to_str().unwrap())
+                    .unwrap();
+                
+                /* Update existing pids */
                 if serv != 0 {
-                    channel.service_name = String::from_str(service_name.to_str().unwrap()).unwrap();
-                    channel.provider_name = String::from_str(provider_name.to_str().unwrap()).unwrap();
+                    metadata.map_group_mut (Some (group_id), |p| {
+                        p.service_name = service_name.clone();
+                        p.provider_name = provider_name.clone();
+                    });
                 }
+
+                name_table.insert (group_id,
+                                   (service_name, provider_name));
             }
         }
     }
 }
 
-pub unsafe fn table (section: *mut GstMpegtsSection, metadata: &mut Structure) -> Option<Structure> {
+pub unsafe fn table (section: *mut GstMpegtsSection,
+                     name_table: &mut HashMap<u32,(String,String)>,
+                     metadata: &mut Structure) -> Option<Structure> {
     if section.is_null() { return None }
     
     match (*section).section_type {
-        GST_MPEGTS_SECTION_PAT => { dump_pat(section, metadata);
+        GST_MPEGTS_SECTION_PAT => { dump_pat(section, name_table, metadata);
                                     Some (metadata.clone()) },
-        GST_MPEGTS_SECTION_PMT => { dump_pmt(section, metadata);
+        GST_MPEGTS_SECTION_PMT => { dump_pmt(section, name_table, metadata);
                                     Some (metadata.clone()) },
-        GST_MPEGTS_SECTION_SDT => { dump_sdt(section, metadata);
+        GST_MPEGTS_SECTION_SDT => { dump_sdt(section, name_table, metadata);
                                     Some (metadata.clone()) },
         _ => None
     }

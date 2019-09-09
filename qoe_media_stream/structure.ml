@@ -50,23 +50,19 @@ module Make (Id : STREAM_ID) = struct
     | _ -> Error("failure in pid_content deserialize")
 
   type pid =
-    { pid              : int
+    { id               : int
+    ; group_id         : int option
+    ; service_name     : string
+    ; provider_name    : string
     ; content          : pid_content
     ; stream_type      : int
     ; stream_type_name : string
     } [@@deriving yojson,eq]
 
-  type channel =
-    { number        : int
-    ; service_name  : string
-    ; provider_name : string
-    ; pids          : pid list
-    } [@@deriving yojson,eq]
-
   type t =
     { id       : Id.t
     ; uri      : uri
-    ; channels : channel list
+    ; pids     : pid list
     } [@@deriving yojson,eq]
 
 (*

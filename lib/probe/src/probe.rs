@@ -1,5 +1,6 @@
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
+use std::collections::HashMap;
 use util::signals::Signal;
 use media_stream::Structure;
 use gst;
@@ -31,6 +32,7 @@ impl ProbeState {
         let id            = stream.0.clone();
         let uri           = stream.1.clone();
         let mut structure = Structure::new(uri.clone(), id.clone());
+        let mut name_table = HashMap::new();
         
         let src   = gst::ElementFactory::make("udpsrc", None).unwrap();
         let parse = gst::ElementFactory::make("tsparse", None).unwrap();
@@ -58,7 +60,9 @@ impl ProbeState {
                     if msg.get_src().unwrap().get_name().starts_with("mpegtsparse") {
                         unsafe {
                             let section = gst_mpegts_sys::gst_message_parse_mpegts_section(msg.as_mut_ptr());
-                            if let Some(s) = parse::table(section, &mut structure) {
+                            if let Some(s) = parse::table(section,
+                                                          &mut name_table,
+                                                          &mut structure) {
                                 signal.lock().unwrap().emit(&s)
                             };
                             gst_sys::gst_mini_object_unref(section as *mut gst_sys::GstMiniObject);
