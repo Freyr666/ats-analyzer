@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 
 #[derive(Clone,PartialEq,Serialize,Deserialize,Debug)]
 pub struct VideoPid {
@@ -136,5 +137,26 @@ impl Structure {
                 f(p);
             }
         }
+    }
+
+    pub fn by_channel (&self) -> Vec<(u32, Vec<Pid>)> {
+        let mut ch : HashMap<u32,Vec<Pid>> = HashMap::new();
+
+        for p in &self.pids {
+            match p.group_id {
+                None => (),
+                Some(gid) => {
+                    /* No such key */
+                    if let Some(v) = ch.get_mut (&gid) {
+                        v.push (p.clone());
+                        continue;
+                    }
+                    /* Otherwise */
+                    ch.insert (gid, vec![p.clone()]);
+                }
+            }
+        };
+
+        ch.into_iter().collect()
     }
 }

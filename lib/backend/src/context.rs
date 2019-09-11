@@ -1,11 +1,9 @@
 //use chatterer::ChattererProxy;
 //use chatterer::Logger;
 //use settings::Configuration;
-use probe::Probe;
-use channels;
+use util::channels;
 use settings::SettingsFlat;
-use streams::StreamParser;
-use media_stream::structure::Structure;
+use media_stream::Structure;
 use wm::template::WmTemplatePartial;
 use graph::Graph;
 use branch::Typ;
@@ -14,9 +12,7 @@ use glib;
 use std::sync::{Arc,Mutex};
 
 pub struct ContextState {
-    stream_parser: StreamParser,
     graph:         Graph,
-    probes:        Vec<Probe>,
 }
 
 pub struct Context {
@@ -25,12 +21,6 @@ pub struct Context {
 }
 
 impl ContextState {
-
-    pub fn stream_parser_get_structure (&self) -> Vec<u8> {
-        println!("Getting streams");
-        let s : &Vec<_> = &self.stream_parser.structures.lock().unwrap();
-        serde_json::to_vec(&s).unwrap()
-    }
 
     pub fn graph_get_structure (&self) -> Vec<u8> {
         let s = self.graph.get_structure();
@@ -81,8 +71,6 @@ impl ContextState {
 
 impl Context {
     pub fn new (uris : &Vec<(String,String)>,
-                streams_cb: channels::Callbacks<Vec<u8>>,
-                graph_cb: channels::Callbacks<Vec<u8>>,
                 wm_cb: channels::Callbacks<Vec<u8>>,
                 data_cb: channels::Callbacks<(Typ,String,u32,u32,gst::Buffer)>,
                 status_cb: channels::Callbacks<(String,u32,u32,bool)>,
@@ -91,31 +79,16 @@ impl Context {
         gst::init().unwrap();
 
         let mainloop = glib::MainLoop::new(None, false);
-        
-        let mut probes  = Vec::new();
 
-        for sid in 0..uris.len() {
-            probes.push(Probe::new(&uris[sid]));
-        };
-
-        let stream_sender = channels::create (streams_cb);
-        let graph_sender = channels::create (graph_cb);
         let wm_sender = channels::create (wm_cb);
         let data_sender = channels::create (data_cb);
         let status_sender = channels::create (status_cb);
 
-        let mut stream_parser = StreamParser::new(stream_sender);
-        let     graph         = Graph::new(graph_sender,
-                                           wm_sender,
+        let     graph         = Graph::new(wm_sender,
                                            data_sender,
                                            status_sender).unwrap();
         
-        for probe in &mut probes {
-            probe.set_state(gst::State::Playing);
-            stream_parser.connect_probe(probe);
-        }
-
-        let state = Arc::new (Mutex::new (ContextState { stream_parser, graph, probes }));
+        let state = Arc::new (Mutex::new (ContextState { graph }));
         
         info!("Context was created");
         Ok(Box::new(Context { state, mainloop }))

@@ -65,16 +65,16 @@ pub struct Audio {
 pub struct SettingsFlat {
     default_video : Video,
     default_audio : Audio,
-    video : Vec<(String,u32,u32,Video)>,
-    audio : Vec<(String,u32,u32,Audio)>,
+    video : Vec<(String,u32,Video)>,
+    audio : Vec<(String,u32,Audio)>,
 }
 
 #[derive(Clone,PartialEq,Debug)]
 pub struct Settings {
     default_video : Video,
     default_audio : Audio,
-    video : HashMap<(String,u32,u32), Video>, // TODO consider Cow<str>
-    audio : HashMap<(String,u32,u32), Audio>,
+    video : HashMap<(String,u32), Video>, // TODO consider Cow<str>
+    audio : HashMap<(String,u32), Audio>,
 }
     
 
@@ -93,10 +93,10 @@ impl Settings {
         let mut video = HashMap::new();
         let mut audio = HashMap::new();
         for e in fs.video {
-            video.insert((e.0, e.1, e.2), e.3);
+            video.insert((e.0, e.1), e.2);
         }
         for e in fs.audio {
-            audio.insert((e.0, e.1, e.2), e.3);
+            audio.insert((e.0, e.1), e.2);
         }
         Settings { video, audio,
                    default_video : fs.default_video,
@@ -107,11 +107,11 @@ impl Settings {
     pub fn to_flat (&self) -> SettingsFlat {
         let video : Vec<_> = self.video
             .iter()
-            .map(|((s,c,p),v)| (s.clone(),*c,*p,*v))
+            .map(|((s,p),v)| (s.clone(),*p,*v))
             .collect();
         let audio : Vec<_> = self.audio
             .iter()
-            .map(|((s,c,p),v)| (s.clone(),*c,*p,*v))
+            .map(|((s,p),v)| (s.clone(),*p,*v))
             .collect();
         SettingsFlat { video, audio,
                        default_video : self.default_video,
@@ -119,25 +119,25 @@ impl Settings {
         }
     }
     
-    pub fn get_video (&self, k: &(String,u32,u32)) -> Video {
+    pub fn get_video (&self, k: &(String,u32)) -> Video {
         match self.video.get(k) {
             Some (v) => *v,
             None => self.default_video,
         }
     }
 
-    pub fn get_audio (&self, k: &(String,u32,u32)) -> Audio {
+    pub fn get_audio (&self, k: &(String,u32)) -> Audio {
         match self.audio.get(k) {
             Some (v) => *v,
             None => self.default_audio,
         }
     }
 
-    pub fn set_video (&mut self, k: (String,u32,u32), v: Video) {
+    pub fn set_video (&mut self, k: (String,u32), v: Video) {
         let _ = self.video.insert(k, v);
     }
 
-    pub fn set_audio (&mut self, k: (String,u32,u32), v: Audio) {
+    pub fn set_audio (&mut self, k: (String,u32), v: Audio) {
         let _ = self.audio.insert(k, v);
     }
 

@@ -15,6 +15,8 @@ extern crate serde_json;
 extern crate log;
 
 extern crate media_stream;
+extern crate util;
+    
 #[macro_use]
 extern crate serde_derive;
 extern crate libc;
@@ -30,9 +32,6 @@ pub mod signals;
 pub mod channels;
 pub mod initial;
 pub mod settings;
-pub mod parse;
-pub mod probe;
-pub mod streams;
 pub mod pad;
 pub mod audio_mux;
 pub mod branch;
@@ -137,8 +136,6 @@ pub struct status_callback {
 #[no_mangle]
 pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
                                              vals_num: u32,
-                                             streams_cb: callback,
-                                             graph_cb: callback,
                                              wm_cb: callback,
                                              data_cb: data_callback,
                                              status_cb: status_callback,
@@ -154,31 +151,11 @@ pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
         vec.push(v);
     }
 
-    let proc = streams_cb.cb;
-    let reg  = streams_cb.reg_thread;
-    let unreg = streams_cb.unreg_thread;
-    
-    let streams_cb : channels::Callbacks<Vec<u8>> = channels::Callbacks {
-        process: Box::new(move |data| {proc(string_to_chars(data));}),
-        thread_reg: Box::new(move || {reg();}),
-        thread_unreg: Box::new(move || {unreg();}),
-    };
-
-    let proc = graph_cb.cb;
-    let reg  = graph_cb.reg_thread;
-    let unreg = graph_cb.unreg_thread;
-    
-    let graph_cb : channels::Callbacks<Vec<u8>> = channels::Callbacks {
-        process: Box::new(move |data| {proc(string_to_chars(data));}),
-        thread_reg: Box::new(move || {reg();}),
-        thread_unreg: Box::new(move || {unreg();}),
-    };
-
     let proc = wm_cb.cb;
     let reg  = wm_cb.reg_thread;
     let unreg = wm_cb.unreg_thread;
     
-    let wm_cb : channels::Callbacks<Vec<u8>> = channels::Callbacks {
+    let wm_cb : util::channels::Callbacks<Vec<u8>> = util::channels::Callbacks {
         process: Box::new(move |data| {proc(string_to_chars(data));}),
         thread_reg: Box::new(move || {reg();}),
         thread_unreg: Box::new(move || {unreg();}),
@@ -188,8 +165,8 @@ pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
     let reg  = data_cb.reg_thread;
     let unreg = data_cb.unreg_thread;
     
-    let data_cb : channels::Callbacks<(branch::Typ,String,u32,u32,gst::Buffer)>
-        = channels::Callbacks {
+    let data_cb : util::channels::Callbacks<(branch::Typ,String,u32,u32,gst::Buffer)>
+        = util::channels::Callbacks {
             process: Box::new(move |(t,s,c,p,d)| {proc(*t as i32,
                                                        string_to_chars(s.as_bytes()),
                                                        *c,
@@ -203,8 +180,8 @@ pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
     let reg  = status_cb.reg_thread;
     let unreg = status_cb.unreg_thread;
     
-    let status_cb : channels::Callbacks<(String,u32,u32,bool)>
-        = channels::Callbacks {
+    let status_cb : util::channels::Callbacks<(String,u32,u32,bool)>
+        = util::channels::Callbacks {
             process: Box::new(move |(s,c,p,d)| {proc(string_to_chars(s.as_bytes()),
                                                      *c,
                                                      *p,
@@ -215,8 +192,10 @@ pub unsafe extern "C" fn qoe_backend_create (vals: *const init_val,
     
     
     let context = initial::validate(&vec)
-        .and_then (|v| context::Context::new (&v, streams_cb, graph_cb, wm_cb,
-                                              data_cb, status_cb));
+        .and_then (|v| context::Context::new (&v,
+                                              wm_cb,
+                                              data_cb,
+                                              status_cb));
     
     match context {
         Ok (v) => {
@@ -255,19 +234,6 @@ pub unsafe extern "C" fn qoe_backend_free (c: *mut context::Context) {
     //std::mem::drop(cont);
 }
 */
-// TODO check allocations
-#[no_mangle]
-pub unsafe extern "C" fn qoe_backend_stream_parser_get_structure (c: *mut context::Context)
-                                                                  -> *const c_char {
-    if c.is_null() {
-        return std::ptr::null() as *const c_char;
-    }
-    let cont = Box::from_raw (c);
-    let res = cont.state.lock ().unwrap ()
-        .stream_parser_get_structure ();
-    std::mem::forget (cont);
-    string_to_chars (&res)
-}
 
 #[no_mangle]
 pub unsafe extern "C" fn qoe_backend_graph_get_structure (c: *mut context::Context)

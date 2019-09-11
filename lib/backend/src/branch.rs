@@ -47,7 +47,6 @@ impl CommonBranch {
 #[derive(Clone)]
 pub struct VideoBranch {
     stream:   String,
-    channel:  u32,
     pid:      u32,
     settings: Option<settings::Video>,
     
@@ -66,10 +65,9 @@ pub struct VideoBranch {
 
 impl VideoBranch {
     pub fn new (stream: String,
-                channel: u32,
                 pid: u32,
-                sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
-                sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>)
+                sender_data: Weak<Mutex<Sender<(Typ,String,u32,gst::Buffer)>>>,
+                sender_status: Weak<Mutex<Sender<(String,u32,bool)>>>)
                 -> VideoBranch {
         debug!("VideoBranch::create");
         
@@ -138,7 +136,6 @@ impl VideoBranch {
                         sender.lock().unwrap()
                             .send((Typ::Video,
                                    stream,
-                                   channel,
                                    pid, // TODO proper vals unwrap
                                    buf))
                             .unwrap();
@@ -154,7 +151,6 @@ impl VideoBranch {
                     Some (ref sender) => {
                         sender.lock().unwrap()
                             .send((stream,
-                                   channel,
                                    pid,
                                    false))
                             .unwrap();
@@ -171,7 +167,6 @@ impl VideoBranch {
                     Some (ref sender) => {
                         sender.lock().unwrap()
                             .send((stream,
-                                   channel,
                                    pid,
                                    true))
                             .unwrap();
@@ -183,14 +178,14 @@ impl VideoBranch {
 
             let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream_id.clone(), channel, pid, "video", &bin, &src_pad);
+            let spad = SrcPad::new(stream_id.clone(), pid, "video", &bin, &src_pad);
 
             debug!("VideoBranch::create emit pad");
             pad_added_c.lock().unwrap().emit(&spad);
             pads_c.lock().unwrap().push(spad);
         });
         
-        VideoBranch { stream, channel, pid,
+        VideoBranch { stream, pid,
                       settings : None,
                       pads,
                       analyser, decoder, bin,
@@ -209,7 +204,7 @@ impl VideoBranch {
     }
 
     pub fn apply_settings (&mut self, s: &settings::Settings) {
-        let vset = s.get_video(&(self.stream.clone(), self.channel, self.pid));
+        let vset = s.get_video(&(self.stream.clone(), self.pid));
 
         match self.settings { // Skip if is already applied
             Some (v) => if v == vset { return },
@@ -252,7 +247,6 @@ impl VideoBranch {
 #[derive(Clone)]
 pub struct AudioBranch {
     stream:   String,
-    channel:  u32,
     pid:      u32,
     settings: Option<settings::Audio>,
     
@@ -268,10 +262,9 @@ pub struct AudioBranch {
 
 impl AudioBranch {
     pub fn new (stream: String,
-                channel: u32,
                 pid: u32,
-                sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
-                sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>)
+                sender_data: Weak<Mutex<Sender<(Typ,String,u32,gst::Buffer)>>>,
+                sender_status: Weak<Mutex<Sender<(String,u32,bool)>>>)
                 -> AudioBranch {
         debug!("AudioBranch::create");
         
@@ -340,7 +333,6 @@ impl AudioBranch {
                         sender.lock().unwrap()
                             .send((Typ::Audio,
                                    stream,
-                                   channel,
                                    pid, // TODO proper vals unwrap
                                    vals[1].get::<gst::Buffer>().unwrap()))
                             .unwrap();
@@ -356,7 +348,6 @@ impl AudioBranch {
                     Some (ref sender) => {
                         sender.lock().unwrap()
                             .send((stream,
-                                   channel,
                                    pid,
                                    false))
                             .unwrap();
@@ -373,7 +364,6 @@ impl AudioBranch {
                     Some (ref sender) => {
                         sender.lock().unwrap()
                             .send((stream,
-                                   channel,
                                    pid,
                                    true))
                             .unwrap();
@@ -385,7 +375,7 @@ impl AudioBranch {
             
             let _ = pad.link(&sink_pad); // TODO
 
-            let spad = SrcPad::new(stream_id.clone(), channel, pid, "audio", &bin, &src_pad);
+            let spad = SrcPad::new(stream_id.clone(), pid, "audio", &bin, &src_pad);
             let aspad = spad.clone();
 
             debug!("AudioBranch::create emit pad");
@@ -395,7 +385,8 @@ impl AudioBranch {
             pads_c.lock().unwrap().push(aspad);
         });
 
-        AudioBranch { stream, channel, pid,
+        AudioBranch { stream,
+                      pid,
                       settings : None,
                       pads,
                       analyser, decoder, bin, sink,
@@ -414,7 +405,7 @@ impl AudioBranch {
     }
 
     pub fn apply_settings (&mut self, s: &settings::Settings) {
-        let aset = s.get_audio(&(self.stream.clone(), self.channel, self.pid));
+        let aset = s.get_audio(&(self.stream.clone(), self.pid));
 
         match self.settings { // Skip if is already applied
             Some (v) => if v == aset { return },
@@ -449,20 +440,17 @@ pub enum Branch {
 impl Branch {
 
     pub fn new(stream: String,
-               channel: u32,
                pid: u32,
                typ: &str,
-               sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
-               sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>)
+               sender_data: Weak<Mutex<Sender<(Typ,String,u32,gst::Buffer)>>>,
+               sender_status: Weak<Mutex<Sender<(String,u32,bool)>>>)
                -> Option<Branch> {
         match typ {
             "video" => Some(Branch::Video(VideoBranch::new(stream,
-                                                           channel,
                                                            pid,
                                                            sender_data,
                                                            sender_status))),
             "audio" => Some(Branch::Audio(AudioBranch::new(stream,
-                                                           channel,
                                                            pid,
                                                            sender_data,
                                                            sender_status))),

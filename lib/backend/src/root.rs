@@ -2,7 +2,7 @@ use gst::prelude::*;
 use gst;
 use std::sync::{Arc,Mutex,Weak};
 use std::sync::mpsc::Sender;
-use media_stream::structure::{Channel,Structure};
+use media_stream::{Structure,Pid};
 use settings::Settings;
 use signals::Signal;
 use pad::SrcPad;
@@ -18,13 +18,14 @@ pub struct Root {
 impl Root {
 
     fn build_branch (branches: &mut Vec<Branch>,
-                     stream: String, chan: &Channel,
+                     stream: String,
+                     pids: Vec<Pid>,
                      added: Arc<Mutex<Signal<SrcPad>>>,
                      audio_added: Arc<Mutex<Signal<SrcPad>>>,
                      bin: &gst::Pipeline,
                      pad: &gst::Pad,
-                     sender_data: Weak<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
-                     sender_status: Weak<Mutex<Sender<(String,u32,u32,bool)>>>) {
+                     sender_data: Weak<Mutex<Sender<(Typ,String,u32,gst::Buffer)>>>,
+                     sender_status: Weak<Mutex<Sender<(String,u32,bool)>>>) {
         let pname = pad.get_name();
         let pcaps = String::from(pad.get_current_caps().unwrap().get_structure(0).unwrap().get_name());
         let name_toks: Vec<&str> = pname.split('_').collect();
@@ -35,14 +36,13 @@ impl Root {
         let pid = u32::from_str_radix(name_toks[2], 16).unwrap();
         
         /* No corresponding pid in config */
-        if let None = chan.find_pid(pid){
+        if ! pids.iter().any(|pn| pid == pn.id) {
             return;
         };
 
         debug!("Root::build_branch [{}]", pid);
 
         if let Some(branch) = Branch::new(stream,
-                                          chan.number,
                                           pid,
                                           typ,
                                           sender_data,
@@ -70,8 +70,8 @@ impl Root {
     
     pub fn new(bin: &gst::Pipeline,
                m: &Structure,
-               sender_data: &Arc<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
-               sender_status: &Arc<Mutex<Sender<(String,u32,u32,bool)>>>)
+               sender_data: &Arc<Mutex<Sender<(Typ,String,u32,gst::Buffer)>>>,
+               sender_status: &Arc<Mutex<Sender<(String,u32,bool)>>>)
                -> Option<Root> {
         debug!("Root::new");
 
@@ -89,14 +89,15 @@ impl Root {
 
         let id = m.id.clone();
 
-        for chan in &m.channels {
-            let demux_name = format!("demux_{}_{}_{}_{}",
-                                     id.clone(), chan.number, chan.service_name, chan.provider_name);
+        for (num, pids) in &m.by_channel() {
+            let demux_name = format!("demux_{}_{}",
+                                     id.clone(),
+                                     num);
 
             let queue = gst::ElementFactory::make("queue", None).unwrap();
             let demux = gst::ElementFactory::make("tsdemux", Some(demux_name.as_str())).unwrap();
 
-            demux.set_property("program-number", &(chan.number as i32)).unwrap();
+            demux.set_property("program-number", &(*num as i32)).unwrap();
             queue.set_property("max-size-time", &0u64).unwrap();
             queue.set_property("max-size-buffers", &0u32).unwrap();
             queue.set_property("max-size-bytes", &0u32).unwrap();
@@ -111,7 +112,7 @@ impl Root {
             let _ = srcpad.link(&sinkpad);
             
             let stream   = id.clone();
-            let chan     = chan.clone();
+            let pid_list = pids.clone();
             let bin_weak = bin.downgrade();
             let branches_weak = branches.clone();
             let pad_added_c = pad_added.clone();
@@ -125,7 +126,7 @@ impl Root {
                 //let branches = branches_weak.upgrade().unwrap();
                 Root::build_branch(&mut branches_weak.lock().unwrap(),
                                    stream.clone(),
-                                   &chan,
+                                   pid_list,
                                    pad_added_c.clone(),
                                    audio_pad_added_c.clone(),
                                    &bin,

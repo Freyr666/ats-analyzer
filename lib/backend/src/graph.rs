@@ -7,7 +7,7 @@ use root::Root;
 use branch::Typ;
 use wm::Wm;
 use wm::template::{WmTemplate,WmTemplatePartial};
-use media_stream::structure::Structure;
+use media_stream::Structure;
 use settings::{Settings,SettingsFlat};
 //use audio_mux::Mux;
 use renderer::{VideoR,AudioR,Renderer};
@@ -28,7 +28,6 @@ pub struct GraphState {
 }
 
 pub struct Graph {
-    sender:  Arc<Mutex<Sender<Vec<u8>>>>,
     state:   Arc<Mutex<GraphState>>,
 }
 
@@ -146,16 +145,14 @@ impl GraphState {
 
 impl Graph {
     
-    pub fn new (sender_graph: Sender<Vec<u8>>,
-                sender_wm: Sender<Vec<u8>>,
+    pub fn new (sender_wm: Sender<Vec<u8>>,
                 sender_data: Sender<(Typ,String,u32,u32,gst::Buffer)>,
                 sender_status: Sender<(String,u32,u32,bool)>)
                 -> Result<Graph,String> {
-        let sender = Arc::new(Mutex::new( sender_graph ));
         let state  = Arc::new(Mutex::new( GraphState::new(sender_wm,
                                                           sender_data,
                                                           sender_status) ));
-        Ok(Graph { sender, state } )
+        Ok(Graph { state } )
     }
 /*
     pub fn get_wm (&self) -> Arc<Mutex<Wm>> {
@@ -167,12 +164,7 @@ impl Graph {
     }
 
     pub fn set_structure (&self, s: Vec<Structure>) -> Result<(),String> {
-        // TODO talk only when applied successfully
-        self.sender.lock().unwrap().send(serde_json::to_vec(&s).unwrap());
         self.state.lock().unwrap().apply_streams(s)
-        //if res.is_ok() {
-        //    self.chat.lock().unwrap().talk()
-        //};
     }
 
     pub fn get_wm_layout (&self) -> Result<WmTemplate,String> {

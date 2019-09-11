@@ -10,7 +10,6 @@ pub enum Type {
 pub struct SrcPad {
     pub typ: Type,
     pub stream: String,
-    pub channel: u32,
     pub pid: u32,
 
     bin: glib::WeakRef<gst::Bin>, // TODO remove
@@ -19,7 +18,11 @@ pub struct SrcPad {
 }
 
 impl SrcPad {
-    pub fn new(stream: String, channel: u32, pid: u32, typ: &str, bin: &gst::Bin, pad: &gst::Pad) -> SrcPad {
+    pub fn new(stream: String,
+               pid: u32,
+               typ: &str,
+               bin: &gst::Bin,
+               pad: &gst::Pad) -> SrcPad {
         let typ = match typ {
             "video" => Type::Video,
             "audio" => Type::Audio,
@@ -40,7 +43,7 @@ impl SrcPad {
 
         bin.add_pad(&ghost).unwrap();
 
-        SrcPad { typ, stream, channel, pid, bin: bin.downgrade(), tee, pad: ghost.upcast() }
+        SrcPad { typ, stream, pid, bin: bin.downgrade(), tee, pad: ghost.upcast() }
     }
     
 }
@@ -51,8 +54,12 @@ impl Clone for SrcPad {
         let ghost   = gst::GhostPad::new(None, &mid_pad).unwrap();
         ghost.set_active(true).unwrap();
 
-        SrcPad { typ: self.typ, stream: self.stream.clone(), channel: self.channel, pid: self.pid,
-                 bin: self.bin.clone(), tee: self.tee.clone(), pad: ghost.upcast() }
+        SrcPad { typ: self.typ,
+                 stream: self.stream.clone(),
+                 pid: self.pid,
+                 bin: self.bin.clone(),
+                 tee: self.tee.clone(),
+                 pad: ghost.upcast() }
     }
 }
 
