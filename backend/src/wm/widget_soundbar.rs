@@ -20,7 +20,7 @@ pub struct WidgetSoundbar {
     input_pad: Option<gst::Pad>,
     valve:     gst::Element,
     soundbar:  gst::Element,
-    //upload:    gst::Element,
+    upload:    gst::Element,
     caps:      gst::Element,
     linked:    Arc<Mutex<Signal<()>>>,
 }
@@ -39,8 +39,8 @@ impl WidgetSoundbar {
         let offset   = (0, 0);
         let desc     = Arc::new(Mutex::new(desc));
         let linked   = Arc::new(Mutex::new(Signal::new()));
-        let soundbar = gst::ElementFactory::make("glsoundbar", None).unwrap();
-        //let upload   = gst::ElementFactory::make("glupload", None).unwrap();
+        let soundbar = gst::ElementFactory::make("wavescope", None).unwrap();
+        let upload   = gst::ElementFactory::make("glupload", None).unwrap();
         let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
         let valve    = gst::ElementFactory::make("valve", None).unwrap();
         caps.set_property("caps", &gst::Caps::from_str("video/x-raw(ANY)").unwrap()).unwrap();
@@ -51,7 +51,7 @@ impl WidgetSoundbar {
             uid:       None,
             stream: String::default(), channel: 0, pid: 0,
             mixer_pad: None, input_pad: None,
-            valve, soundbar,/* upload,*/ caps, linked,
+            valve, soundbar, upload, caps, linked,
         }
     }
 
@@ -70,10 +70,10 @@ impl WidgetSoundbar {
 impl Widget for WidgetSoundbar {
     fn add_to_pipe (&self, pipe: &gst::Bin) {
         // TODO fix valve after soundbar
-        pipe.add_many(&[&self.soundbar, &self.valve, &self.caps/*, &self.upload*/]).unwrap();
-        gst::Element::link_many(&[&self.soundbar, &self.valve, &self.caps/*, &self.upload*/]).unwrap();
+        pipe.add_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload]).unwrap();
+        gst::Element::link_many(&[&self.soundbar, &self.valve, &self.caps, &self.upload]).unwrap();
         self.soundbar.sync_state_with_parent().unwrap();
-        //self.upload.sync_state_with_parent().unwrap();
+        self.upload.sync_state_with_parent().unwrap();
         self.valve.sync_state_with_parent().unwrap();
         self.caps.sync_state_with_parent().unwrap();
     }
@@ -97,7 +97,7 @@ impl Widget for WidgetSoundbar {
 
     fn plug_sink (&mut self, sink: gst::Pad) {
         // TODO check
-        let _ = self.caps.get_static_pad("src").unwrap().link(&sink);
+        let _ = self.upload.get_static_pad("src").unwrap().link(&sink);
         if ! self.enabled {
             self.valve.set_property("drop", &true).unwrap();
             sink.set_property("alpha", &0.0).unwrap();
