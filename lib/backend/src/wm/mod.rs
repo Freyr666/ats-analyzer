@@ -48,24 +48,44 @@ impl WmState {
         format!("video/x-raw(ANY),height={},width={}", height, width)
     }
     
-    pub fn new (pipe: &gst::Pipeline, resolution: (u32, u32)) -> WmState {
-        let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
-        let download = gst::ElementFactory::make("gldownload", None).unwrap();
-        let mixer    = gst::ElementFactory::make("glvideomixer", None).unwrap();
+    pub fn new (pipe: &gst::Pipeline, resolution: (u32, u32)) -> Result<WmState,String> {
+        let caps     = optraise!(gst::ElementFactory::make("capsfilter", None),
+                                 "WM: Failed to create caps");
+        let download = optraise!(gst::ElementFactory::make("gldownload", None),
+                                 "WM: Failed to create GL downloader");
+        let mixer    = optraise!(gst::ElementFactory::make("glvideomixer", None),
+                                 "WM: Failed to create GL mixer");
         
-        mixer.set_property("background", &enum_to_val("GstGLVideoMixerBackground", 1)).unwrap();
-        mixer.set_property("async-handling", &true).unwrap();
-        mixer.set_property("latency", &100_000_000u64).unwrap();
-        caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(resolution)).unwrap()).unwrap();
+        reraise!(mixer.set_property("background",
+                                    &enum_to_val("GstGLVideoMixerBackground", 1)),
+                 "WM: Failed to set background");
 
-        pipe.add_many(&[&mixer,&caps,&download]).unwrap();
-        mixer.link(&caps).unwrap();
-        caps.link(&download).unwrap();
+        reraise!(mixer.set_property("async-handling", &true),
+                 "WM: Failed to set async-handling");
+
+        reraise!(mixer.set_property("latency", &100_000_000u64),
+                 "WM: Failed to set latency");
+        
+        let caps_format =
+            optraise!(gst::Caps::from_string(& WmState::resolution_caps(resolution)),
+                      "WM: Can't generate initial picture format");
+
+        reraise!(caps.set_property("caps", &caps_format),
+                 "WM: Failed to apply initial picture format");
+
+        reraise!(pipe.add_many(&[&mixer,&caps,&download]),
+                 "WM: Failed to construct initial WM");
+        
+        reraise!(mixer.link(&caps),
+                 "WM: Failed to link WM with the format filter");
+        
+        reraise!(caps.link(&download),
+                 "WM: Failed to link the format filter with the gl downloader");
 
         let pipe = pipe.downgrade();
         
-        WmState { resolution, layout: HashMap::new(), widgets: HashMap::new(),
-                  pipe, caps, download, mixer }
+        Ok (WmState { resolution, layout: HashMap::new(), widgets: HashMap::new(),
+                      pipe, caps, download, mixer })
     }
 
     pub fn plug (&mut self, pad: &SrcPad) -> Option<Arc<Mutex<Signal<()>>>> {

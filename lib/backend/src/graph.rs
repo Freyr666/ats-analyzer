@@ -35,7 +35,7 @@ impl GraphState {
     pub fn new (sender_wm: Sender<Vec<u8>>,
                 sender_data: Sender<(Typ,String,u32,u32,gst::Buffer)>,
                 sender_status: Sender<(String,u32,u32,bool)>)
-                -> GraphState {
+                -> Result<GraphState,String> {
         let sender_data = Arc::new(Mutex::new(sender_data));
         let sender_status = Arc::new(Mutex::new(sender_status));
         let settings  = Settings::new();
@@ -49,9 +49,9 @@ impl GraphState {
         let roots     = Vec::new();
         wm.lock().unwrap().init(&pipeline);
         //mux.lock().unwrap().init(&pipeline);
-        GraphState { sender_data, sender_status,
-                     settings, structure, pipeline, wm,
-                     /*mux,*/ bus, roots, arend, vrend }
+        Ok (GraphState { sender_data, sender_status,
+                         settings, structure, pipeline, wm,
+                         /*mux,*/ bus, roots, arend, vrend })
     }
 
     pub fn reset (&mut self) {
@@ -151,7 +151,7 @@ impl Graph {
                 -> Result<Graph,String> {
         let state  = Arc::new(Mutex::new( GraphState::new(sender_wm,
                                                           sender_data,
-                                                          sender_status) ));
+                                                          sender_status).unwrap() ));
         Ok(Graph { state } )
     }
 /*

@@ -84,9 +84,9 @@ impl Context {
         let data_sender = channels::create (data_cb);
         let status_sender = channels::create (status_cb);
 
-        let     graph         = Graph::new(wm_sender,
-                                           data_sender,
-                                           status_sender).unwrap();
+        let graph = Graph::new(wm_sender,
+                               data_sender,
+                               status_sender)?;
         
         let state = Arc::new (Mutex::new (ContextState { graph }));
         

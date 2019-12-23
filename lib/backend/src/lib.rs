@@ -15,6 +15,8 @@ extern crate serde_json;
 extern crate log;
 
 extern crate media_stream;
+
+#[macro_use]
 extern crate util;
     
 #[macro_use]
