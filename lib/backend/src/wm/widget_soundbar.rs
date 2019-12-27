@@ -3,7 +3,7 @@ use gst::prelude::*;
 use std::str::FromStr;
 use std::sync::{Arc,Mutex};
 use signals::Signal;
-use pad::{Type,SrcPad};
+use pad::SrcPad;
 use wm::position::Position;
 use wm::position::Absolute;
 use wm::widget::{Widget,WidgetDesc,Domain};
@@ -14,8 +14,7 @@ pub struct WidgetSoundbar {
     offset:    (u32, u32),
     uid:       Option<String>,
     stream:    String,
-    channel:   u32,
-    pid:       u32,
+    id:        u32,
     mixer_pad: Option<gst::Pad>,
     input_pad: Option<gst::Pad>,
     valve:     gst::Element,
@@ -26,12 +25,12 @@ pub struct WidgetSoundbar {
 }
 
 impl WidgetSoundbar {
-    pub fn new() -> WidgetSoundbar {
+    pub fn new() -> Result<WidgetSoundbar,String> {
         let desc = WidgetDesc {
             position: None,
-            typ: Type::Audio,
+            typ: "soundbar".to_string(),
             domain: Domain::Nihil,
-            pid: None,
+            id: None,
             aspect: None,
             description: String::from("soundbar widget"),
             layer: 0,
@@ -39,23 +38,29 @@ impl WidgetSoundbar {
         let offset   = (0, 0);
         let desc     = Arc::new(Mutex::new(desc));
         let linked   = Arc::new(Mutex::new(Signal::new()));
-        let soundbar = gst::ElementFactory::make("glsoundbar", None).unwrap();
+        let soundbar = optraise!(gst::ElementFactory::make("glsoundbar", None),
+                                 "Soundbar Widget: Failed to create glsoundbar");
         //let upload   = gst::ElementFactory::make("glupload", None).unwrap();
-        let caps     = gst::ElementFactory::make("capsfilter", None).unwrap();
-        let valve    = gst::ElementFactory::make("valve", None).unwrap();
-        caps.set_property("caps", &gst::Caps::from_str("video/x-raw(ANY)").unwrap()).unwrap();
-        WidgetSoundbar {
+        let caps     = optraise!(gst::ElementFactory::make("capsfilter", None),
+                                 "Soundbar Widget: Failed to create capsfilter");
+        let valve    = optraise!(gst::ElementFactory::make("valve", None),
+                                 "Soundbar Widget: Failed to create valve");
+
+        let caps_format = reraise!(gst::Caps::from_str("video/x-raw(ANY)"),
+                                   "Soundbar Widget: Failed to create caps format");
+        reraise!(caps.set_property("caps", &caps_format),
+                 "Soundbar Widget: Failed to setup caps");
+        
+        Ok(WidgetSoundbar {
             desc,
             offset,
             enabled:   false,
             uid:       None,
-            stream: String::default(), channel: 0, pid: 0,
+            stream: String::default(), id: 0,
             mixer_pad: None, input_pad: None,
             valve, soundbar,/* upload,*/ caps, linked,
-        }
+        })
     }
-
-
 
     fn enable (&mut self) {
         if self.enabled { return };
@@ -81,14 +86,13 @@ impl Widget for WidgetSoundbar {
     fn plug_src (&mut self, src: &SrcPad) {
         if self.input_pad.is_some() { return }; //is plugged already
         self.stream  = src.stream.clone();
-        self.channel = src.channel;
-        self.pid     = src.pid;
+        self.id      = src.id;
         let in_pad   = self.soundbar.get_static_pad("sink").unwrap();
         self.input_pad = Some(in_pad.clone());
 
         self.desc.lock().unwrap().domain =
-            Domain::Chan { stream: src.stream.clone(), channel: src.channel };
-        self.desc.lock().unwrap().pid = Some(src.pid);
+            Domain::Ts(src.stream.clone());
+        self.desc.lock().unwrap().id = Some(src.id);
 
         // TODO check
         let _ = src.pad.link(&in_pad.clone());
@@ -145,7 +149,7 @@ impl Widget for WidgetSoundbar {
         if let Some(ref s) = self.uid {
             s.clone()
         } else {
-            let s = format!("Sbar_{}_{}", self.stream, self.pid);
+            let s = format!("Sbar_{}_{}", self.stream, self.id);
             self.uid = Some(s.clone()); // TODO consider stream =/= 0 check
             s
         }

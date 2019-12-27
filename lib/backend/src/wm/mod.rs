@@ -6,21 +6,21 @@ pub mod widget_factory;
 pub mod template;
 
 use std::collections::HashMap;
-use std::sync::{Arc,Mutex};
+use std::sync::{Arc,Mutex,Weak};
 use std::sync::mpsc::Sender;
 use gst::prelude::*;
 use gst;
 use glib;
 use signals::Signal;
 use pad::{Type,SrcPad};
-use wm::widget::Widget;
+use wm::widget::{Widget,WidgetDesc};
 use wm::position::Position;
 use wm::position::Absolute;
 use wm::template::{WmTemplate,WmTemplatePartial,ContainerTemplate};
 
 pub struct Container {
     pub position: Position,
-    pub widgets:  HashMap<String,Arc<Mutex<Widget + Send>>>, // TODO WeakRef
+    pub widgets:  HashMap<String,Weak<Mutex<Widget + Send>>>,
 }
 
 pub struct WmState {    
@@ -84,10 +84,27 @@ impl WmState {
 
         let pipe = pipe.downgrade();
         
-        Ok (WmState { resolution, layout: HashMap::new(), widgets: HashMap::new(),
+        Ok (WmState { resolution,
+                      layout: HashMap::new(),
+                      widgets: HashMap::new(),
                       pipe, caps, download, mixer })
     }
 
+    fn add_widget (&mut self, desc: &WidgetDesc) -> Result<(),String> {
+        let pipe = optraise!(self.pipe.upgrade(),
+                             "WM add_widget: Failed to retreive the pipeline");
+        let widg = widget_factory::make(&desc.typ)?;
+
+        {
+            let mut widg = widg.lock().unwrap();
+            widg.add_to_pipe(&pipe.upcast());
+            let sink_pad = self.mixer.get_request_pad("sink_%u").unwrap();
+            widg.plug_sink(sink_pad);
+        }
+        
+        Ok (())
+    }
+    
     pub fn plug (&mut self, pad: &SrcPad) -> Option<Arc<Mutex<Signal<()>>>> {
         let pipe = self.pipe.upgrade().unwrap();
 
@@ -127,7 +144,8 @@ impl WmState {
     }
 
     pub fn set_resolution (&mut self, res: (u32, u32)) {
-        self.caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(res))
+        self.caps.set_property("caps",
+                               &gst::Caps::from_string(& WmState::resolution_caps(res))
                                .unwrap())
             .unwrap();
         self.resolution = res;
@@ -135,6 +153,9 @@ impl WmState {
     
     pub fn from_template (&mut self, t: &WmTemplate) -> Result<(),String> {
         let pipe = self.pipe.upgrade().unwrap();
+
+        
+        
         for &(ref name,_) in &t.widgets {
             if ! self.widgets.keys().any(|n| n == name) {
                 return Err(format!("Wm: Widget {} does not exists", name))
@@ -189,10 +210,14 @@ impl Wm {
         Wm { sender, state }
     }
 
-    pub fn init (&mut self, pipe: &gst::Pipeline) {
-        let wm = WmState::new(pipe, (1280,720));
-        self.sender.lock().unwrap().send(serde_json::to_vec(&wm.to_template()).unwrap());
-        *self.state.lock().unwrap() = Some(wm);
+    pub fn init (&mut self, pipe: &gst::Pipeline) -> Result<(),String> {
+        let wm_state = WmState::new(pipe, (1280,720))?;
+        /* TODO consider to remove this send */
+        self.sender.lock()
+            .unwrap()
+            .send(serde_json::to_vec(&wm_state.to_template()).unwrap());
+        *self.state.lock().unwrap() = Some(wm_state);
+        Ok (())
     }
     
     pub fn reset (&mut self) {
@@ -249,10 +274,7 @@ impl Wm {
         match *self.state.lock().unwrap() {
             None => Err(String::from("Wm is not initialized")),
             Some(ref mut wm) => {
-                let widg = wm.widgets.iter()
-                    .map(move |(name,w)| (name.clone(), w.lock().unwrap().get_desc().clone()))
-                    .collect();
-                let temp = WmTemplate::from_partial(templ, &widg);
+                let temp = WmTemplate::from_partial(templ);
                 wm.from_template(&temp)
                 // TODO send event
             }

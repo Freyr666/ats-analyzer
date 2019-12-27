@@ -1,5 +1,5 @@
 use gst;
-use pad::{Type,SrcPad};
+use pad::SrcPad;
 use signals::Signal;
 use std::sync::{Arc,Mutex};
 use wm::position::Position;
@@ -7,16 +7,16 @@ use wm::position::Absolute;
 
 #[derive(Serialize,Deserialize,Clone,Debug)]
 pub enum Domain {
-    Chan { stream: String, channel: u32 },
+    Ts(String),
     Nihil,
 }
 
 #[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct WidgetDesc {
     #[serde(rename = "type")]
-    pub typ:         Type,
+    pub typ:         String,
     pub domain:      Domain,
-    pub pid:         Option<u32>,
+    pub id:          Option<u32>,
     pub position:    Option<Position>,
     pub layer:       i32,
     pub aspect:      Option<(u32,u32)>,

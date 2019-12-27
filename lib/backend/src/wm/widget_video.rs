@@ -2,7 +2,7 @@ use gst;
 use gst_video::VideoInfo;
 use gst::prelude::*;
 use std::str::FromStr;
-use pad::{Type,SrcPad};
+use pad::SrcPad;
 use signals::Signal;
 use std::sync::{Arc,Mutex};
 use wm::position::Position;
@@ -16,8 +16,7 @@ pub struct WidgetVideo {
     offset:    (u32, u32),
     uid:       Option<String>,
     stream:    String,
-    channel:   u32,
-    pid:       u32,
+    id:        u32,
     mixer_pad: Option<gst::Pad>,
     input_pad: Option<gst::Pad>,
     valve:     gst::Element,
@@ -33,12 +32,19 @@ struct Asp {
 }
 
 impl WidgetVideo {
-    pub fn new() -> WidgetVideo {
+
+    pub fn from_desc(init: &WidgetDesc) -> Result<WidgetVideo,String> {
+        let desc = init.clone();
+
+        
+    }
+    
+    pub fn new() -> Result<WidgetVideo,String> {
         let desc = WidgetDesc {
             position: None,
-            typ: Type::Video,
+            typ: "video".to_string(),
             domain: Domain::Nihil,
-            pid: None,
+            id: None,
             aspect: None,
             description: String::from("video widget"),
             layer: 0,
@@ -47,21 +53,31 @@ impl WidgetVideo {
         let desc   = Arc::new(Mutex::new(desc));
         let par    = Arc::new(Mutex::new(None));
         let linked = Arc::new(Mutex::new(Signal::new()));
-        let valve  = gst::ElementFactory::make("valve", None).unwrap();
-        let conv   = gst::ElementFactory::make("glcolorconvert", None).unwrap();
-        let deint = gst::ElementFactory::make("gldeinterlace", None).unwrap();
-        let caps  = gst::ElementFactory::make("capsfilter", None).unwrap();
-        caps.set_property("caps", &gst::Caps::from_str("video/x-raw(ANY),format=RGBA").unwrap()).unwrap();
-        WidgetVideo {
+        let valve  = optraise!(gst::ElementFactory::make("valve", None),
+                              "Video Widget: Failed to create valve");
+        let conv   = optraise!(gst::ElementFactory::make("glcolorconvert", None),
+                              "Video Widget: Failed to create glcolorconvert");
+        let deint = optraise!(gst::ElementFactory::make("gldeinterlace", None),
+                             "Video Widget: Failed to create gldeinterlace");
+        let caps  = optraise!(gst::ElementFactory::make("capsfilter", None),
+                             "Video Widget: Failed to create capsfilter");
+
+        let caps_format = reraise!(gst::Caps::from_str("video/x-raw(ANY),format=RGBA"),
+                                   "Video Widget: Failed to create caps format");
+        
+        reraise!(caps.set_property("caps", &caps_format),
+                 "Video Widget: Failed to setup caps");
+        
+        Ok(WidgetVideo {
             desc, par,
             offset,
             enabled:   false,
             uid:       None,
-            stream: String::default(), channel: 0, pid: 0,
+            stream: String::default(), id: 0,
             mixer_pad: None, input_pad: None,
             valve, conv, deint, caps,
             linked,
-        }
+        })
     }
 
     fn gcd(x: u32, y: u32) -> u32 {
@@ -77,7 +93,10 @@ impl WidgetVideo {
 
     fn retrieve_aspect (pad: &gst::Pad) -> Option<Asp> {
         if let Some(ref caps) = pad.get_current_caps() {
-            let vi = VideoInfo::from_caps(caps).unwrap();
+            let vi = match VideoInfo::from_caps(caps) {
+                None => return None,
+                Some (c) => c,
+            };
             let (width, height) = (vi.width(), vi.height());
             let (par_n, par_d)  = vi.par().into();
             let x = width * (par_n as u32);
@@ -114,14 +133,13 @@ impl Widget for WidgetVideo {
     fn plug_src(&mut self, src: &SrcPad) {
         if self.input_pad.is_some() { return };
         self.stream  = src.stream.clone();
-        self.channel = src.channel;
-        self.pid     = src.pid;
+        self.id      = src.id;
         let in_pad   = self.valve.get_static_pad("sink").unwrap();
         self.input_pad = Some(in_pad.clone());
         
         self.desc.lock().unwrap().domain =
-            Domain::Chan { stream: src.stream.clone(), channel: src.channel };
-        self.desc.lock().unwrap().pid = Some(src.pid);
+            Domain::Ts(src.stream.clone());
+        self.desc.lock().unwrap().id = Some(src.id);
 
         let desc   = self.desc.clone();
         let par    = self.par.clone();
@@ -192,7 +210,7 @@ impl Widget for WidgetVideo {
         if let Some(ref s) = self.uid {
             s.clone()
         } else {
-            let s = format!("Vid_{}_{}", self.stream, self.pid);
+            let s = format!("Vid_{}_{}", self.stream, self.id);
             self.uid = Some(s.clone()); // TODO consider stream =/= 0 check
             s
         }

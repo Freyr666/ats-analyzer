@@ -10,7 +10,7 @@ pub enum Type {
 pub struct SrcPad {
     pub typ: Type,
     pub stream: String,
-    pub pid: u32,
+    pub id: u32,
 
     bin: glib::WeakRef<gst::Bin>, // TODO remove
     tee: gst::Element,
@@ -19,7 +19,7 @@ pub struct SrcPad {
 
 impl SrcPad {
     pub fn new(stream: String,
-               pid: u32,
+               id: u32,
                typ: &str,
                bin: &gst::Bin,
                pad: &gst::Pad) -> SrcPad {
@@ -43,7 +43,7 @@ impl SrcPad {
 
         bin.add_pad(&ghost).unwrap();
 
-        SrcPad { typ, stream, pid, bin: bin.downgrade(), tee, pad: ghost.upcast() }
+        SrcPad { typ, stream, id, bin: bin.downgrade(), tee, pad: ghost.upcast() }
     }
     
 }
@@ -56,7 +56,7 @@ impl Clone for SrcPad {
 
         SrcPad { typ: self.typ,
                  stream: self.stream.clone(),
-                 pid: self.pid,
+                 id: self.id,
                  bin: self.bin.clone(),
                  tee: self.tee.clone(),
                  pad: ghost.upcast() }

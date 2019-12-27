@@ -23,8 +23,11 @@ pub struct WmTemplate {
 
 impl WmTemplate {
 
-    pub fn from_partial (part: WmTemplatePartial, widgets: &HashMap<String,WidgetDesc>) -> WmTemplate {
-        let widgets = widgets.iter().map(|(name,w)| (name.clone(), w.clone())).collect();
+    pub fn from_partial (part: WmTemplatePartial) -> WmTemplate {
+        let widgets = Vec::new();
+        part.layout
+            .iter()
+            .map(|(_,cont)| widgets.append(&mut cont.widgets.clone()));
         WmTemplate { resolution: part.resolution, layout: part.layout, widgets }
     }
 
