@@ -59,21 +59,21 @@ impl GraphState {
         debug!("GraphState::reset [pipeline pause]");
         gst::debug_bin_to_dot_file(&self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_pre_reset");
         let _ = self.pipeline.set_state(gst::State::Null);
-        
-        debug!("GraphState::reset [bus reset]");
-        self.bus      = self.pipeline.get_bus().unwrap();
-        debug!("GraphState::reset [root reset]");
-        self.roots    = Vec::new();       
-        debug!("GraphState::reset [vrend reset]");
-        self.vrend    = None;
-        debug!("GraphState::reset [arend reset]");
-        self.arend    = None;
-        debug!("GraphState::reset [audio mux reset]");
-        //self.mux.lock().unwrap().reset();
-        debug!("GraphState::reset [wm reset]");
-        self.wm.lock().unwrap().reset();
-        gst::debug_bin_to_dot_file(& self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_post_reset");
-
+        {
+            debug!("GraphState::reset [bus reset]");
+            self.bus      = self.pipeline.get_bus().unwrap();
+            debug!("GraphState::reset [root reset]");
+            self.roots    = Vec::new();       
+            debug!("GraphState::reset [vrend reset]");
+            self.vrend    = None;
+            debug!("GraphState::reset [arend reset]");
+            self.arend    = None;
+            debug!("GraphState::reset [audio mux reset]");
+            //self.mux.lock().unwrap().reset();
+            debug!("GraphState::reset [wm reset]");
+            self.wm.lock().unwrap().reset();
+            gst::debug_bin_to_dot_file(& self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_post_reset");
+        }
         debug!("GraphState::reset [pipeline refcounter] {}", self.pipeline.ref_count());
         for el in self.pipeline.iterate_recurse() {
             match el {
