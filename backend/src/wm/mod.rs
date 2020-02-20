@@ -30,9 +30,9 @@ pub struct WmState {
     widgets:    HashMap<String,Arc<Mutex<Widget + Send>>>,
 
     pipe:           glib::WeakRef<gst::Pipeline>,
-    caps:           gst::Element,
-    download:       gst::Element,
-    mixer:          gst::Element,
+    caps:           glib::WeakRef<gst::Element>,
+    download:       glib::WeakRef<gst::Element>,
+    mixer:          glib::WeakRef<gst::Element>,
 }
 
 pub struct Wm {
@@ -64,6 +64,9 @@ impl WmState {
         caps.link(&download).unwrap();
 
         let pipe = pipe.downgrade();
+        let caps = caps.downgrade();
+        let download = download.downgrade();
+        let mixer = mixer.downgrade();
         
         WmState { resolution, layout: HashMap::new(), widgets: HashMap::new(),
                   pipe, caps, download, mixer }
@@ -71,7 +74,8 @@ impl WmState {
 
     pub fn plug (&mut self, pad: &SrcPad) -> Option<Arc<Mutex<Signal<()>>>> {
         let pipe = self.pipe.upgrade().unwrap();
-
+        let mixer = self.mixer.upgrade().unwrap();
+        
         match pad.typ {
             Type::Video => {
                 let uid;
@@ -79,7 +83,7 @@ impl WmState {
                 {
                     let mut widg = widg.lock().unwrap();
                     widg.add_to_pipe(&pipe.upcast());
-                    let sink_pad = self.mixer.get_request_pad("sink_%u").unwrap();
+                    let sink_pad = mixer.get_request_pad("sink_%u").unwrap();
                     widg.plug_src(pad);
                     widg.plug_sink(sink_pad);
                     uid = widg.gen_uid();
@@ -94,7 +98,7 @@ impl WmState {
                 {
                     let mut widg = widg.lock().unwrap();
                     widg.add_to_pipe(&pipe.upcast());
-                    let sink_pad = self.mixer.get_request_pad("sink_%u").unwrap();
+                    let sink_pad = mixer.get_request_pad("sink_%u").unwrap();
                     widg.plug_src(pad);
                     widg.plug_sink(sink_pad);
                     uid = widg.gen_uid();
@@ -108,8 +112,9 @@ impl WmState {
     }
 
     pub fn set_resolution (&mut self, res: (u32, u32)) {
-        self.caps.set_property("caps", &gst::Caps::from_str(& WmState::resolution_caps(res))
-                               .unwrap())
+        let caps = self.caps.upgrade().unwrap();
+        caps.set_property("caps", &gst::Caps::from_str(& WmState::resolution_caps(res))
+                          .unwrap())
             .unwrap();
         self.resolution = res;
     }
@@ -215,7 +220,8 @@ impl Wm {
     pub fn src_pad (&self) -> gst::Pad {
         match *self.state.lock().unwrap() {
             None => panic!("Wm::src_pad invariant is brocken"), // TODO invariant?
-            Some(ref state) => state.download.get_static_pad("src").unwrap()
+            Some(ref state) =>
+                state.download.upgrade().unwrap().get_static_pad("src").unwrap()
         }
     }
 

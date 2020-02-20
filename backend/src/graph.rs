@@ -60,8 +60,6 @@ impl GraphState {
         gst::debug_bin_to_dot_file(&self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_pre_reset");
         let _ = self.pipeline.set_state(gst::State::Null);
         {
-            debug!("GraphState::reset [bus reset]");
-            self.bus      = self.pipeline.get_bus().unwrap();
             debug!("GraphState::reset [root reset]");
             self.roots    = Vec::new();       
             debug!("GraphState::reset [vrend reset]");
@@ -85,8 +83,13 @@ impl GraphState {
                 }
             }
         }
-        debug!("GraphState::reset [pipeline reset]");
-        self.pipeline = gst::Pipeline::new(None);
+
+        {
+            debug!("GraphState::reset [pipeline reset]");
+            self.pipeline = gst::Pipeline::new(None);
+        }
+        debug!("GraphState::reset [bus reset]");
+        self.bus      = self.pipeline.get_bus().unwrap();
     }
 
     pub fn init (&mut self) {
