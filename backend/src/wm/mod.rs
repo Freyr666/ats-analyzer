@@ -5,6 +5,7 @@ pub mod widget_soundbar;
 pub mod widget_factory;
 pub mod template;
 
+use std::str::FromStr;
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
 use std::sync::mpsc::Sender;
@@ -56,7 +57,7 @@ impl WmState {
         mixer.set_property("background", &enum_to_val("GstGLVideoMixerBackground", 1)).unwrap();
         mixer.set_property("async-handling", &true).unwrap();
         mixer.set_property("latency", &100_000_000u64).unwrap();
-        caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(resolution)).unwrap()).unwrap();
+        caps.set_property("caps", &gst::Caps::from_str(&WmState::resolution_caps(resolution)).unwrap()).unwrap();
 
         pipe.add_many(&[&mixer,&caps,&download]).unwrap();
         mixer.link(&caps).unwrap();
@@ -107,7 +108,7 @@ impl WmState {
     }
 
     pub fn set_resolution (&mut self, res: (u32, u32)) {
-        self.caps.set_property("caps", &gst::Caps::from_string(& WmState::resolution_caps(res))
+        self.caps.set_property("caps", &gst::Caps::from_str(& WmState::resolution_caps(res))
                                .unwrap())
             .unwrap();
         self.resolution = res;

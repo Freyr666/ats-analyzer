@@ -133,6 +133,7 @@ impl Context {
     // Should be called in separate thread since
     // Mainloop::run is blocking
     pub fn quit (&mut self) {
+        self.state.lock().unwrap().graph.reset();
         self.mainloop.quit();
         warn!("Context {}: loop quit", self.num)
     }

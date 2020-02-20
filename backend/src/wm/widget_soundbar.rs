@@ -132,7 +132,7 @@ impl Widget for WidgetSoundbar {
 
         if let Some(ref pad) = self.mixer_pad {
             let cps = format!("video/x-raw(ANY),height={},width={}", height, width);
-            self.caps.set_property("caps", &gst::Caps::from_string(&cps).unwrap()).unwrap();
+            self.caps.set_property("caps", &gst::Caps::from_str(&cps).unwrap()).unwrap();
             pad.set_property("zorder", &((layer+1) as u32)).unwrap();
             pad.set_property("height", &(height as i32)).unwrap();
             pad.set_property("width", &(width as i32)).unwrap();

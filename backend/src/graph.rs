@@ -199,6 +199,10 @@ impl Graph {
         self.state.lock().unwrap().apply_settings(s)
     }
 
+    pub fn reset (&self) {
+        self.state.lock().unwrap().reset()
+    }
+
             /*
     pub fn connect_destructive (&mut self, msg: &mut Msg<Vec<Structure>,Result<(),String>>) {
         let state  = self.state.clone();

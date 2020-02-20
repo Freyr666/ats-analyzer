@@ -25,7 +25,7 @@ impl CommonBranch {
         // Diminish vaapi decoders' priority
         for el in &["vaapih264dec", "vaapimpeg2dec", "vaapidecodebin"] {
             if let Some(f) = gst::ElementFactory::find(&el) {
-                f.set_rank(0)
+                f.set_rank(gst::Rank::__Unknown(0))
             }
         };
         
@@ -134,7 +134,7 @@ impl VideoBranch {
                 match sender_data.upgrade() {
                     None => None,
                     Some (ref sender) => { // TODO proper vals unwrap
-                        let buf = vals[1].get::<gst::Buffer>().unwrap();
+                        let buf = vals[1].get::<gst::Buffer>().unwrap().unwrap();
                         sender.lock().unwrap()
                             .send((Typ::Video,
                                    stream,
@@ -342,7 +342,7 @@ impl AudioBranch {
                                    stream,
                                    channel,
                                    pid, // TODO proper vals unwrap
-                                   vals[1].get::<gst::Buffer>().unwrap()))
+                                   vals[1].get::<gst::Buffer>().unwrap().unwrap()))
                             .unwrap();
                         None
                     },
