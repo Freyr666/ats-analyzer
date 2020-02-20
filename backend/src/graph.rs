@@ -59,17 +59,6 @@ impl GraphState {
         debug!("GraphState::reset [pipeline pause]");
         gst::debug_bin_to_dot_file(&self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_pre_reset");
         let _ = self.pipeline.set_state(gst::State::Null);
-        debug!("GraphState::reset [pipeline refcounter] {}", self.pipeline.ref_count());
-        for el in self.pipeline.iterate_recurse() {
-            match el {
-                Err (_) => error!("GraphState::reset [pipeline] Unknown iter error"),
-                Ok (e) => {
-                    error!("GraphState::reset [pipeline] element {} counter {}",
-                           e.get_name(),
-                           e.ref_count())
-                }
-            }
-        }
         
         debug!("GraphState::reset [pipeline reset]");
         self.pipeline = gst::Pipeline::new(None);
@@ -86,6 +75,18 @@ impl GraphState {
         debug!("GraphState::reset [wm reset]");
         self.wm.lock().unwrap().reset();
         gst::debug_bin_to_dot_file(& self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_post_reset");
+
+        debug!("GraphState::reset [pipeline refcounter] {}", self.pipeline.ref_count());
+        for el in self.pipeline.iterate_recurse() {
+            match el {
+                Err (_) => error!("GraphState::reset [pipeline] Unknown iter error"),
+                Ok (e) => {
+                    error!("GraphState::reset [pipeline] element {} counter {}",
+                           e.get_name(),
+                           e.ref_count())
+                }
+            }
+        }
     }
 
     pub fn init (&mut self) {
