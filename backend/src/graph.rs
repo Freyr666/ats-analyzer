@@ -93,11 +93,15 @@ impl GraphState {
                            e.ref_count());
                     unsafe {
                         let c : *mut gst_sys::GstElement = e.to_glib_full();
+                        gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
                         gobject_sys::g_object_set_data_full(c as *mut gobject_sys::GObject,
                                                             c_str.as_ptr() as *const libc::c_char,
                                                             c as glib_sys::gpointer,
                                                             Some(on_destroy));
-                        gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
+                        let p = gobject_sys::g_object_get_data (c as *mut gobject_sys::GObject,
+                                                                c_str.as_ptr() as *const libc::c_char);
+                        let v = CStr::from_ptr(gst_sys::gst_object_get_name(p as *mut gst_sys::GstObject));
+                        error!("Data was attached to {}", v.to_str().unwrap());
                     }
                 }
             }
@@ -109,6 +113,7 @@ impl GraphState {
                                                 c_str.as_ptr() as *const libc::c_char,
                                                 p as glib_sys::gpointer,
                                                 Some(on_destroy));
+            gstreamer_sys::gst_object_unref(p as *mut gst_sys::GstObject);
         }
 
         {
