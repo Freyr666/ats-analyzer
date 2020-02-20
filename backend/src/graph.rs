@@ -35,9 +35,16 @@ pub struct Graph {
     state:   Arc<Mutex<GraphState>>,
 }
 
+unsafe fn string_to_chars (s: &str) -> *mut libc::c_char {
+    let size = s.len();    
+    //let cstr = CString::new(res).unwrap();
+    let buf = libc::calloc(size + 1, 1);
+    libc::memcpy(buf, s.as_ptr() as *const libc::c_void, size);
+    buf as *mut libc::c_char
+}
+
 unsafe extern "C" fn on_destroy (p : glib_sys::gpointer) {
-    let o = p as *mut gst_sys::GstObject;
-    let c = CStr::from_ptr(gst_sys::gst_object_get_name(o));
+    let c = CStr::from_ptr(p as *mut libc::c_char);
     error!("GraphState::reset [pipeline] element {} was destroyed", c.to_str().unwrap());
 }
 
@@ -92,11 +99,12 @@ impl GraphState {
                            e.get_name(),
                            e.ref_count());
                     unsafe {
+                        let name = string_to_chars(&e.get_name().as_str());
                         let c : *mut gst_sys::GstElement = e.to_glib_full();
                         gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
                         gobject_sys::g_object_set_data_full(c as *mut gobject_sys::GObject,
                                                             c_str.as_ptr() as *const libc::c_char,
-                                                            c as glib_sys::gpointer,
+                                                            name as glib_sys::gpointer,
                                                             Some(on_destroy));
                         let p = gobject_sys::g_object_get_data (c as *mut gobject_sys::GObject,
                                                                 c_str.as_ptr() as *const libc::c_char);
@@ -113,7 +121,6 @@ impl GraphState {
                                                 c_str.as_ptr() as *const libc::c_char,
                                                 p as glib_sys::gpointer,
                                                 Some(on_destroy));
-            gstreamer_sys::gst_object_unref(p as *mut gst_sys::GstObject);
         }
 
         {
