@@ -108,7 +108,7 @@ impl GraphState {
                                                             Some(on_destroy));
                         let p = gobject_sys::g_object_get_data (c as *mut gobject_sys::GObject,
                                                                 c_str.as_ptr() as *const libc::c_char);
-                        let v = CStr::from_ptr(gst_sys::gst_object_get_name(p as *mut gst_sys::GstObject));
+                        let v = CStr::from_ptr(p as *mut libc::c_char);
                         error!("Data was attached to {}", v.to_str().unwrap());
                     }
                 }
