@@ -22,7 +22,10 @@ pub struct ContextState {
 pub struct Context {
     pub state:   Arc<Mutex<ContextState>>,
     mainloop:    glib::MainLoop,
+    num:         i32,
 }
+
+static mut C : i32 = 0;
 
 impl ContextState {
 
@@ -90,6 +93,9 @@ impl Context {
         
         gst::init().unwrap();
 
+        let num = unsafe { C };
+        unsafe { C = C + 1 };
+
         let mainloop = glib::MainLoop::new(None, false);
         
         let mut probes  = Vec::new();
@@ -118,7 +124,7 @@ impl Context {
         let state = Arc::new (Mutex::new (ContextState { stream_parser, graph, probes }));
         
         info!("Context was created");
-        Ok(Box::new(Context { state, mainloop }))
+        Ok(Box::new(Context { state, mainloop, num }))
     }
 
     pub fn run (&mut self) {
@@ -127,7 +133,14 @@ impl Context {
     // Should be called in separate thread since
     // Mainloop::run is blocking
     pub fn quit (&mut self) {
-        self.mainloop.quit()
+        self.mainloop.quit();
+        println!("Context {}: loop quit", self.num)
     }
     
+}
+
+impl Drop for Context {
+    fn drop (&mut self) {
+        println!("Context {} was dropped", self.num)
+    }
 }
