@@ -134,13 +134,13 @@ impl Context {
     // Mainloop::run is blocking
     pub fn quit (&mut self) {
         self.mainloop.quit();
-        println!("Context {}: loop quit", self.num)
+        warn!("Context {}: loop quit", self.num)
     }
     
 }
 
 impl Drop for Context {
     fn drop (&mut self) {
-        println!("Context {} was dropped", self.num)
+        warn!("Context {} was dropped", self.num)
     }
 }
