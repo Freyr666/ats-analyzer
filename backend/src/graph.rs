@@ -12,6 +12,9 @@ use settings::{Settings,SettingsFlat};
 //use audio_mux::Mux;
 use renderer::{VideoR,AudioR,Renderer};
 
+use glib::translate::ToGlibPtr;
+use std::ffi::{CString, CStr};
+
 pub struct GraphState {
     sender_data: Arc<Mutex<Sender<(Typ,String,u32,u32,gst::Buffer)>>>,
     sender_status: Arc<Mutex<Sender<(String,u32,u32,bool)>>>,
@@ -30,6 +33,12 @@ pub struct GraphState {
 pub struct Graph {
     sender:  Arc<Mutex<Sender<Vec<u8>>>>,
     state:   Arc<Mutex<GraphState>>,
+}
+
+unsafe extern "C" fn on_destroy (p : glib_sys::gpointer) {
+    let o = p as *mut gst_sys::GstObject;
+    let c = CStr::from_ptr(gst_sys::gst_object_get_name(o));
+    error!("GraphState::reset [pipeline] element {} was destroyed", c.to_str().unwrap());
 }
 
 impl GraphState {
@@ -72,6 +81,8 @@ impl GraphState {
             self.wm.lock().unwrap().reset();
             gst::debug_bin_to_dot_file(& self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_post_reset");
         }
+        //unsafe { gstreamer_sys::gst_object_unref(self.pipeline.to_glib_full() as *mut gst_sys::GstObject); }
+        let c_str = CString::new("destroy").unwrap();
         debug!("GraphState::reset [pipeline refcounter] {}", self.pipeline.ref_count());
         for el in self.pipeline.iterate_recurse() {
             match el {
@@ -79,7 +90,14 @@ impl GraphState {
                 Ok (e) => {
                     error!("GraphState::reset [pipeline] element {} counter {}",
                            e.get_name(),
-                           e.ref_count())
+                           e.ref_count());
+                    unsafe {
+                        let c : *mut gst_sys::GstElement = e.to_glib_full();
+                        gobject_sys::g_object_set_data_full(c as *mut gobject_sys::GObject,
+                                                            c_str.as_ptr() as *const libc::c_char,
+                                                            c as glib_sys::gpointer,
+                                                            Some(on_destroy));
+                    }
                 }
             }
         }
