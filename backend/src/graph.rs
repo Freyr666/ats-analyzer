@@ -81,7 +81,7 @@ impl GraphState {
             self.wm.lock().unwrap().reset();
             gst::debug_bin_to_dot_file(& self.pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline_post_reset");
         }
-        //unsafe { gstreamer_sys::gst_object_unref(self.pipeline.to_glib_full() as *mut gst_sys::GstObject); }
+
         let c_str = CString::new("destroy").unwrap();
         debug!("GraphState::reset [pipeline refcounter] {}", self.pipeline.ref_count());
         for el in self.pipeline.iterate_recurse() {
@@ -97,9 +97,18 @@ impl GraphState {
                                                             c_str.as_ptr() as *const libc::c_char,
                                                             c as glib_sys::gpointer,
                                                             Some(on_destroy));
+                        gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
                     }
                 }
             }
+        }
+
+        unsafe {
+            let p : *mut gst_sys::GstPipeline = self.pipeline.to_glib_full();
+            gobject_sys::g_object_set_data_full(p as *mut gobject_sys::GObject,
+                                                c_str.as_ptr() as *const libc::c_char,
+                                                p as glib_sys::gpointer,
+                                                Some(on_destroy));
         }
 
         {
