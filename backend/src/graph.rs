@@ -137,7 +137,7 @@ impl GraphState {
         debug!("GraphState::reset [pipeline refcounter] {}", self.pipeline.ref_count());
         unsafe {
             let p : *mut gst_sys::GstPipeline = self.pipeline.to_glib_full();
-            let name = string_to_chars(&p.get_name().as_str());
+            let name = string_to_chars(&self.pipeline.get_name().as_str());
             gobject_sys::g_object_set_data_full(p as *mut gobject_sys::GObject,
                                                 c_str.as_ptr() as *const libc::c_char,
                                                 name as glib_sys::gpointer,
