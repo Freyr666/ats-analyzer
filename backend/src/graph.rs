@@ -140,8 +140,9 @@ impl GraphState {
                                                 c_str.as_ptr() as *const libc::c_char,
                                                 p as glib_sys::gpointer,
                                                 Some(on_destroy));
+            gstreamer_sys::gst_object_unref(p as *mut gst_sys::GstObject);
         }
-
+        
         {
             debug!("GraphState::reset [pipeline reset]");
             self.pipeline = gst::Pipeline::new(None);
