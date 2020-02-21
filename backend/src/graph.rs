@@ -48,6 +48,22 @@ unsafe extern "C" fn on_destroy (p : glib_sys::gpointer) {
     error!("GraphState::reset [pipeline] element {} was destroyed", c.to_str().unwrap());
 }
 
+fn get_deps<T: IsA<gst::Object>> (el: &T) -> String {
+    let mut res = String::from(el.get_name().as_str());
+    let mut cur = el.get_parent();
+    loop {
+        match cur {
+            None => break,
+            Some(p) => {
+                cur = p.get_parent();
+                res.push_str(" :> ");
+                res.push_str(p.get_name().as_str());
+            }
+        }
+    };
+    res
+}
+
 impl GraphState {
     pub fn new (sender_wm: Sender<Vec<u8>>,
                 sender_data: Sender<(Typ,String,u32,u32,gst::Buffer)>,
@@ -95,13 +111,14 @@ impl GraphState {
             match el {
                 Err (_) => error!("GraphState::reset [pipeline] Unknown iter error"),
                 Ok (e) => {
-                    error!("GraphState::reset [pipeline] element {} counter {}",
-                           e.get_name(),
-                           e.ref_count());
+                    let s = get_deps(&e);
+                    error!("GraphState::reset [pipeline] counter {} element {}",
+                           e.ref_count(),
+                           s);
                     unsafe {
                         let name = string_to_chars(&e.get_name().as_str());
                         let c : *mut gst_sys::GstElement = e.to_glib_full();
-                       
+                        
                         gobject_sys::g_object_set_data_full(c as *mut gobject_sys::GObject,
                                                             c_str.as_ptr() as *const libc::c_char,
                                                             name as glib_sys::gpointer,
@@ -110,8 +127,8 @@ impl GraphState {
                                                                 c_str.as_ptr() as *const libc::c_char);
                         let v = CStr::from_ptr(p as *mut libc::c_char);
                         error!("Data was attached to {}", v.to_str().unwrap());
-                        gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
-                        gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
+                        //gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
+                        //gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
                     }
                 }
             }
