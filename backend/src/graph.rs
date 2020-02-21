@@ -106,7 +106,7 @@ impl GraphState {
         }
 
         let c_str = CString::new("destroy").unwrap();
-        debug!("GraphState::reset [pipeline refcounter] {}", self.pipeline.ref_count());
+        
         for el in self.pipeline.iterate_recurse() {
             match el {
                 Err (_) => error!("GraphState::reset [pipeline] Unknown iter error"),
@@ -134,6 +134,7 @@ impl GraphState {
             }
         }
 
+        debug!("GraphState::reset [pipeline refcounter] {}", self.pipeline.ref_count());
         unsafe {
             let p : *mut gst_sys::GstPipeline = self.pipeline.to_glib_full();
             gobject_sys::g_object_set_data_full(p as *mut gobject_sys::GObject,
