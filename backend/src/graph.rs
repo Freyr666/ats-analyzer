@@ -127,7 +127,7 @@ impl GraphState {
                                                                 c_str.as_ptr() as *const libc::c_char);
                         let v = CStr::from_ptr(p as *mut libc::c_char);
                         error!("Data was attached to {}", v.to_str().unwrap());
-                        //gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
+                        gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
                         //gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
                     }
                 }
