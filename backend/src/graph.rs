@@ -117,7 +117,7 @@ impl GraphState {
                            s);
                     unsafe {
                         let name = string_to_chars(&e.get_name().as_str());
-                        let c : *mut gst_sys::GstElement = e.to_glib_full();
+                        let c : *mut gst_sys::GstElement = e.to_glib_none().0;
                         
                         gobject_sys::g_object_set_data_full(c as *mut gobject_sys::GObject,
                                                             c_str.as_ptr() as *const libc::c_char,
@@ -127,7 +127,7 @@ impl GraphState {
                                                                 c_str.as_ptr() as *const libc::c_char);
                         let v = CStr::from_ptr(p as *mut libc::c_char);
                         error!("Data was attached to {}", v.to_str().unwrap());
-                        gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
+                        //gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
                         //gstreamer_sys::gst_object_unref(c as *mut gst_sys::GstObject);
                     }
                 }
@@ -136,13 +136,13 @@ impl GraphState {
 
         debug!("GraphState::reset [pipeline refcounter] {}", self.pipeline.ref_count());
         unsafe {
-            let p : *mut gst_sys::GstPipeline = self.pipeline.to_glib_full();
+            let p : *mut gst_sys::GstPipeline = self.pipeline.to_glib_none().0;
             let name = string_to_chars(&self.pipeline.get_name().as_str());
             gobject_sys::g_object_set_data_full(p as *mut gobject_sys::GObject,
                                                 c_str.as_ptr() as *const libc::c_char,
                                                 name as glib_sys::gpointer,
                                                 Some(on_destroy));
-            gstreamer_sys::gst_object_unref(p as *mut gst_sys::GstObject);
+            //gstreamer_sys::gst_object_unref(p as *mut gst_sys::GstObject);
         }
         
         {
