@@ -1,4 +1,6 @@
 *.o
+*.merlin
+*.lock
 /build
-/target/
+**/target/
 **/*.rs.bk

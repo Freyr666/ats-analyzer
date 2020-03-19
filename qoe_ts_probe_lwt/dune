@@ -1,0 +1,7 @@
+(library
+  (name        qoe_ts_probe_lwt)
+  (public_name qoe_ts_probe_lwt)
+  (libraries   qoe_ts_probe
+               qoe_media_stream
+               lwt.unix
+               lwt_react))
